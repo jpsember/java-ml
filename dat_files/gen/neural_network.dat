@@ -1,0 +1,44 @@
+// Defines a neural network
+
+enum gen.NetworkProjectType;
+
+fields {
+  int version;
+
+  NetworkProjectType project_type;
+
+  * Layer layers;
+
+  // Number of weights (not their size, which is times sizeof(byte))
+  //
+  long weight_count;
+
+  // Default values:
+
+  // For CONV layers: the kernel's spatial extent; 1, 3, 5... (meaning 1x1, 3x3, 5x5...)
+  //
+  int kernel_width = 3;
+
+  // For LEAKY_RELU, the alpha value
+  //
+  float alpha = 0.01;
+
+  // For MAXPOOL, the stride to apply
+  //
+  int stride = 2;
+
+  // If nonzero, and network is for training, a dropout layer is added to the end of the layer to randomly drop out
+  // elements with this probability (distinct defaults for CONV vs FC).
+  //
+  // A value of -1 is equivalent to 0, and has the advantage of not being replaced by pojo 'apply defaults' operations.
+  //
+  float dropout_conv;
+  float dropout_fc;
+
+  JSMap model_config;
+
+  // True if the source images are .rax (or .raw) files, as opposed to color images.
+  // This is independent of the depth of the images the model manipulates.
+  //
+  bool monochrome_source_images;
+}

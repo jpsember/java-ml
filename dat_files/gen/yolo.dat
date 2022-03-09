@@ -1,0 +1,27 @@
+// YOLO-specific layer fields
+//
+
+fields {
+
+  // Whether to connect the previous layer to this one via a fully connected layer.
+  // Otherwise, it inserts a 1x1xF convolutional layer, where F is the number of values
+  // required for each cell.
+  //
+  bool fully_connected;
+
+  IPoint block_size = [32,32];
+
+  IPoint image_size;
+  int image_channels; // or depth, i.e. 1 for monochrome, 3 for rgb
+
+  int category_count;
+
+  * IPoint anchor_boxes_pixels;
+
+  // These are the lambda constants used by the YOLO loss function
+  //
+  float lambda_coord = 5.0;
+  float lambda_noobj = 0.5;
+
+  float neighbor_factor;
+}

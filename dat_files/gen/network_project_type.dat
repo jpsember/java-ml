@@ -1,0 +1,4 @@
+enum {
+  unknown;    // to ensure an explicit value was given
+  yolo;
+}

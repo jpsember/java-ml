@@ -1,0 +1,8 @@
+enum {
+  conv,
+  fc,
+  leaky_relu,
+  maxpool,
+  output,
+  yolo,
+}

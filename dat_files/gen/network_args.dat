@@ -1,0 +1,10 @@
+// Arguments for DescribeNetworkOper
+//
+fields {
+
+  NeuralNetwork architecture;
+
+  // If not zero, desired limit on the size of the network's weights (in MB)
+  //
+  int max_size_mb;
+}
