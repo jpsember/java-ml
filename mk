@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
 set -e
 
-APP=java-ml
+*/                            %%% // gitdiff marker
+APP=ml
 
 ###### Flags start ##### {~flags:
-DRIVER=0
+DRIVER=1
 DATAGEN=1
 ###### Flags end   ##### ~}
 
@@ -78,16 +79,6 @@ if [ "$NOTEST" != "" ]; then
 fi
 
 ###### Custom pre-compile start ##### {~precompile:
-
-##################################################
-# Generate DFA
-#
-
-# Omitting since the tokncompile command may not be available on all
-# systems, and the output file is tracked by the repository.  If we change the
-# tokens.rxp file, we will have to run the command again.
-#tokncompile tokens.rxp > src/main/resources/datagen/tokens.dfa
-
 ###### Custom pre-compile end   ##### ~}
 
 if [ "$DATAGEN" -ne "0" ]; then

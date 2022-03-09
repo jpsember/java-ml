@@ -1,0 +1,5 @@
+extern js.graphics.ScriptElement;
+
+fields {
+  * ScriptElement elements;
+}

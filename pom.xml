@@ -37,6 +37,12 @@
       <scope>test</scope>
     </dependency>
 
+    <dependency>
+      <groupId>com.jsbase</groupId>
+      <artifactId>graphics</artifactId>
+      <version>1.0</version>
+    </dependency>
+
     <!--  Custom dependencies end   ~}              -->
 
   </dependencies>
