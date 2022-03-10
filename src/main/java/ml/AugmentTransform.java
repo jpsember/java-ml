@@ -4,14 +4,15 @@ import static js.base.Tools.*;
 import js.geometry.Matrix;
 
 /**
- * Bookkeeping class for transformation matrix, its inverse, and a rotation_degrees field.  Inverse is lazily calculated;
- * otherwise, we could use pojo (if it supported matrices)
+ * Bookkeeping class for transformation matrix, its inverse, and a
+ * rotation_degrees field. Inverse is lazily calculated
  */
+@Deprecated
 public final class AugmentTransform {
 
   public AugmentTransform(Matrix transform, int rotationDegrees) {
     todo("Rename class to TransformWrapper");
-    mMatrix = transform;
+    mMatrix = transform.assertInvertible();
     mRotationDegrees = rotationDegrees;
   }
 

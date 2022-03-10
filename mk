@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 set -e
 
-*/                            %%% // gitdiff marker
 APP=ml
 
 ###### Flags start ##### {~flags:

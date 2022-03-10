@@ -17,6 +17,7 @@ import ml.ModelInputReceiver;
 import ml.ModelWrapper;
 import gen.AugmentationConfig;
 import gen.NeuralNetwork;
+import js.graphics.ImgUtil;
 import js.graphics.gen.ScriptElementList;
 
 public final class ImageHandler extends BaseObject {
@@ -43,7 +44,9 @@ public final class ImageHandler extends BaseObject {
   public final void applyCompileImagePipeline(BufferedImage srcImage, ScriptElementList annotations,
       AugmentTransform aug, ImageTransformer<BufferedImage> imageTransformer, ModelInputReceiver receiver,
       ImageRecord sourceImage) {
-
+    todo("remove this");
+    pr("srcImage:", INDENT, ImgUtil.toJson(srcImage));
+    pr("aug:", aug);
     annotations = Util.transform(annotations, aug.inverse(), -aug.rotationDegrees()).build();
     imageTransformer.withPendingAnnotation(annotations);
     imageTransformer.transform(aug.inverse(), aug.matrix(), srcImage, mDestFloatPixels);

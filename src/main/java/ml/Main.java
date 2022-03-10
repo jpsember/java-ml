@@ -24,6 +24,7 @@ public class Main extends App {
   protected void registerOperations() {
     registerOper(new GenerateImageSetOper());
     registerOper(new GenerateTrainingSetOper());
+    registerOper(new TrainStreamServiceOper());
   }
 
 }

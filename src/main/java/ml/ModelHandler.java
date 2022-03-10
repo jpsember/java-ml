@@ -43,6 +43,13 @@ public abstract class ModelHandler extends BaseObject {
   public void auxSetModel() {
   }
 
+  //------------------------------------------------------------------
+  // Training progress
+  // ------------------------------------------------------------------
+
+  public void updateTrainingProgress(ProgressFile progressFile, JSMap m) {
+  }
+
   // ------------------------------------------------------------------
   // Statistics about training images (optional)
   //

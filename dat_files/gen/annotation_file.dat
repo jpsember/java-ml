@@ -1,3 +1,5 @@
+extern js.graphics.gen.ScriptElementList;
+
 fields {
   * string filenames;
   * ScriptElementList annotations;
