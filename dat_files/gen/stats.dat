@@ -1,0 +1,7 @@
+fields {
+  int train_count;
+  int test_count;
+
+  float mean;
+  float standard_deviation;
+}

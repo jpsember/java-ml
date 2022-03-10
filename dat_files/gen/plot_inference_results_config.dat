@@ -1,0 +1,23 @@
+fields {
+  File inference_input_dir;
+  File inference_results_dir;
+  File output_dir;
+
+  ? NeuralNetwork network;
+  File network_path;
+
+  // For YOLO, the required confidence (percentage)
+  //
+  float confidence_pct = 65.0;
+
+  // Factor for applying non-max suppression
+  // (maximum intersection over union); zero to omit this filter
+  //
+  float max_i_over_u = 0.6;
+
+  // Frame number to display inspections of (or -1 for none)
+  //
+  int inspection_frame_number = -1;
+
+  bool plot_anchor_boxes;
+}

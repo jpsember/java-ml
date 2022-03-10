@@ -37,4 +37,44 @@ public final class NetworkUtil {
     return n.build();
   }
 
+  public static double ensureFinite(double value, double argument, String prompt) {
+    if (!Double.isFinite(value)) {
+      throw die("Failed to produce finite value for argument:", argument, "Location:", prompt);
+    }
+    return value;
+  }
+
+  private static final float MAX_EXPONENT = 12;
+  private static final float EPSILON = (float) Math.exp(-MAX_EXPONENT);
+
+  public static float logit(float value) {
+    if (value < EPSILON)
+      return -MAX_EXPONENT;
+    if (value > 1 - EPSILON)
+      return MAX_EXPONENT;
+    double result = (float) Math.log(value / (1 - value));
+    return (float) ensureFinite(result, value, "logit");
+  }
+
+  public static float sigmoid(float value) {
+    return (float) ensureFinite((1 / (1 + Math.exp(-value))), value, "sigmoid");
+  }
+
+  public static float tanh(float value) {
+    // see https://en.wikipedia.org/wiki/Activation_function
+    float exp = (float) Math.exp(value);
+    float exp2 = (float) Math.exp(-value);
+    return (float) ensureFinite((exp - exp2) / (exp + exp2), value, "tanh");
+  }
+
+  public static float ln(float value) {
+    if (value < EPSILON)
+      return -MAX_EXPONENT;
+    return (float) ensureFinite(Math.log(value), value, "ln");
+  }
+
+  public static float exp(float value) {
+    return (float) ensureFinite(Math.exp(value), value, "ln");
+  }
+
 }
