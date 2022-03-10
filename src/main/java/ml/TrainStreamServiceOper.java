@@ -40,8 +40,6 @@ import js.graphics.gen.ScriptElementList;
  */
 public final class TrainStreamServiceOper extends AppOper {
 
-  public static final String ACKNOWLEDGMENT_FILENAME = "stream_prepared.txt";
-
   @Override
   public String userCommand() {
     return "train-stream";
@@ -92,20 +90,16 @@ public final class TrainStreamServiceOper extends AppOper {
 
   //------------------------------------------------------------------
 
-  public AugmentationConfig augmentationConfig() {
+  private AugmentationConfig augmentationConfig() {
     return mTrainConfig.augmentationConfig();
   }
 
-  public Random random() {
+  private Random random() {
     return mImageHandler.random();
   }
 
   private File streamDir() {
     return mConfig.trainStreamDir();
-  }
-
-  private void sendAcknowledgment() {
-    Files.S.writeString(new File(streamDir(), ACKNOWLEDGMENT_FILENAME), "streamer starting");
   }
 
   /**
@@ -137,13 +131,8 @@ public final class TrainStreamServiceOper extends AppOper {
       return;
     }
 
-    // Send an acknowledgment, now that everything is set up
-    // (including the compiled test files)
-    //
-    sendAcknowledgment();
-
     writeProcessSignature();
-    
+
     while (!stopFlagDetected())
       streamMainLoop();
 
@@ -456,7 +445,7 @@ public final class TrainStreamServiceOper extends AppOper {
     return new File(mConfig.trainInputDir(), relativePath);
   }
 
-  public TrainConfig trainConfig() {
+  private TrainConfig trainConfig() {
     return mTrainConfig;
   }
 
