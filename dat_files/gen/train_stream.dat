@@ -22,7 +22,7 @@ fields {
 
   // Maximum number of sets to generate; if zero, defaults to reasonable value
   //
-  int max_sets = 4;
+  int max_sets = 2;
 
   // If true, stops streaming service earlier, and performs updates less frequently;
   // for debugging Python code

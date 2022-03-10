@@ -14,6 +14,7 @@ import js.app.AppOper;
 import js.base.DateTimeTools;
 import js.base.TaskProcessor;
 import js.data.DataUtil;
+import js.file.DirWalk;
 import js.file.Files;
 import js.geometry.MyMath;
 import js.graphics.Inspector;
@@ -61,19 +62,35 @@ public final class TrainStreamServiceOper extends AppOper {
     log("performance starts");
     mConfig = config();
 
-    if (!todo("investigate how to safely kill old instances")) {
-      SystemUtil.killProcesses("ml", "train-stream");
-    }
-
-    log("remaking stream directory");
-    Files.S.remakeDirs(streamDir());
-
     try {
       auxPerform();
     } finally {
       Files.closePeacefully(mProgressFile);
     }
   }
+
+  // ------------------------------------------------------------------
+  // Enforcing a single instance of the stream service running at once
+  // ------------------------------------------------------------------
+
+  private void writeProcessSignature() {
+    deleteAllSignatures();
+    mSigFile = new File(streamDir(), SIGNATURE_PREFIX + System.currentTimeMillis() + "." + SIGNATURE_EXT);
+    Files.S.writeString(mSigFile, "");
+    log("...wrote signature file:", mSigFile.getName());
+  }
+
+  private void deleteAllSignatures() {
+    for (File f : new DirWalk(streamDir()).withExtensions(SIGNATURE_EXT).withRecurse(false).files())
+      Files.S.deletePeacefully(f);
+  }
+
+  private static final String SIGNATURE_PREFIX = "signature-";
+  private static final String SIGNATURE_EXT = "sig";
+
+  private File mSigFile;
+
+  //------------------------------------------------------------------
 
   public AugmentationConfig augmentationConfig() {
     return mTrainConfig.augmentationConfig();
@@ -96,6 +113,7 @@ public final class TrainStreamServiceOper extends AppOper {
    * things up
    */
   private void auxPerform() {
+    Files.S.mkdirs(streamDir());
     readTrainConfig();
     mInspectionManager = Inspector.build(mConfig.inspectionsDir());
     mInspectionManager.maxSamples(200);
@@ -124,10 +142,13 @@ public final class TrainStreamServiceOper extends AppOper {
     //
     sendAcknowledgment();
 
+    writeProcessSignature();
+    
     while (!stopFlagDetected())
       streamMainLoop();
 
     log("...stream operation exiting");
+    mSigFile = Files.S.deletePeacefully(mSigFile);
   }
 
   private void streamMainLoop() {
@@ -160,8 +181,12 @@ public final class TrainStreamServiceOper extends AppOper {
     checkState(!mPerformingGenerateSetsTask);
     mPerformingGenerateSetsTask = true;
 
-    int setsToGenerate = determineMinimumBufferedSetCount() - countStreamSets();
+    int currentSets = countStreamSets();
+    int targetSets = determineMinimumBufferedSetCount();
+    int setsToGenerate = targetSets - countStreamSets();
+
     while (mSetsGenerated < setsToGenerate) {
+      log("desired sets:", targetSets, "current:", currentSets);
       File subdir = null;
       File finalSubdir = null;
 
@@ -217,6 +242,9 @@ public final class TrainStreamServiceOper extends AppOper {
    * will create unnecessary delays
    */
   private int determineMinimumBufferedSetCount() {
+    int maxSets = mConfig.maxSets();
+    if (maxSets <= 0)
+      maxSets = 2;
     return MyMath.clamp((int) ((currentTime() - mStartTime) / DateTimeTools.SECONDS(8)), 1,
         mConfig.maxSets());
   }
@@ -242,6 +270,12 @@ public final class TrainStreamServiceOper extends AppOper {
       File auxStopFile = new File(streamDir(), ".stop_signal_java.txt");
       if (stopFile.exists() || auxStopFile.exists()) {
         log("stop flag detected, quitting stream");
+        mStopFlag = true;
+      }
+    }
+    if (!mStopFlag) {
+      if (!mSigFile.exists()) {
+        log("signature file has disappeared, quitting stream");
         mStopFlag = true;
       }
     }
