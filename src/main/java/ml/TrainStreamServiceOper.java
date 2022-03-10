@@ -27,6 +27,7 @@ import js.system.SystemUtil;
 import gen.AugmentationConfig;
 import gen.TrainConfig;
 import gen.TrainStream;
+import gen.TransformWrapper;
 import gen.AnnotationFile;
 import js.graphics.gen.ScriptElementList;
 
@@ -346,7 +347,7 @@ public final class TrainStreamServiceOper extends AppOper {
     boolean cacheImagesInMemory = calculateCacheImagesFlag(records.size());
 
     for (ImageRecord rec : records) {
-      AugmentTransform aug = mImageHandler.buildAugmentTransform();
+      TransformWrapper aug = mImageHandler.buildAugmentTransform();
       ImageTransformer<BufferedImage> transformer = mHandler.buildImageTransformer(augmentationConfig(),
           random(), mTrainConfig.stats(), rec);
       transformer.setInspector(mInspectionManager);

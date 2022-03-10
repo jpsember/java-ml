@@ -17,8 +17,10 @@ import ml.ModelInputReceiver;
 import ml.ModelWrapper;
 import gen.AugmentationConfig;
 import gen.NeuralNetwork;
+import gen.TransformWrapper;
 import js.graphics.ImgUtil;
 import js.graphics.gen.ScriptElementList;
+import static ml.Util.*;
 
 public final class ImageHandler extends BaseObject {
 
@@ -42,7 +44,7 @@ public final class ImageHandler extends BaseObject {
    * Generate annotated images for training or inference
    */
   public final void applyCompileImagePipeline(BufferedImage srcImage, ScriptElementList annotations,
-      AugmentTransform aug, ImageTransformer<BufferedImage> imageTransformer, ModelInputReceiver receiver,
+      TransformWrapper aug, ImageTransformer<BufferedImage> imageTransformer, ModelInputReceiver receiver,
       ImageRecord sourceImage) {
     todo("remove this");
     pr("srcImage:", INDENT, ImgUtil.toJson(srcImage));
@@ -54,7 +56,7 @@ public final class ImageHandler extends BaseObject {
     receiver.accept(mDestFloatPixels, annotations);
   }
 
-  public AugmentTransform buildAugmentTransform() {
+  public TransformWrapper buildAugmentTransform() {
     AugmentationConfig ac = mAugmentationConfig;
     boolean horizFlip = ac.horizontalFlip() && random().nextBoolean();
 
@@ -110,7 +112,7 @@ public final class ImageHandler extends BaseObject {
         .pcat(tfmTranslateFromCenter)//
         .pcat(tfmTranslate);
 
-    return new AugmentTransform(tfm, rotateDegrees);
+    return transformWrapper(tfm, rotateDegrees);
   }
 
   /**

@@ -4,6 +4,7 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.util.List;
 
+import gen.TransformWrapper;
 import js.file.Files;
 import js.geometry.IPoint;
 import js.geometry.IRect;
@@ -271,7 +272,7 @@ public final class ImageRecord {
     return mLogDisplayFilename;
   }
 
-  public List<AugmentTransform> transforms() {
+  public List<TransformWrapper> transforms() {
     return mTransforms;
   }
 
@@ -307,7 +308,7 @@ public final class ImageRecord {
 
   private final File mSourceImageFile;
   private final ImageHandler mImageProcessor;
-  private final List<AugmentTransform> mTransforms = arrayList();
+  private final List<TransformWrapper> mTransforms = arrayList();
   private final List<ScriptElement> mShapes = arrayList();
   private BufferedImage mSourceBufferedImage;
   private String mRejectionReason = "";

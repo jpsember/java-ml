@@ -20,6 +20,7 @@ import js.graphics.ScriptUtil;
 import js.graphics.gen.ElementProperties;
 import js.graphics.gen.Script;
 import gen.AugmentationConfig;
+import gen.TransformWrapper;
 import js.graphics.gen.ScriptElementList;
 
 public final class Util {
@@ -212,6 +213,14 @@ public final class Util {
     if (rotationDegrees < RectElement.BOX_ROT_MIN || rotationDegrees > RectElement.BOX_ROT_MAX)
       throw die("illegal rotation_degrees:", rotationDegrees);
     return rotationDegrees * (1f / RectElement.BOX_ROT_MAX);
+  }
+
+  public static TransformWrapper transformWrapper(Matrix matrix, int rotationDegrees) {
+    TransformWrapper.Builder b = TransformWrapper.newBuilder();
+    b.matrix(matrix);
+    b.inverse(matrix.invert());
+    b.rotationDegrees(rotationDegrees);
+    return b.build();
   }
 
 }
