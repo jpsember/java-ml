@@ -50,4 +50,16 @@
   <!--  Custom elements start {~elements:         -->
   <!--  Custom elements end   ~}                  -->
 
+
+  <!--DEV
+  {
+
+  "app_name" : "ml",
+
+  "cmdline" : "/Library/Java/JavaVirtualMachines/jdk1.8.0_25.jdk/Contents/Home/bin/java -Dfile.encoding=UTF-8 -classpath /Users/home/github_projects/java-ml/target/classes:/Users/home/.m2/repository/commons-io/commons-io/2.6/commons-io-2.6.jar:/Users/home/github_projects/java-core/target/classes:/Users/home/github_projects/java-graphics/target/classes ml.Main"
+  }
+  -->
+
 </project>
+
+
