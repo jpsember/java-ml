@@ -1,6 +1,7 @@
 package ml;
 
 import js.app.App;
+import js.system.SystemUtil;
 
 import static js.base.Tools.*;
 
@@ -10,6 +11,7 @@ public class Main extends App {
 
   public static void main(String[] args) {
     loadTools();
+    SystemUtil.setConsoleAppFlag(true);
     App app = new Main();
     app.startApplication(args);
     app.exitWithReturnCode();
