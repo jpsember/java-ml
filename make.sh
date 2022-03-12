@@ -10,9 +10,9 @@ DATAGEN=1
 
 if [ "$DRIVER" -ne "0" ]; then
   BINDIR="$HOME/bin"
-  if [ ! -d $BINDIR ]
+  if [ ! -d $BINDIR ] 
   then
-    echo "Directory doesn't exist: $BINDIR"
+    echo "Directory doesn't exist; please create it: $BINDIR"
     exit 1
   fi
   LINK=$BINDIR/$APP
@@ -82,7 +82,7 @@ fi
 
 if [ "$DATAGEN" -ne "0" ]; then
   echo "...generating data classes"
-  datagen comments
+  datagen
 fi
 
 mvn install $NOTEST
