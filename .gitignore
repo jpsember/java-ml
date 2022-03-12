@@ -7,6 +7,10 @@
 _OLD_*
 _SKIP_*
 
+# Our project files (created by dev)
+#
+.jsproject
+
 # Sublime text editor
 #
 *.sublime-project
