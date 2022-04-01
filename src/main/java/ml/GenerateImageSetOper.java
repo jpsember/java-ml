@@ -73,6 +73,8 @@ public class GenerateImageSetOper extends AppOper {
       FontInfo fi = randomElement(fonts());
       p.with(PAINT_BGND).fillRect();
 
+      plotNoise(p);
+
       Script.Builder script = Script.newBuilder();
       List<ScriptElement> scripts = arrayList();
 
@@ -124,7 +126,7 @@ public class GenerateImageSetOper extends AppOper {
 
           // If this rectangle overlaps too much with a previous one, keep searching
           choseValidRectangle = true;
-         
+
           for (IRect prevRect : rectList) {
             IRect intersection = IRect.intersection(prevRect, tfmRect);
             if (intersection == null)
@@ -138,7 +140,7 @@ public class GenerateImageSetOper extends AppOper {
         }
         if (!choseValidRectangle)
           continue;
-        
+
         RectElement rectElement = new RectElement(ElementProperties.newBuilder().category(category), tfmRect);
         rectList.add(tfmRect);
         scripts.add(rectElement);
@@ -147,6 +149,8 @@ public class GenerateImageSetOper extends AppOper {
         p.graphics().setTransform(tfm.toAffineTransform());
         p.graphics().drawString(text, 0, 0);
       }
+      
+      plotNoise(p);
 
       if (insp.used()) {
         // TODO: inspector is kind of useless if we are writing out script projects anyways
@@ -175,6 +179,27 @@ public class GenerateImageSetOper extends AppOper {
     //    files().write(categoryBytes, new File(config().targetDir(), "labels.bin"));
   }
 
+  private IPoint rndPoint() {
+    return IPoint.with(random().nextInt(config().imageSize().x), random().nextInt(config().imageSize().y));
+  }
+
+  private void plotNoise(Plotter p) {
+    int nf = config().noiseFactor();
+    if (nf <= 0)
+      return;
+
+    IPoint loc = rndPoint();
+    int k = random().nextInt(nf);
+
+    for (int i = 0; i < k; i++) {
+      IPoint loc2 = rndPoint();
+      p.with(randomElement(paints()));
+      p.graphics().drawLine(loc.x, loc.y, loc2.x, loc2.y);
+      loc = loc2;
+    }
+
+  }
+
   @Override
   public GenerateImagesConfig defaultArgs() {
     return GenerateImagesConfig.DEFAULT_INSTANCE;
@@ -197,7 +222,7 @@ public class GenerateImageSetOper extends AppOper {
         sc = sColorsMono;
       mColors = arrayList();
       for (int i = 0; i < sc.length; i += 3) {
-        mColors.add(Paint.newBuilder().color(sc[i], sc[i + 1], sc[i + 2]).build());
+        mColors.add(Paint.newBuilder().width(1f).color(sc[i], sc[i + 1], sc[i + 2]).build());
       }
     }
     return mColors;
@@ -207,6 +232,8 @@ public class GenerateImageSetOper extends AppOper {
       74, 168, 50, //
       50, 107, 168, //
       168, 101, 50, //
+      25, 25, 25, //
+      127, 3, 252,//
   };
   private int[] sColorsMono = { //
       100, 100, 100, //

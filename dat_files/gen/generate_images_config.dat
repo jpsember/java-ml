@@ -19,6 +19,10 @@ fields {
   float scale_factor_max = 1.3;
   int rot_factor = 30;
 
+  // If nonzero, generates random colored lines
+  //
+  int noise_factor = 30;
+
   File inspection_dir;
 
   // GenerateType = classifier
