@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Random;
 
 import gen.GenerateImagesConfig;
+import gen.GenerateType;
 import js.app.AppOper;
 import js.file.Files;
 import js.geometry.IPoint;
@@ -40,17 +41,16 @@ public class GenerateImageSetOper extends AppOper {
 
   @Override
   public void perform() {
-    boolean detector = false;
 
     switch (config().type()) {
+    default:
+      throw setError("unsupported type:", config().type());
     case DETECTOR:
-      detector = true;
       if (config().maxObjects() < 1)
         setError("max_objects bad", config());
       break;
     case CLASSIFIER:
-    default:
-      throw setError("unsupported type:", config().type());
+      break;
     }
 
     File targetDir = files().remakeDirs(config().targetDir());
@@ -64,7 +64,7 @@ public class GenerateImageSetOper extends AppOper {
     for (int i = 0; i < config().imageTotal(); i++) {
 
       int totalObjects = 1;
-      if (detector)
+      if (config().type() == GenerateType.DETECTOR)
         totalObjects = 1 + random().nextInt(config().maxObjects());
 
       Plotter p = Plotter.build();
@@ -76,8 +76,7 @@ public class GenerateImageSetOper extends AppOper {
       plotNoise(p);
 
       Script.Builder script = Script.newBuilder();
-      List<ScriptElement> scripts = arrayList();
-
+      List<ScriptElement> scriptElements = arrayList();
       List<IRect> rectList = arrayList();
 
       for (int objIndex = 0; objIndex < totalObjects; objIndex++) {
@@ -143,13 +142,13 @@ public class GenerateImageSetOper extends AppOper {
 
         RectElement rectElement = new RectElement(ElementProperties.newBuilder().category(category), tfmRect);
         rectList.add(tfmRect);
-        scripts.add(rectElement);
+        scriptElements.add(rectElement);
 
         Matrix tfm = Matrix.postMultiply(objectTfm, tfmFontOrigin);
         p.graphics().setTransform(tfm.toAffineTransform());
         p.graphics().drawString(text, 0, 0);
       }
-      
+
       plotNoise(p);
 
       if (insp.used()) {
@@ -159,6 +158,12 @@ public class GenerateImageSetOper extends AppOper {
       }
 
       String imageBaseName = String.format("image_%05d", i);
+
+      // If we're doing a classifier, append the class number to the filename
+      if (config().type() == GenerateType.CLASSIFIER) {
+        imageBaseName += String.format("_%d", first(scriptElements).properties().category());
+      }
+
       {
         String path = Files.setExtension(imageBaseName, ImgUtil.EXT_JPEG);
         File f = new File(targetDir, path);
@@ -167,7 +172,7 @@ public class GenerateImageSetOper extends AppOper {
         ImgUtil.writeImage(files(), p.image(), f);
       }
 
-      script.items(scripts);
+      script.items(scriptElements);
       {
         String path = Files.setExtension(imageBaseName, Files.EXT_JSON);
         File f = new File(annotationDir, path);
