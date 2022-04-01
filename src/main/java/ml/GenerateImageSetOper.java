@@ -21,6 +21,7 @@ import js.file.Files;
 import js.geometry.Matrix;
 import js.geometry.MyMath;
 import js.graphics.ImgUtil;
+import js.graphics.Inspector;
 import js.graphics.Paint;
 import js.graphics.Plotter;
 
@@ -72,6 +73,10 @@ public class GenerateImageSetOper extends AppOper {
       imageStream = files().outputStream(new File(config().targetDir(), "images.bin"));
     }
 
+    todo("Make inspector an option");
+    Inspector insp = Inspector.build(new File("genimageset_inspection"));
+    insp.minSamples(5);
+    insp.alertVerbose();
     for (int i = 0; i < config().imageTotal(); i++) {
 
       Plotter p = Plotter.build();
@@ -106,6 +111,9 @@ public class GenerateImageSetOper extends AppOper {
       p.graphics().setTransform(tfm.toAffineTransform());
       p.graphics().drawString(text, 0, 0);
 
+      insp.create();
+      insp.image(p.image());
+      
       if (imageStream != null) {
         float[] pixels = ImgUtil.floatPixels(p.image(), config().monochrome() ? 1 : 3, null);
         files().writeFloatsLittleEndian(pixels, imageStream);

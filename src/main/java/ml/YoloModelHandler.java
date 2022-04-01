@@ -167,15 +167,10 @@ public final class YoloModelHandler extends ModelHandler {
     int valuesPerBlock = YoloUtil.valuesPerBlock(yol);
     IPoint grid = YoloUtil.gridSize(yol);
 
-    int numFilters;
-    if (yol.fullyConnected())
-      numFilters = valuesPerBlock * grid.product();
-    else {
       // I think what happens here is we apply 1x1 spatial filters to the input volume
       // to produce an output volume that has the same spatial dimension as the input,
       // but with the number of filters chosen to equal valuesPerBlock
-      numFilters = valuesPerBlock;
-    }
+     int numFilters = valuesPerBlock;
 
     if (layer.filters() != 0 && layer.filters() != numFilters) {
       analyzer.addProblem("Unexpected Yolo filters:", layer.filters(), "!=", numFilters);
@@ -186,10 +181,7 @@ public final class YoloModelHandler extends ModelHandler {
     Vol inBox = layer.inputVolume();
     Vol outputBox = VolumeUtil.build(grid.x, grid.y, valuesPerBlock);
 
-    if (yol.fullyConnected())
-      NetworkUtil.calcWeightsForFC(layer, VolumeUtil.product(inBox), VolumeUtil.product(outputBox));
-    else
-      NetworkUtil.calcWeightsForConv(layer, VolumeUtil.fibre(inBox.depth()), valuesPerBlock, outputBox);
+    NetworkUtil.calcWeightsForConv(layer, VolumeUtil.fibre(inBox.depth()), valuesPerBlock, outputBox);
     layer.outputVolume(outputBox);
   }
 

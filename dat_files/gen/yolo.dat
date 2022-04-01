@@ -3,12 +3,6 @@
 
 fields {
 
-  // Whether to connect the previous layer to this one via a fully connected layer.
-  // Otherwise, it inserts a 1x1xF convolutional layer, where F is the number of values
-  // required for each cell.
-  //
-  bool fully_connected;
-
   IPoint block_size = [32,32];
 
   IPoint image_size;
