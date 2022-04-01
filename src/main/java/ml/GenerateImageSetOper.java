@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Random;
 
 import gen.GenerateImagesConfig;
+import gen.GenerateType;
 import js.app.AppOper;
 import js.data.DataUtil;
 import js.data.IntArray;
@@ -34,7 +35,7 @@ public class GenerateImageSetOper extends AppOper {
 
   @Override
   public String getHelpDescription() {
-    return "Generate some images for experiment purposes";
+    return "Generate annotated images procedurally";
   }
 
   private List<Paint> paints() {
@@ -58,6 +59,9 @@ public class GenerateImageSetOper extends AppOper {
 
   @Override
   public void perform() {
+    if (config().type() == GenerateType.UNKNOWN)
+      setError("No type specified");
+
     files().mkdirs(config().targetDir());
     for (File f : new DirWalk(config().targetDir()).withExtensions("jpg", "bin").files()) {
       files().deleteFile(f);
@@ -113,7 +117,7 @@ public class GenerateImageSetOper extends AppOper {
 
       insp.create();
       insp.image(p.image());
-      
+
       if (imageStream != null) {
         float[] pixels = ImgUtil.floatPixels(p.image(), config().monochrome() ? 1 : 3, null);
         files().writeFloatsLittleEndian(pixels, imageStream);

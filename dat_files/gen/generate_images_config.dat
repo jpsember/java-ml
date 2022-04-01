@@ -1,8 +1,16 @@
+
+enum GenerateType;
+
 fields {
-  File target_dir = "source_images";
+
+  GenerateType type;
+
+  File target_dir = "generated_images";
   int image_total = 20;
   IPoint image_size = [32,48];
   int seed = 1965;
+
+
   string categories = "AB";
   bool write_uncompressed;
   bool write_floats;
@@ -17,4 +25,10 @@ fields {
   float scale_factor_max = 1.3;
   int rot_factor = 30;
 
+  // GenerateType = classifier
+  //
+
+  // GenerateType = detector
+  //
+  int max_objects = 4;
 }

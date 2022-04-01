@@ -1,0 +1,9 @@
+{
+   "type" : "detector",
+
+   "categories" : "AB",
+   "image_size" : [ 48,48 ],
+   "image_total" : 10,
+
+}
+
