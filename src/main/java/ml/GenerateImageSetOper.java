@@ -17,7 +17,6 @@ import gen.GenerateType;
 import js.app.AppOper;
 import js.data.DataUtil;
 import js.data.IntArray;
-import js.file.DirWalk;
 import js.file.Files;
 import js.geometry.Matrix;
 import js.geometry.MyMath;
@@ -38,34 +37,12 @@ public class GenerateImageSetOper extends AppOper {
     return "Generate annotated images procedurally";
   }
 
-  private List<Paint> paints() {
-    if (mColors == null) {
-      int[] sc = sColors;
-      if (config().monochrome())
-        sc = sColorsMono;
-      mColors = arrayList();
-      for (int i = 0; i < sc.length; i += 3) {
-        mColors.add(Paint.newBuilder().color(sc[i], sc[i + 1], sc[i + 2]).build());
-      }
-    }
-    return mColors;
-  }
-
-  private Paint PAINT_BGND = Paint.newBuilder().color(220, 220, 220).build();
-
-  private <T> T randomElement(List<T> elements) {
-    return elements.get(random().nextInt(elements.size()));
-  }
-
   @Override
   public void perform() {
     if (config().type() == GenerateType.UNKNOWN)
       setError("No type specified");
 
-    files().mkdirs(config().targetDir());
-    for (File f : new DirWalk(config().targetDir()).withExtensions("jpg", "bin").files()) {
-      files().deleteFile(f);
-    }
+    files().remakeDirs(config().targetDir());
 
     String categoriesString = config().categories();
 
@@ -73,13 +50,14 @@ public class GenerateImageSetOper extends AppOper {
 
     OutputStream imageStream = null;
     if (config().mergeImages()) {
+      setError("merge has been disabled");
       checkArgument(config().writeFloats() && config().writeUncompressed());
       imageStream = files().outputStream(new File(config().targetDir(), "images.bin"));
     }
 
     Inspector insp = Inspector.build(config().inspectionDir());
     insp.minSamples(5);
-    
+
     for (int i = 0; i < config().imageTotal(); i++) {
 
       Plotter p = Plotter.build();
@@ -146,16 +124,6 @@ public class GenerateImageSetOper extends AppOper {
     files().write(categoryBytes, new File(config().targetDir(), "labels.bin"));
   }
 
-  private float randGuassian(float min, float max) {
-    float scl = (max - min) * 0.35f;
-    float center = (max + min) * 0.5f;
-    while (true) {
-      float g = (float) (random().nextGaussian() * scl + center);
-      if (g >= min && g <= max)
-        return g;
-    }
-  }
-
   @Override
   public GenerateImagesConfig defaultArgs() {
     return GenerateImagesConfig.DEFAULT_INSTANCE;
@@ -167,7 +135,64 @@ public class GenerateImageSetOper extends AppOper {
     return super.config();
   }
 
-  private class FontInfo {
+  // ------------------------------------------------------------------
+  // Paints
+  // ------------------------------------------------------------------
+
+  private List<Paint> paints() {
+    if (mColors == null) {
+      int[] sc = sColors;
+      if (config().monochrome())
+        sc = sColorsMono;
+      mColors = arrayList();
+      for (int i = 0; i < sc.length; i += 3) {
+        mColors.add(Paint.newBuilder().color(sc[i], sc[i + 1], sc[i + 2]).build());
+      }
+    }
+    return mColors;
+  }
+
+  private int[] sColors = { //
+      74, 168, 50, //
+      50, 107, 168, //
+      168, 101, 50, //
+  };
+  private int[] sColorsMono = { //
+      100, 100, 100, //
+      80, 80, 80, //
+      40, 40, 40, //
+      20, 20, 20, //
+  };
+
+  private Paint PAINT_BGND = Paint.newBuilder().color(220, 220, 220).build();
+
+  // ------------------------------------------------------------------
+  // Fonts
+  // ------------------------------------------------------------------
+
+  private List<FontInfo> fonts() {
+    if (mFonts == null) {
+      mFonts = arrayList();
+      addFont("Dialog");
+      addFont("DialogInput");
+      addFont("Monospaced");
+      addFont("Serif");
+      addFont("SansSerif");
+    }
+    return mFonts;
+  }
+
+  private void addFont(String family) {
+    FontInfo fi = new FontInfo();
+    fi.mFont = new Font(family, Font.PLAIN, 12);
+    fonts().add(fi);
+
+    fi = new FontInfo();
+    fi.mFont = new Font(family, Font.BOLD, 12);
+    fonts().add(fi);
+  }
+
+  private static class FontInfo {
     Font mFont;
     FontMetrics mMetrics;
 
@@ -183,27 +208,9 @@ public class GenerateImageSetOper extends AppOper {
     }
   }
 
-  private void addFont(String family) {
-    FontInfo fi = new FontInfo();
-    fi.mFont = new Font(family, Font.PLAIN, 12);
-    fonts().add(fi);
-
-    fi = new FontInfo();
-    fi.mFont = new Font(family, Font.BOLD, 12);
-    fonts().add(fi);
-  }
-
-  private List<FontInfo> fonts() {
-    if (mFonts == null) {
-      mFonts = arrayList();
-      addFont("Dialog");
-      addFont("DialogInput");
-      addFont("Monospaced");
-      addFont("Serif");
-      addFont("SansSerif");
-    }
-    return mFonts;
-  }
+  // ------------------------------------------------------------------
+  // Utilities
+  // ------------------------------------------------------------------
 
   private Random random() {
     if (mRandom == null)
@@ -211,17 +218,19 @@ public class GenerateImageSetOper extends AppOper {
     return mRandom;
   }
 
-  private int[] sColors = { //
-      74, 168, 50, //
-      50, 107, 168, //
-      168, 101, 50, //
-  };
-  private int[] sColorsMono = { //
-      100, 100, 100, //
-      80, 80, 80, //
-      40, 40, 40, //
-      20, 20, 20, //
-  };
+  private float randGuassian(float min, float max) {
+    float scl = (max - min) * 0.35f;
+    float center = (max + min) * 0.5f;
+    while (true) {
+      float g = (float) (random().nextGaussian() * scl + center);
+      if (g >= min && g <= max)
+        return g;
+    }
+  }
+
+  private <T> T randomElement(List<T> elements) {
+    return elements.get(random().nextInt(elements.size()));
+  }
 
   private Random mRandom;
   private List<FontInfo> mFonts;
