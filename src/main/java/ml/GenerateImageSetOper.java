@@ -5,25 +5,27 @@ import static js.base.Tools.*;
 import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics2D;
-import java.awt.image.BufferedImage;
-import java.awt.image.DataBufferByte;
 import java.io.File;
-import java.io.OutputStream;
 import java.util.List;
 import java.util.Random;
 
 import gen.GenerateImagesConfig;
 import gen.GenerateType;
 import js.app.AppOper;
-import js.data.DataUtil;
-import js.data.IntArray;
 import js.file.Files;
+import js.geometry.IPoint;
+import js.geometry.IRect;
 import js.geometry.Matrix;
 import js.geometry.MyMath;
 import js.graphics.ImgUtil;
 import js.graphics.Inspector;
 import js.graphics.Paint;
 import js.graphics.Plotter;
+import js.graphics.RectElement;
+import js.graphics.ScriptElement;
+import js.graphics.ScriptUtil;
+import js.graphics.gen.ElementProperties;
+import js.graphics.gen.Script;
 
 public class GenerateImageSetOper extends AppOper {
 
@@ -42,18 +44,12 @@ public class GenerateImageSetOper extends AppOper {
     if (config().type() == GenerateType.UNKNOWN)
       setError("No type specified");
 
-    files().remakeDirs(config().targetDir());
+    File targetDir = files().remakeDirs(config().targetDir());
+    File annotationDir = files().mkdirs(ScriptUtil.scriptDirForProject(targetDir));
 
     String categoriesString = config().categories();
 
-    IntArray.Builder categories = IntArray.newBuilder();
-
-    OutputStream imageStream = null;
-    if (config().mergeImages()) {
-      setError("merge has been disabled");
-      checkArgument(config().writeFloats() && config().writeUncompressed());
-      imageStream = files().outputStream(new File(config().targetDir(), "images.bin"));
-    }
+    //IntArray.Builder categories = IntArray.newBuilder();
 
     Inspector insp = Inspector.build(config().inspectionDir());
     insp.minSamples(5);
@@ -69,7 +65,9 @@ public class GenerateImageSetOper extends AppOper {
 
       int category = random().nextInt(categoriesString.length());
       String text = categoriesString.substring(category, category + 1);
-      categories.add(category);
+
+      Script.Builder script = Script.newBuilder();
+      List<ScriptElement> scripts = arrayList();
 
       FontMetrics m = fi.metrics(p.graphics());
 
@@ -79,49 +77,55 @@ public class GenerateImageSetOper extends AppOper {
       float rangex = mx * config().translateFactor();
       float rangey = my * config().translateFactor();
 
-      Matrix tfmFontOrigin = Matrix.getTranslate(-m.charWidth(categoriesString.charAt(0)) / 2,
-          m.getAscent() / 2);
+      int charWidth = m.charWidth(categoriesString.charAt(0));
+      int charHeight = m.getAscent();
+      Matrix tfmFontOrigin = Matrix.getTranslate(-charWidth / 2, charHeight / 2);
       Matrix tfmImageCenter = Matrix.getTranslate(randGuassian(mx - rangex, mx + rangex),
           randGuassian(my - rangey, my + rangey));
       Matrix tfmRotate = Matrix
           .getRotate(randGuassian(-config().rotFactor() * MyMath.M_DEG, config().rotFactor() * MyMath.M_DEG));
       Matrix tfmScale = Matrix.getScale(randGuassian(config().scaleFactorMin(), config().scaleFactorMax()));
 
-      Matrix tfm = Matrix.postMultiply(tfmImageCenter, tfmScale, tfmRotate, tfmFontOrigin);
+      Matrix objectTfm = Matrix.postMultiply(tfmImageCenter, tfmScale, tfmRotate);
 
+      IPoint topLeft = IPoint.with(-charWidth / 2, -charHeight / 2);
+      IPoint size = IPoint.with(charWidth, charHeight);
+      IRect origRect = IRect.withLocAndSize(topLeft, size);
+
+      IRect tfmRect = RectElement.applyTruncatedHeuristicTransform(origRect, objectTfm);
+
+      RectElement rectElement = new RectElement(ElementProperties.newBuilder().category(category), tfmRect);
+      scripts.add(rectElement);
+
+      Matrix tfm = Matrix.postMultiply(objectTfm, tfmFontOrigin);
       p.graphics().setTransform(tfm.toAffineTransform());
       p.graphics().drawString(text, 0, 0);
 
       insp.create();
-      insp.image(p.image());
+      if (insp.used()) {
+        insp.image(p.image());
+        insp.plotter().drawRect(tfmRect);
+      }
 
-      if (imageStream != null) {
-        float[] pixels = ImgUtil.floatPixels(p.image(), config().monochrome() ? 1 : 3, null);
-        files().writeFloatsLittleEndian(pixels, imageStream);
-      } else {
-        String path = String.format("image_%05d.jpg", i);
-        File f = new File(config().targetDir(), path);
+      String imageBaseName = String.format("image_%05d", i);
+      {
+        String path = Files.setExtension(imageBaseName, ImgUtil.EXT_JPEG);
+        File f = new File(targetDir, path);
+        if (config().monochrome())
+          setError("Monochrome not supported yet");
+        ImgUtil.writeImage(files(), p.image(), f);
+      }
 
-        if (config().writeUncompressed()) {
-          f = Files.setExtension(f, "bin");
-          if (config().writeFloats()) {
-            float[] pixels = ImgUtil.floatPixels(p.image(), config().monochrome() ? 1 : 3, null);
-            files().writeFloatsLittleEndian(pixels, f);
-          } else {
-            if (config().monochrome())
-              setError("monochrome not supported for integer pixels (yet)");
-            BufferedImage bgrImage = ImgUtil.imageAsType(p.image(), BufferedImage.TYPE_3BYTE_BGR);
-            byte[] pix = ((DataBufferByte) bgrImage.getRaster().getDataBuffer()).getData();
-            files().write(pix, f);
-          }
-        } else
-          ImgUtil.writeImage(files(), p.image(), f);
+      script.items(scripts);
+      {
+        String path = Files.setExtension(imageBaseName, Files.EXT_JSON);
+        File f = new File(annotationDir, path);
+        ScriptUtil.write(files(), script, f);
       }
     }
-    Files.close(imageStream);
 
-    byte[] categoryBytes = DataUtil.intsToBytesLittleEndian(categories.array());
-    files().write(categoryBytes, new File(config().targetDir(), "labels.bin"));
+    //    byte[] categoryBytes = DataUtil.intsToBytesLittleEndian(categories.array());
+    //    files().write(categoryBytes, new File(config().targetDir(), "labels.bin"));
   }
 
   @Override

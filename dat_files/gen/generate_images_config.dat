@@ -12,13 +12,7 @@ fields {
 
 
   string categories = "AB";
-  bool write_uncompressed;
-  bool write_floats;
   bool monochrome;
-
-  // Write a single output file containing images concatenated together
-  //
-  bool merge_images;
 
   float translate_factor = 0.5;
   float scale_factor_min = 0.7;
