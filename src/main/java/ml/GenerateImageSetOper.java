@@ -61,9 +61,8 @@ public class GenerateImageSetOper extends AppOper {
     Inspector insp = Inspector.build(config().inspectionDir());
     insp.minSamples(5);
 
-    float asc = ASCENT_SCALE_FACTOR - 0.08f;
     
-    for (int i = 0; i < config().imageTotal(); i++, asc += 0.01f) {
+    for (int i = 0; i < config().imageTotal(); i++ ) {
 
       int totalObjects = 1;
       if (detector)
@@ -95,7 +94,6 @@ public class GenerateImageSetOper extends AppOper {
 
         int charWidth = m.charWidth(categoriesString.charAt(0));
         int charHeight = (int) (m.getAscent() * ASCENT_SCALE_FACTOR);
-       charHeight = (int) (m.getAscent() * asc);
         
         // This is the offset in the y coordinate to apply when actually rendering the character
         // using Java, so the render location is in terms of the baseline (not our center of the character)j
@@ -130,7 +128,6 @@ public class GenerateImageSetOper extends AppOper {
       }
 
       String imageBaseName = String.format("image_%05d", i);
-      imageBaseName+="_fa_"+(int)(asc*100 );
       {
         String path = Files.setExtension(imageBaseName, ImgUtil.EXT_JPEG);
         File f = new File(targetDir, path);
