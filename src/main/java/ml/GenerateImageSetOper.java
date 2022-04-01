@@ -77,10 +77,9 @@ public class GenerateImageSetOper extends AppOper {
       imageStream = files().outputStream(new File(config().targetDir(), "images.bin"));
     }
 
-    todo("Make inspector an option");
-    Inspector insp = Inspector.build(new File("genimageset_inspection"));
+    Inspector insp = Inspector.build(config().inspectionDir());
     insp.minSamples(5);
-    insp.alertVerbose();
+    
     for (int i = 0; i < config().imageTotal(); i++) {
 
       Plotter p = Plotter.build();
