@@ -61,8 +61,7 @@ public class GenerateImageSetOper extends AppOper {
     Inspector insp = Inspector.build(config().inspectionDir());
     insp.minSamples(5);
 
-    
-    for (int i = 0; i < config().imageTotal(); i++ ) {
+    for (int i = 0; i < config().imageTotal(); i++) {
 
       int totalObjects = 1;
       if (detector)
@@ -77,8 +76,9 @@ public class GenerateImageSetOper extends AppOper {
       Script.Builder script = Script.newBuilder();
       List<ScriptElement> scripts = arrayList();
 
+      List<IRect> rectList = arrayList();
+
       for (int objIndex = 0; objIndex < totalObjects; objIndex++) {
-        todo("try to choose object locations so the rects don't overlap");
         p.with(randomElement(paints()).toBuilder().font(fi.mFont, 1f));
 
         int category = random().nextInt(categoriesString.length());
@@ -86,34 +86,61 @@ public class GenerateImageSetOper extends AppOper {
 
         FontMetrics m = fi.metrics(p.graphics());
 
-        int mx = config().imageSize().x / 2;
-        int my = config().imageSize().y / 2;
+        Matrix objectTfm = null;
+        Matrix tfmFontOrigin = null;
+        IRect tfmRect = null;
 
-        float rangex = mx * config().translateFactor();
-        float rangey = my * config().translateFactor();
+        boolean choseValidRectangle = false;
 
-        int charWidth = m.charWidth(categoriesString.charAt(0));
-        int charHeight = (int) (m.getAscent() * ASCENT_SCALE_FACTOR);
+        for (int attempt = 0; attempt < 5; attempt++) {
+
+          int mx = config().imageSize().x / 2;
+          int my = config().imageSize().y / 2;
+
+          float rangex = mx * config().translateFactor();
+          float rangey = my * config().translateFactor();
+
+          int charWidth = m.charWidth(categoriesString.charAt(0));
+          int charHeight = (int) (m.getAscent() * ASCENT_SCALE_FACTOR);
+
+          // This is the offset in the y coordinate to apply when actually rendering the character
+          // using Java, so the render location is in terms of the baseline (not our center of the character)j
+          IPoint fontRenderOffset = IPoint.with(-charWidth / 2, charHeight / 2);
+          tfmFontOrigin = Matrix.getTranslate(fontRenderOffset);
+          Matrix tfmImageCenter = Matrix.getTranslate(randGuassian(mx - rangex, mx + rangex),
+              randGuassian(my - rangey, my + rangey));
+          Matrix tfmRotate = Matrix.getRotate(
+              randGuassian(-config().rotFactor() * MyMath.M_DEG, config().rotFactor() * MyMath.M_DEG));
+          Matrix tfmScale = Matrix
+              .getScale(randGuassian(config().scaleFactorMin(), config().scaleFactorMax()));
+
+          objectTfm = Matrix.postMultiply(tfmImageCenter, tfmScale, tfmRotate);
+
+          IPoint topLeft = IPoint.with(-charWidth / 2, -charHeight / 2);
+          IPoint size = IPoint.with(charWidth, charHeight);
+          IRect origRect = IRect.withLocAndSize(topLeft, size);
+
+          tfmRect = RectElement.applyTruncatedHeuristicTransform(origRect, objectTfm);
+
+          // If this rectangle overlaps too much with a previous one, keep searching
+          choseValidRectangle = true;
+         
+          for (IRect prevRect : rectList) {
+            IRect intersection = IRect.intersection(prevRect, tfmRect);
+            if (intersection == null)
+              continue;
+            float intersectionFactor = intersection.area() / (float) tfmRect.area();
+            if (intersectionFactor < 0.25f)
+              continue;
+            choseValidRectangle = false;
+            break;
+          }
+        }
+        if (!choseValidRectangle)
+          continue;
         
-        // This is the offset in the y coordinate to apply when actually rendering the character
-        // using Java, so the render location is in terms of the baseline (not our center of the character)j
-        IPoint fontRenderOffset = IPoint.with(-charWidth / 2, charHeight / 2);
-        Matrix tfmFontOrigin = Matrix.getTranslate(fontRenderOffset);
-        Matrix tfmImageCenter = Matrix.getTranslate(randGuassian(mx - rangex, mx + rangex),
-            randGuassian(my - rangey, my + rangey));
-        Matrix tfmRotate = Matrix.getRotate(
-            randGuassian(-config().rotFactor() * MyMath.M_DEG, config().rotFactor() * MyMath.M_DEG));
-        Matrix tfmScale = Matrix.getScale(randGuassian(config().scaleFactorMin(), config().scaleFactorMax()));
-
-        Matrix objectTfm = Matrix.postMultiply(tfmImageCenter, tfmScale, tfmRotate);
-
-        IPoint topLeft = IPoint.with(-charWidth / 2, -charHeight / 2);
-        IPoint size = IPoint.with(charWidth, charHeight);
-        IRect origRect = IRect.withLocAndSize(topLeft, size);
-
-        IRect tfmRect = RectElement.applyTruncatedHeuristicTransform(origRect, objectTfm);
-
         RectElement rectElement = new RectElement(ElementProperties.newBuilder().category(category), tfmRect);
+        rectList.add(tfmRect);
         scripts.add(rectElement);
 
         Matrix tfm = Matrix.postMultiply(objectTfm, tfmFontOrigin);
@@ -195,7 +222,7 @@ public class GenerateImageSetOper extends AppOper {
   // ------------------------------------------------------------------
 
   private static final float ASCENT_SCALE_FACTOR = 0.85f;
-  
+
   private List<FontInfo> fonts() {
     if (mFonts == null) {
       mFonts = arrayList();
