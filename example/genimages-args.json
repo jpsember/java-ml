@@ -2,16 +2,16 @@
    "type" : "detector",
 
    "categories" : "AB",
-   "image_size" : [ 48,48 ],
-   "image_total" : 10,
+   "image_size" : [ 320, 256 ],
+   "image_total" : 30,
 
    //"inspection_dir" : "inspection",
 
 
        "max_objects" : 1,
         "rot_factor" : 0,
-  "scale_factor_max" : 1,
-  "scale_factor_min" : 1,
+  "scale_factor_max" : 4,
+  "scale_factor_min" : 1.5,
   "translate_factor" : 0,
 
   "":""
