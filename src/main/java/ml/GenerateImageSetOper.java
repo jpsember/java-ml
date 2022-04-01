@@ -10,7 +10,6 @@ import java.util.List;
 import java.util.Random;
 
 import gen.GenerateImagesConfig;
-import gen.GenerateType;
 import js.app.AppOper;
 import js.file.Files;
 import js.geometry.IPoint;
@@ -41,70 +40,89 @@ public class GenerateImageSetOper extends AppOper {
 
   @Override
   public void perform() {
-    if (config().type() == GenerateType.UNKNOWN)
-      setError("No type specified");
+    boolean detector = false;
+
+    switch (config().type()) {
+    case DETECTOR:
+      detector = true;
+      if (config().maxObjects() < 1)
+        setError("max_objects bad", config());
+      break;
+    case CLASSIFIER:
+    default:
+      throw setError("unsupported type:", config().type());
+    }
 
     File targetDir = files().remakeDirs(config().targetDir());
     File annotationDir = files().mkdirs(ScriptUtil.scriptDirForProject(targetDir));
 
     String categoriesString = config().categories();
 
-    //IntArray.Builder categories = IntArray.newBuilder();
-
     Inspector insp = Inspector.build(config().inspectionDir());
     insp.minSamples(5);
 
     for (int i = 0; i < config().imageTotal(); i++) {
+
+      int totalObjects = 1;
+      if (detector)
+        totalObjects = 1 + random().nextInt(config().maxObjects());
 
       Plotter p = Plotter.build();
       p.withCanvas(config().imageSize());
 
       FontInfo fi = randomElement(fonts());
       p.with(PAINT_BGND).fillRect();
-      p.with(randomElement(paints()).toBuilder().font(fi.mFont, 1f));
-
-      int category = random().nextInt(categoriesString.length());
-      String text = categoriesString.substring(category, category + 1);
 
       Script.Builder script = Script.newBuilder();
       List<ScriptElement> scripts = arrayList();
 
-      FontMetrics m = fi.metrics(p.graphics());
+      for (int objIndex = 0; objIndex < totalObjects; objIndex++) {
 
-      int mx = config().imageSize().x / 2;
-      int my = config().imageSize().y / 2;
+        todo("try to choose object locations so the rects don't overlap");
+        
+        p.with(randomElement(paints()).toBuilder().font(fi.mFont, 1f));
 
-      float rangex = mx * config().translateFactor();
-      float rangey = my * config().translateFactor();
+        int category = random().nextInt(categoriesString.length());
+        String text = categoriesString.substring(category, category + 1);
 
-      int charWidth = m.charWidth(categoriesString.charAt(0));
-      int charHeight = m.getAscent();
-      Matrix tfmFontOrigin = Matrix.getTranslate(-charWidth / 2, charHeight / 2);
-      Matrix tfmImageCenter = Matrix.getTranslate(randGuassian(mx - rangex, mx + rangex),
-          randGuassian(my - rangey, my + rangey));
-      Matrix tfmRotate = Matrix
-          .getRotate(randGuassian(-config().rotFactor() * MyMath.M_DEG, config().rotFactor() * MyMath.M_DEG));
-      Matrix tfmScale = Matrix.getScale(randGuassian(config().scaleFactorMin(), config().scaleFactorMax()));
+        FontMetrics m = fi.metrics(p.graphics());
 
-      Matrix objectTfm = Matrix.postMultiply(tfmImageCenter, tfmScale, tfmRotate);
+        int mx = config().imageSize().x / 2;
+        int my = config().imageSize().y / 2;
 
-      IPoint topLeft = IPoint.with(-charWidth / 2, -charHeight / 2);
-      IPoint size = IPoint.with(charWidth, charHeight);
-      IRect origRect = IRect.withLocAndSize(topLeft, size);
+        float rangex = mx * config().translateFactor();
+        float rangey = my * config().translateFactor();
 
-      IRect tfmRect = RectElement.applyTruncatedHeuristicTransform(origRect, objectTfm);
+        int charWidth = m.charWidth(categoriesString.charAt(0));
+        int charHeight = m.getAscent();
+        Matrix tfmFontOrigin = Matrix.getTranslate(-charWidth / 2, charHeight / 2);
+        Matrix tfmImageCenter = Matrix.getTranslate(randGuassian(mx - rangex, mx + rangex),
+            randGuassian(my - rangey, my + rangey));
+        Matrix tfmRotate = Matrix.getRotate(
+            randGuassian(-config().rotFactor() * MyMath.M_DEG, config().rotFactor() * MyMath.M_DEG));
+        Matrix tfmScale = Matrix.getScale(randGuassian(config().scaleFactorMin(), config().scaleFactorMax()));
 
-      RectElement rectElement = new RectElement(ElementProperties.newBuilder().category(category), tfmRect);
-      scripts.add(rectElement);
+        Matrix objectTfm = Matrix.postMultiply(tfmImageCenter, tfmScale, tfmRotate);
 
-      Matrix tfm = Matrix.postMultiply(objectTfm, tfmFontOrigin);
-      p.graphics().setTransform(tfm.toAffineTransform());
-      p.graphics().drawString(text, 0, 0);
+        IPoint topLeft = IPoint.with(-charWidth / 2, -charHeight / 2);
+        IPoint size = IPoint.with(charWidth, charHeight);
+        IRect origRect = IRect.withLocAndSize(topLeft, size);
 
-      insp.create();
+        IRect tfmRect = RectElement.applyTruncatedHeuristicTransform(origRect, objectTfm);
+
+        RectElement rectElement = new RectElement(ElementProperties.newBuilder().category(category), tfmRect);
+        scripts.add(rectElement);
+
+        Matrix tfm = Matrix.postMultiply(objectTfm, tfmFontOrigin);
+        p.graphics().setTransform(tfm.toAffineTransform());
+        p.graphics().drawString(text, 0, 0);
+
+      }
+
       if (insp.used()) {
+        // TODO: inspector is kind of useless if we are writing out script projects anyways
+        insp.create();
         insp.image(p.image());
-        insp.plotter().drawRect(tfmRect);
       }
 
       String imageBaseName = String.format("image_%05d", i);
