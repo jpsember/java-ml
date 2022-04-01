@@ -2,9 +2,11 @@ package ml;
 
 import static js.base.Tools.*;
 
+import java.awt.Color;
 import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics2D;
+import java.awt.RenderingHints;
 import java.io.File;
 import java.util.List;
 import java.util.Random;
@@ -79,14 +81,13 @@ public class GenerateImageSetOper extends AppOper {
       for (int objIndex = 0; objIndex < totalObjects; objIndex++) {
 
         todo("try to choose object locations so the rects don't overlap");
-        
+
         p.with(randomElement(paints()).toBuilder().font(fi.mFont, 1f));
 
         int category = random().nextInt(categoriesString.length());
         String text = categoriesString.substring(category, category + 1);
 
         FontMetrics m = fi.metrics(p.graphics());
-
         int mx = config().imageSize().x / 2;
         int my = config().imageSize().y / 2;
 
@@ -95,7 +96,8 @@ public class GenerateImageSetOper extends AppOper {
 
         int charWidth = m.charWidth(categoriesString.charAt(0));
         int charHeight = m.getAscent();
-        Matrix tfmFontOrigin = Matrix.getTranslate(-charWidth / 2, charHeight / 2);
+        pr("ascent:", m.getAscent(), "height:", m.getHeight(), "charWidth:", charWidth);
+
         Matrix tfmImageCenter = Matrix.getTranslate(randGuassian(mx - rangex, mx + rangex),
             randGuassian(my - rangey, my + rangey));
         Matrix tfmRotate = Matrix.getRotate(
@@ -113,10 +115,36 @@ public class GenerateImageSetOper extends AppOper {
         RectElement rectElement = new RectElement(ElementProperties.newBuilder().category(category), tfmRect);
         scripts.add(rectElement);
 
+        // This is the offset in the y coordinate to apply when actually rendering the character
+        // using Java, so the render location is in terms of the baseline (not our center of the character)j
+        IPoint fontRenderOffset = IPoint.with(-charWidth / 2, charHeight / 2);
+        Matrix tfmFontOrigin = Matrix.getTranslate(fontRenderOffset);
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        {
+        Graphics2D g = p.graphics();
+        int x = 2;
+        int y = 25;
+        g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_OFF);
+        
+        g.drawRect(x,y-m.getAscent(),m.charWidth('A'), m.getAscent());
+         g.setColor(Color.red);
+         g.drawString("A",x,y);
+       
+        }
+        
         Matrix tfm = Matrix.postMultiply(objectTfm, tfmFontOrigin);
         p.graphics().setTransform(tfm.toAffineTransform());
         p.graphics().drawString(text, 0, 0);
-
       }
 
       if (insp.used()) {
@@ -195,20 +223,23 @@ public class GenerateImageSetOper extends AppOper {
   private List<FontInfo> fonts() {
     if (mFonts == null) {
       mFonts = arrayList();
-      addFont("Dialog");
-      addFont("DialogInput");
-      addFont("Monospaced");
-      addFont("Serif");
       addFont("SansSerif");
+      if (false) {
+        addFont("Dialog");
+        addFont("DialogInput");
+        addFont("Monospaced");
+        addFont("Serif");
+      }
     }
     return mFonts;
   }
 
   private void addFont(String family) {
     FontInfo fi = new FontInfo();
-    fi.mFont = new Font(family, Font.PLAIN, 12);
+    fi.mFont = new Font(family, Font.PLAIN, 20);
     fonts().add(fi);
-
+    if (alert("skipping bold"))
+      return;
     fi = new FontInfo();
     fi.mFont = new Font(family, Font.BOLD, 12);
     fonts().add(fi);

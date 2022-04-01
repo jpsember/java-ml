@@ -5,6 +5,15 @@
    "image_size" : [ 48,48 ],
    "image_total" : 10,
 
-   "inspection_dir" : "inspection",
+   //"inspection_dir" : "inspection",
+
+
+       "max_objects" : 1,
+        "rot_factor" : 0,
+  "scale_factor_max" : 1,
+  "scale_factor_min" : 1,
+  "translate_factor" : 0,
+
+  "":""
 }
 
