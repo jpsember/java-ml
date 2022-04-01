@@ -179,9 +179,6 @@ public class GenerateImageSetOper extends AppOper {
         ScriptUtil.write(files(), script, f);
       }
     }
-
-    //    byte[] categoryBytes = DataUtil.intsToBytesLittleEndian(categories.array());
-    //    files().write(categoryBytes, new File(config().targetDir(), "labels.bin"));
   }
 
   private IPoint rndPoint() {
