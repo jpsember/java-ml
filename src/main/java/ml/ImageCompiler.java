@@ -35,6 +35,10 @@ public class ImageCompiler extends BaseObject {
     mRandom = new Random(seed);
   }
 
+  public void setFiles(Files files) {
+    mFiles = nullTo(Files.S,  files);
+  }
+  
   public void compileTrainSet(File targetDir) {
     auxCompile(targetDir, trainEntries(), true);
   }
