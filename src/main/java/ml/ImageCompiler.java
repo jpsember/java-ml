@@ -25,6 +25,7 @@ public class ImageCompiler extends BaseObject {
 
   public ImageCompiler() {
     this(null);
+    todo("better to use image_size and depth, instead of vol");
   }
 
   public ImageCompiler(CompileImagesConfig config) {
@@ -83,6 +84,7 @@ public class ImageCompiler extends BaseObject {
           ent.scriptElements = script.items();
         } else
           ent.scriptElements = arrayList();
+        ents.add(ent);
       }
       int testCount = Math.min(config().maxTestImagesCount(),
           (config().maxTestImagesPct() * ents.size()) / 100);
@@ -141,6 +143,7 @@ public class ImageCompiler extends BaseObject {
   private static final Map<Integer, Integer> sImgChannelsMap = mapWith(//
       BufferedImage.TYPE_INT_RGB, 3, //
       BufferedImage.TYPE_INT_BGR, 3, //
+      BufferedImage.TYPE_3BYTE_BGR, 3, //
       BufferedImage.TYPE_BYTE_GRAY, 1, //
       BufferedImage.TYPE_USHORT_GRAY, 1 //
   );

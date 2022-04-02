@@ -1,0 +1,14 @@
+{             "image_vol" : {
+                               "width" : 320,
+                              "height" : 256,
+                               "depth" : 3,
+                            },
+
+                             "image_size" : [ 320, 256 ],
+                             "image_depth" : 3,
+
+
+             "source_dir" : "generated_images",
+        "target_dir_test" : "test_data",
+       "target_dir_train" : "train_data"
+}
