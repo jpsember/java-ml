@@ -1,0 +1,10 @@
+fields {
+  File source_dir;
+
+  Vol image_vol;
+
+  int max_test_images_count = 100;
+  int max_test_images_pct = 10;
+
+  int seed;
+}
