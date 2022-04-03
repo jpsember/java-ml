@@ -1,9 +1,6 @@
 fields {
   File source_dir;
 
-  IPoint image_size;
-  int image_channels;
-
   int max_test_images_count = 100;
   int max_test_images_pct = 10;
 
@@ -12,4 +9,6 @@ fields {
   File target_dir_train = "train_data";
   File target_dir_test = "test_data";
 
+  ? NeuralNetwork network;
+  File network_path;
 }

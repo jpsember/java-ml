@@ -1,8 +1,8 @@
 {
-   "type" : "classifier",
+   //"type" : "classifier",
 
-   //"type" : "detector",
-   //"categories" : "AB",
+   "type" : "detector",
+   "categories" : "AB",
 
    "image_size" : [ 320, 256 ],
    "image_total" : 30,

@@ -10,7 +10,9 @@ import java.util.Map;
 import java.util.Random;
 
 import gen.CompileImagesConfig;
+import gen.NeuralNetwork;
 import js.base.BaseObject;
+import js.data.DataUtil;
 import js.file.DirWalk;
 import js.file.Files;
 import js.geometry.IPoint;
@@ -33,6 +35,11 @@ public class ImageCompiler extends BaseObject {
     if (seed <= 0)
       seed = 1965;
     mRandom = new Random(seed);
+
+    NeuralNetwork network = DataUtil.resolveField(null, NeuralNetwork.DEFAULT_INSTANCE, mConfig.network(),
+        mConfig.networkPath());
+    checkNotNull(network, "network not defined");
+    mModelHandler = ModelHandler.construct(network);
   }
 
   public void setFiles(Files files) {
@@ -55,12 +62,12 @@ public class ImageCompiler extends BaseObject {
     DataOutputStream imagesStream = new DataOutputStream(files().outputStream(imagePath));
     DataOutputStream labelsStream = new DataOutputStream(files().outputStream(labelsPath));
 
+    ModelWrapper model = modelHandler().model();
     for (Entry entry : entries) {
       BufferedImage img = ImgUtil.read(entry.imageFile);
-      checkImageSizeAndType(entry.imageFile, img, config().imageSize(), config().imageChannels());
-
+      checkImageSizeAndType(entry.imageFile, img, model.inputImagePlanarSize(),model.inputImageChannels());
       todo("transform image randomly if training image");
-      mWorkArray = ImgUtil.floatPixels(img, config().imageChannels(), mWorkArray);
+      mWorkArray = ImgUtil.floatPixels(img, model.inputImageChannels(), mWorkArray);
       files().writeFloatsLittleEndian(mWorkArray, imagesStream);
       todo("write something to labels", entry.scriptElements.size());
     }
@@ -153,8 +160,13 @@ public class ImageCompiler extends BaseObject {
     List<ScriptElement> scriptElements;
   }
 
+  private ModelHandler modelHandler() {
+    return mModelHandler;
+  }
+
   private final CompileImagesConfig mConfig;
   private final Random mRandom;
+  private ModelHandler mModelHandler;
   private Files mFiles = Files.S;
   private List<Entry> mEntries;
   private List<Entry> mTestEntries;

@@ -1,12 +1,5 @@
-{             "image_vol" : {
-                               "width" : 320,
-                              "height" : 256,
-                               "depth" : 3,
-                            },
-
-                             "image_size" : [ 320, 256 ],
-                             "image_depth" : 3,
-
+{
+            "network_path" : "architecture.json",
 
              "source_dir" : "generated_images",
         "target_dir_test" : "test_data",
