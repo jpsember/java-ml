@@ -1,5 +1,5 @@
 {
-            "network_path" : "architecture.json",
+            "network_path" : "network.json",
 
              "source_dir" : "generated_images",
         "target_dir_test" : "test_data",
