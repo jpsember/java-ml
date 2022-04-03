@@ -129,7 +129,7 @@ public class DescribeNetworkOper extends AppOper {
     }
   }
 
-  public static void appendDropout(StringBuilder sb, float dropout) {
+  private static void appendDropout(StringBuilder sb, float dropout) {
     if (dropout > 0)
       sb.append(" dropout:" + String.format("%4.2f", dropout));
   }
@@ -249,10 +249,6 @@ public class DescribeNetworkOper extends AppOper {
     mMessages.add("*** " + BasePrinter.toString(messages));
   }
 
-  /* private */ void addNote(Object... messages) {
-    mMessages.add("+++ " + BasePrinter.toString(messages));
-  }
-
   private NeuralNetwork architecture() {
     if (mArchitecture == null) {
       File path = mConfig.path();
@@ -262,7 +258,6 @@ public class DescribeNetworkOper extends AppOper {
     }
     return mArchitecture;
   }
-
 
   private NeuralNetwork mArchitecture;
   private NetworkArgs mConfig;
