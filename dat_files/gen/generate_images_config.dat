@@ -6,12 +6,15 @@ fields {
 
   File target_dir = "generated_images";
   int image_total = 20;
-  IPoint image_size = [32,48];
+  //IPoint image_size = [32,48];
   int seed = 1965;
+
+  ? NeuralNetwork network;
+  File network_path;
 
 
   string categories = "AB";
-  bool monochrome;
+  //bool monochrome;
 
   float translate_factor = 0.5;
   float scale_factor_min = 0.7;
@@ -30,4 +33,6 @@ fields {
   // GenerateType = detector
   //
   int max_objects = 4;
+
+
 }

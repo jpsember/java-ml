@@ -11,7 +11,9 @@ import java.util.Random;
 
 import gen.GenerateImagesConfig;
 import gen.GenerateType;
+import gen.NeuralNetwork;
 import js.app.AppOper;
+import js.data.DataUtil;
 import js.file.Files;
 import js.geometry.IPoint;
 import js.geometry.IRect;
@@ -53,6 +55,16 @@ public class GenerateImageSetOper extends AppOper {
       break;
     }
 
+    {
+      NeuralNetwork network = DataUtil.resolveField(null, NeuralNetwork.DEFAULT_INSTANCE, config().network(),
+          config().networkPath());
+      checkNotNull(network, "network not defined");
+      mModelHandler = ModelHandler.construct(network);
+      mImageSize = modelHandler().model().inputImagePlanarSize();
+    }
+
+    ModelWrapper model = modelHandler().model();
+    
     File targetDir = files().remakeDirs(config().targetDir());
     File annotationDir = files().mkdirs(ScriptUtil.scriptDirForProject(targetDir));
 
@@ -68,7 +80,7 @@ public class GenerateImageSetOper extends AppOper {
         totalObjects = 1 + random().nextInt(config().maxObjects());
 
       Plotter p = Plotter.build();
-      p.withCanvas(config().imageSize());
+      p.withCanvas(mImageSize);
 
       FontInfo fi = randomElement(fonts());
       p.with(PAINT_BGND).fillRect();
@@ -95,8 +107,8 @@ public class GenerateImageSetOper extends AppOper {
 
         for (int attempt = 0; attempt < 5; attempt++) {
 
-          int mx = config().imageSize().x / 2;
-          int my = config().imageSize().y / 2;
+          int mx = mImageSize.x / 2;
+          int my = mImageSize.y / 2;
 
           float rangex = mx * config().translateFactor();
           float rangey = my * config().translateFactor();
@@ -167,7 +179,7 @@ public class GenerateImageSetOper extends AppOper {
       {
         String path = Files.setExtension(imageBaseName, ImgUtil.EXT_JPEG);
         File f = new File(targetDir, path);
-        if (config().monochrome())
+        if (model.inputImageChannels() == 1)
           setError("Monochrome not supported yet");
         ImgUtil.writeImage(files(), p.image(), f);
       }
@@ -182,7 +194,7 @@ public class GenerateImageSetOper extends AppOper {
   }
 
   private IPoint rndPoint() {
-    return IPoint.with(random().nextInt(config().imageSize().x), random().nextInt(config().imageSize().y));
+    return IPoint.with(random().nextInt(mImageSize.x), random().nextInt(mImageSize.y));
   }
 
   private void plotNoise(Plotter p) {
@@ -220,7 +232,7 @@ public class GenerateImageSetOper extends AppOper {
   private List<Paint> paints() {
     if (mColors == null) {
       int[] sc = sColors;
-      if (config().monochrome())
+      if (modelHandler().model().inputImageChannels() == 1)
         sc = sColorsMono;
       mColors = arrayList();
       for (int i = 0; i < sc.length; i += 3) {
@@ -313,6 +325,12 @@ public class GenerateImageSetOper extends AppOper {
     return elements.get(random().nextInt(elements.size()));
   }
 
+  private ModelHandler modelHandler() {
+    return mModelHandler;
+  }
+
+  private ModelHandler mModelHandler;
+  private IPoint mImageSize;
   private Random mRandom;
   private List<FontInfo> mFonts;
   private List<Paint> mColors;

@@ -1,4 +1,6 @@
 {
+  "network_path" : "network.json",
+
    //"type" : "classifier",
 
    "type" : "detector",
@@ -16,6 +18,5 @@
   "scale_factor_min" : 1.5,
  // "translate_factor" : 0,
 
-  "":""
 }
 
