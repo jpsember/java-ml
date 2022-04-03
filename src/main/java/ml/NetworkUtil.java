@@ -2,14 +2,26 @@ package ml;
 
 import static js.base.Tools.*;
 
+import java.io.File;
+
 import gen.Layer;
 import gen.NetworkProjectType;
 import gen.NeuralNetwork;
 import gen.Vol;
+import js.data.DataUtil;
 
 public final class NetworkUtil {
 
   public final static int VERSION = 0;
+
+  public static ModelHandler constructModelHandler(File baseDirectoryOrNull, NeuralNetwork networkOrNull,
+      File networkPath) {
+    NeuralNetwork network = DataUtil.resolveField(baseDirectoryOrNull, NeuralNetwork.DEFAULT_INSTANCE,
+        networkOrNull, networkPath);
+    if (network == null)
+      throw badArg("Cannot construct model handler");
+    return ModelHandler.construct(network);
+  }
 
   public static NeuralNetwork applyDefaults(NeuralNetwork network) {
     if (network.version() != VERSION)

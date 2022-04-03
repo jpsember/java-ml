@@ -6,7 +6,6 @@
    "type" : "detector",
    "categories" : "AB",
 
-   "image_size" : [ 320, 256 ],
    "image_total" : 30,
 
    //"inspection_dir" : "inspection",

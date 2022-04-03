@@ -11,9 +11,7 @@ import java.util.Random;
 
 import gen.GenerateImagesConfig;
 import gen.GenerateType;
-import gen.NeuralNetwork;
 import js.app.AppOper;
-import js.data.DataUtil;
 import js.file.Files;
 import js.geometry.IPoint;
 import js.geometry.IRect;
@@ -55,16 +53,11 @@ public class GenerateImageSetOper extends AppOper {
       break;
     }
 
-    {
-      NeuralNetwork network = DataUtil.resolveField(null, NeuralNetwork.DEFAULT_INSTANCE, config().network(),
-          config().networkPath());
-      checkNotNull(network, "network not defined");
-      mModelHandler = ModelHandler.construct(network);
-      mImageSize = modelHandler().model().inputImagePlanarSize();
-    }
+    mModelHandler = NetworkUtil.constructModelHandler(null, config().network(), config().networkPath());
+    mImageSize = modelHandler().model().inputImagePlanarSize();
 
     ModelWrapper model = modelHandler().model();
-    
+
     File targetDir = files().remakeDirs(config().targetDir());
     File annotationDir = files().mkdirs(ScriptUtil.scriptDirForProject(targetDir));
 
