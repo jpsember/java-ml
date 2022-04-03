@@ -52,11 +52,6 @@ public final class YoloImageReceiver extends BaseObject implements ModelInputRec
     mOutputLayerStream = stream;
   }
 
-  @Override
-  public void setInspector(Inspector inspector) {
-    mInspector = Inspector.orNull(inspector);
-  }
-
   private Inspector mInspector = Inspector.NULL_INSPECTOR;
 
   // ------------------------------------------------------------------

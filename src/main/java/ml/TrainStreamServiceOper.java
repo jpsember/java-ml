@@ -22,7 +22,6 @@ import js.json.JSMap;
 import js.parsing.RegExp;
 import ml.ModelHandler;
 import ml.ModelInputReceiver;
-import ml.ProgressFile;
 import ml.ModelWrapper;
 import js.system.SystemUtil;
 import gen.AugmentationConfig;
@@ -59,12 +58,7 @@ public final class TrainStreamServiceOper extends AppOper {
   public void perform() {
     log("performance starts");
     mConfig = config();
-
-    try {
       auxPerform();
-    } finally {
-      Files.closePeacefully(mProgressFile);
-    }
   }
 
   // ------------------------------------------------------------------
@@ -112,8 +106,6 @@ public final class TrainStreamServiceOper extends AppOper {
     mInspectionManager = Inspector.build(mConfig.inspectionsDir());
     mInspectionManager.maxSamples(200);
     mHandler = ModelHandler.construct(mTrainConfig.architecture());
-
-    mProgressFile = new ProgressFile(mHandler, mConfig);
 
     constructImageHandler();
     compileTestFiles();
@@ -313,21 +305,6 @@ public final class TrainStreamServiceOper extends AppOper {
         throw asRuntimeException(t);
       }
       Files.S.deleteFile(file);
-      processPythonCommand(m);
-    }
-  }
-
-  private void processPythonCommand(JSMap cmd) {
-    String c = cmd.opt("cmd", "<none>");
-    switch (c) {
-    case "progress":
-      mProgressFile.processUpdate(cmd);
-      break;
-    case "message":
-      mProgressFile.displayMessage(cmd);
-      break;
-    default:
-      throw die("Unrecognized command:", c, INDENT, cmd);
     }
   }
 
@@ -365,7 +342,6 @@ public final class TrainStreamServiceOper extends AppOper {
     DataOutputStream imagesStream = Util.outputDataStream(directory, filenamePrefix + "_images.bin");
     DataOutputStream labelsStream = Util.outputDataStream(directory, filenamePrefix + "_labels.bin");
     ModelInputReceiver modelInputReceiver = mHandler.buildModelInputReceiver(imagesStream, labelsStream);
-    modelInputReceiver.setInspector(mInspectionManager);
 
     boolean cacheImagesInMemory = calculateCacheImagesFlag(records.size());
 
@@ -453,7 +429,6 @@ public final class TrainStreamServiceOper extends AppOper {
   private TrainConfig mTrainConfig;
   private ModelHandler mHandler;
   private ImageHandler mImageHandler;
-  private ProgressFile mProgressFile;
   private List<ImageRecord> mRecords;
   private long mLastGeneratedFilesTime;
   private long mStartTime;

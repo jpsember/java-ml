@@ -3,9 +3,6 @@ package ml;
 import java.util.List;
 
 import js.graphics.gen.ScriptElementList;
-import js.graphics.Inspector;
-
-import static js.base.Tools.*;
 
 /**
  * Receives annotated image, suitable for applying to a model (for training or
@@ -18,10 +15,6 @@ public interface ModelInputReceiver {
    * training
    */
   void accept(float[] image, ScriptElementList annotation);
-
-  default void setInspector(Inspector inspector) {
-    throw notSupported("setInspector", "implementing class:", getClass().getSimpleName());
-  }
 
   /**
    * Get the (possibly transformed) annotations

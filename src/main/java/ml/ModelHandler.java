@@ -32,46 +32,7 @@ public abstract class ModelHandler extends BaseObject {
   }
 
   public final void setModel(ModelWrapper model) {
-    loadTools();
     mModelConfig = model;
-    auxSetModel();
-  }
-
-  /**
-   * Allow subclasses to do additional initialization after model set
-   */
-  public void auxSetModel() {
-  }
-
-  //------------------------------------------------------------------
-  // Training progress
-  // ------------------------------------------------------------------
-
-  public void updateTrainingProgress(ProgressFile progressFile, JSMap m) {
-  }
-
-  // ------------------------------------------------------------------
-  // Statistics about training images (optional)
-  //
-  // This is somewhat limited, since the Stats object has fields for a 
-  // single mean and std dev.  Perhaps we can add a JSMap field to allow 
-  // future expansion.
-  // ------------------------------------------------------------------
-
-  /**
-   * Optionally update statistics about images during training
-   * 
-   * Default implementation does nothing (i.e. stats not supported by this
-   * handler)
-   */
-  public void updateStats(ImageRecord rec, Stats.Builder stats) {
-  }
-
-  /**
-   * Perform any final stats manipulation. This is called once all the training
-   * images have been added
-   */
-  public void summarizeStats(Stats.Builder stats) {
   }
 
   public ImageTransformer<BufferedImage> buildImageTransformer(AugmentationConfig augmentationConfig,
