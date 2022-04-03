@@ -7,7 +7,7 @@ import java.util.List;
 
 import gen.Layer;
 import gen.LayerType;
-import gen.NetworkArgs;
+import gen.DescribeNetworkConfig;
 import gen.NeuralNetwork;
 import js.file.Files;
 import js.app.AppOper;
@@ -28,8 +28,8 @@ public class DescribeNetworkOper extends AppOper {
   }
 
   @Override
-  public NetworkArgs defaultArgs() {
-    return NetworkArgs.DEFAULT_INSTANCE;
+  public DescribeNetworkConfig defaultArgs() {
+    return DescribeNetworkConfig.DEFAULT_INSTANCE;
   }
 
   private static final int MAX_COL = 4;
@@ -174,7 +174,7 @@ public class DescribeNetworkOper extends AppOper {
       dash();
   }
 
-  private NetworkArgs networkArgs() {
+  private DescribeNetworkConfig networkArgs() {
     return mConfig;
   }
 
@@ -260,7 +260,7 @@ public class DescribeNetworkOper extends AppOper {
   }
 
   private NeuralNetwork mArchitecture;
-  private NetworkArgs mConfig;
+  private DescribeNetworkConfig mConfig;
   private List<String> mFields = arrayList();
   private int mRow, mColumn;
   private List<String> mMessages = arrayList();

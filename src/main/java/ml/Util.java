@@ -9,11 +9,8 @@ import java.util.Random;
 
 import js.file.DirWalk;
 import js.file.Files;
-import js.geometry.IPoint;
-import js.geometry.IRect;
 import js.geometry.Matrix;
 import js.geometry.MyMath;
-import js.geometry.Polygon;
 import js.graphics.RectElement;
 import js.graphics.ScriptElement;
 import js.graphics.ScriptUtil;
@@ -26,7 +23,6 @@ import js.graphics.gen.ScriptElementList;
 public final class Util {
 
   public static final String EVAL_IMAGES_FILENAME = "images.bin";
-  public static final String EVAL_ANNOTATIONS_FILENAME = "annotations.json";
   public static final String EVAL_RESULTS_FILENAME = "inference_results.bin";
 
   public static final AugmentationConfig AUGMENTATIONS_NONE = AugmentationConfig.newBuilder()//
@@ -56,26 +52,6 @@ public final class Util {
     return dirWalk.files();
   }
 
-  public static void partitionToPrimaryAndTest(int testPct, List<ImageRecord> src, List<ImageRecord> dest0,
-      List<ImageRecord> dest1) {
-    checkState(src.size() > 0, "no output image files found");
-
-    dest0.clear();
-    dest1.clear();
-
-    int trainFiles = ((100 - testPct) * src.size() + 50) / 100;
-    dest0.addAll(src.subList(0, trainFiles));
-    dest1.addAll(src.subList(trainFiles, src.size()));
-  }
-
-  @SuppressWarnings("unchecked")
-  public static void clampSize(List list, int... bounds) {
-    int limit = list.size();
-    for (int x : bounds)
-      if (x > 0)
-        limit = Math.min(limit, x);
-    removeAllButFirstN(list, limit);
-  }
 
   public static void applyRandomBrightness(Random random, float[] pixels, float minShift, float maxShift) {
     float scale = 1 + MyMath.random(random, minShift, maxShift);
@@ -108,36 +84,7 @@ public final class Util {
   }
 
   /**
-   * Determine string that can be used to format integer counters from
-   * 0...total-1, using just enough digits, with left-padded zeros.
-   * 
-   * Returns a string x such that String.format(x,i) yields e.g. "0072"
-   * 
-   * (public for testing)
-   */
-  public static String formatStringForTotal(int total) {
-    checkArgument(total >= 0);
-    int numDigits = 1;
-    if (total > 0)
-      numDigits = 1 + (int) Math.round(Math.floor(Math.log10(total)));
-    return "%0" + numDigits + "d";
-  }
-
-  /**
-   * Merge zero or more annotations into another
-   */
-  public static ScriptElementList.Builder mergeAnnotation(ScriptElementList targetOrNull,
-      ScriptElementList source) {
-    if (targetOrNull == null)
-      targetOrNull = ScriptElementList.newBuilder();
-
-    ScriptElementList.Builder b = targetOrNull.toBuilder();
-    b.elements().addAll(source.elements());
-    return b;
-  }
-
-  /**
-   * Compile UbAnnotation from list of shapes
+   * Compile ScriptElementList from list of shapes
    */
   public static ScriptElementList compileAnnotation(List<ScriptElement> shapes) {
     ScriptElementList.Builder b = ScriptElementList.newBuilder();
@@ -148,44 +95,6 @@ public final class Util {
   public static ScriptElementList validate(ScriptElementList annotation) {
     ScriptUtil.assertNoMixing(annotation.elements());
     return annotation.build();
-  }
-
-  /**
-   * Construct polygon representing a rectangle with its corners cut off, to
-   * support a heuristic that approximates applying a transform to the rect by
-   * taking the bounds of the transformed polygon
-   */
-  public static Polygon truncatedRect(IRect r, float s) {
-    List<IPoint> pts = arrayList();
-
-    float x0 = r.x;
-    float y0 = r.y;
-    float x3 = r.endX();
-    float y3 = r.endY();
-
-    float x1 = x0 * (1 - s) + x3 * s;
-    float x2 = x3 * (1 - s) + x0 * s;
-    float y1 = y0 * (1 - s) + y3 * s;
-    float y2 = y3 * (1 - s) + y0 * s;
-
-    addPt(pts, x1, y0);
-    addPt(pts, x2, y0);
-    addPt(pts, x3, y1);
-    addPt(pts, x3, y2);
-    addPt(pts, x2, y3);
-    addPt(pts, x1, y3);
-    addPt(pts, x0, y2);
-    addPt(pts, x0, y1);
-
-    return new Polygon(pts);
-  }
-
-  public static Polygon truncatedRect(IRect r) {
-    return truncatedRect(r, 0.2f);
-  }
-
-  private static void addPt(List<IPoint> dest, float x, float y) {
-    dest.add(new IPoint(x, y));
   }
 
   public static Script.Builder generateScriptFrom(ScriptElementList annotation) {

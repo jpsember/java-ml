@@ -2,7 +2,6 @@ package ml;
 
 import java.awt.image.BufferedImage;
 import java.io.DataOutputStream;
-import java.io.File;
 import java.util.List;
 import java.util.Random;
 
@@ -13,14 +12,11 @@ import js.graphics.ScriptElement;
 import js.graphics.ScriptUtil;
 import js.graphics.gen.Script;
 import js.base.BaseObject;
-import js.json.JSMap;
 import ml.ModelWrapper;
-import gen.AnnotationFile;
 import gen.AugmentationConfig;
 import gen.Layer;
 import gen.NeuralNetwork;
 import gen.PlotInferenceResultsConfig;
-import js.graphics.gen.ScriptElementList;
 import gen.Stats;
 
 public abstract class ModelHandler extends BaseObject {
@@ -67,23 +63,10 @@ public abstract class ModelHandler extends BaseObject {
         model().inputImageVolume().depth());
   }
 
-  protected AnnotationFile readAnnotations(File inputDir) {
-    File polygonFile = new File(inputDir, Util.EVAL_ANNOTATIONS_FILENAME);
-
-    AnnotationFile.Builder fb = AnnotationFile.newBuilder();
-    JSMap m = JSMap.from(polygonFile);
-
-    for (JSMap polygonJsonMap : m.getList("p").asMaps()) {
-      ScriptElementList annotation = ScriptElementList.DEFAULT_INSTANCE.parse(polygonJsonMap);
-      fb.annotations().add(annotation);
-    }
-    return fb.build();
-  }
-
   private ModelWrapper mModelConfig;
 
   protected RuntimeException notSupported() {
-    return die("Unsupported project type:", model().projectType());
+    return die("Unsupported; project type:", model().projectType());
   }
 
   /**
