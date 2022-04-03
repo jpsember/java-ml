@@ -44,25 +44,28 @@ public class GenerateImageSetOper extends AppOper {
   @Override
   public void perform() {
     mModelHandler = NetworkUtil.constructModelHandler(null, config().network(), config().networkPath());
+
+    int objectCount = -1;
+
     switch (projectType()) {
     default:
       throw setError("unsupported project type", projectType());
-      
+
     case YOLO: {
       Yolo yolo = model().modelConfig();
       checkArgument(yolo.categoryCount() == config().categories().length(), "Yolo category count",
           yolo.categoryCount(), "disagrees with categories string length", config().categories());
     }
       break;
-      
-    case CLASSIFIER:
-    {
+
+    case CLASSIFIER: {
+      objectCount = 1;
       Classifier c = model().modelConfig();
       checkArgument(c.categoryCount() == config().categories().length(), "Classifier category count",
           c.categoryCount(), "disagrees with categories string length", config().categories());
     }
       break;
-      
+
     }
 
     mImageSize = modelHandler().model().inputImagePlanarSize();
@@ -79,7 +82,9 @@ public class GenerateImageSetOper extends AppOper {
 
     for (int i = 0; i < config().imageTotal(); i++) {
 
-      int totalObjects = 1 + random().nextInt(config().maxObjects());
+      int totalObjects = objectCount;
+      if (totalObjects < 0)
+        totalObjects = 1 + random().nextInt(config().maxObjects());
 
       Plotter p = Plotter.build();
       p.withCanvas(mImageSize);
@@ -93,8 +98,9 @@ public class GenerateImageSetOper extends AppOper {
       List<ScriptElement> scriptElements = arrayList();
       List<IRect> rectList = arrayList();
 
-      if (model.inputImageChannels() == 1)  
-        alert("monochrome isn't necessarily supported yet; clients should just use single channel of generated images, e.g. green");
+      if (model.inputImageChannels() == 1)
+        alert(
+            "monochrome isn't necessarily supported yet; clients should just use single channel of generated images, e.g. green");
 
       for (int objIndex = 0; objIndex < totalObjects; objIndex++) {
         p.with(randomElement(paints()).toBuilder().font(fi.mFont, 1f));

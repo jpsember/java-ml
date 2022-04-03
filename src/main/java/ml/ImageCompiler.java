@@ -135,12 +135,18 @@ public class ImageCompiler extends BaseObject {
       Integer channels = sImgChannelsMap.get(img.getType());
       if (channels == null)
         throw badArg("Unsupported image type:", INDENT, ImgUtil.toJson(img));
-      if (channels != expectedImageChannels)
-        throw badArg("Unsupported image type; wanted channels:", expectedImageChannels, "got:", INDENT,
-            ImgUtil.toJson(img));
+      if (channels != expectedImageChannels) {
+        // Special case for using color images to produce monochrome
+        if (expectedImageChannels == 1 && img.getType() == BufferedImage.TYPE_3BYTE_BGR)
+          ;
+        else
+          throw badArg("Unsupported image type; wanted channels:", expectedImageChannels, "got:", INDENT,
+              ImgUtil.toJson(img));
+      }
       mExpectedImageType = img.getType();
     }
     if (img.getType() != mExpectedImageType)
+
       badArg("Unexpected image type, wanted:", mExpectedImageType, "but got:", INDENT, ImgUtil.toJson(img));
     if (!imgSize.equals(mExpectedImageSize))
       badArg("Unexpected image size, wanted:", mExpectedImageSize, "but got:", INDENT, ImgUtil.toJson(img));
