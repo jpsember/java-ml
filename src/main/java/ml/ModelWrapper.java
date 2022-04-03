@@ -35,6 +35,9 @@ public final class ModelWrapper extends BaseObject {
     case YOLO:
       prototype = Yolo.DEFAULT_INSTANCE;
       break;
+    case CLASSIFIER:
+      prototype = Classifier.DEFAULT_INSTANCE;
+      break;
     }
     return (T) prototype.parse(jsMap);
   }

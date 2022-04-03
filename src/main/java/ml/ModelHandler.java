@@ -122,6 +122,10 @@ public abstract class ModelHandler extends BaseObject {
       handler = new YoloModelHandler();
       break;
 
+    case CLASSIFIER:
+      handler = new ClassifierModelHandler();
+      break;
+      
     default:
       throw die("not supported:", model.projectType());
     }

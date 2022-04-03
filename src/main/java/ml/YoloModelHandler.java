@@ -35,6 +35,7 @@ public final class YoloModelHandler extends ModelHandler {
 
   @Override
   public void addImageRecordFilters(ImageHandler p) {
+    todo("move yolo-related classes to own subpackage");
     loadTools();
     p.withFilter(ImageRecord.FILTER_SCRIPT_REQUIRED);
     p.withFilter(ImageRecord.FILTER_SHAPE_OR_RETAIN_REQUIRED);

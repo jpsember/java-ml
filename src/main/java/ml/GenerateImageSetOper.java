@@ -9,6 +9,7 @@ import java.io.File;
 import java.util.List;
 import java.util.Random;
 
+import gen.Classifier;
 import gen.GenerateImagesConfig;
 import gen.NetworkProjectType;
 import gen.Yolo;
@@ -46,12 +47,22 @@ public class GenerateImageSetOper extends AppOper {
     switch (projectType()) {
     default:
       throw setError("unsupported project type", projectType());
+      
     case YOLO: {
       Yolo yolo = model().modelConfig();
       checkArgument(yolo.categoryCount() == config().categories().length(), "Yolo category count",
           yolo.categoryCount(), "disagrees with categories string length", config().categories());
     }
       break;
+      
+    case CLASSIFIER:
+    {
+      Classifier c = model().modelConfig();
+      checkArgument(c.categoryCount() == config().categories().length(), "Classifier category count",
+          c.categoryCount(), "disagrees with categories string length", config().categories());
+    }
+      break;
+      
     }
 
     mImageSize = modelHandler().model().inputImagePlanarSize();
@@ -81,6 +92,9 @@ public class GenerateImageSetOper extends AppOper {
       Script.Builder script = Script.newBuilder();
       List<ScriptElement> scriptElements = arrayList();
       List<IRect> rectList = arrayList();
+
+      if (model.inputImageChannels() == 1)  
+        alert("monochrome isn't necessarily supported yet; clients should just use single channel of generated images, e.g. green");
 
       for (int objIndex = 0; objIndex < totalObjects; objIndex++) {
         p.with(randomElement(paints()).toBuilder().font(fi.mFont, 1f));
@@ -170,8 +184,6 @@ public class GenerateImageSetOper extends AppOper {
       {
         String path = Files.setExtension(imageBaseName, ImgUtil.EXT_JPEG);
         File f = new File(targetDir, path);
-        if (model.inputImageChannels() == 1)
-          setError("Monochrome not supported yet");
         ImgUtil.writeImage(files(), p.image(), f);
       }
 

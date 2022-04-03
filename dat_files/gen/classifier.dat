@@ -1,0 +1,22 @@
+// CLASSIFIER implementation of the abstract network model
+//
+//
+
+fields {
+
+  // ------------------------------------------------
+  //
+  // Abstract network model required fields
+  //
+  // (datagen classes don't support inheritance, so we must
+  // reproduce these fields manually)
+  //
+
+  IPoint image_size;
+  int image_channels;
+
+  //
+  // ------------------------------------------------
+
+  int category_count;
+}
