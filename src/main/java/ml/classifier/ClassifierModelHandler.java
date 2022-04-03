@@ -45,7 +45,8 @@ public final class ClassifierModelHandler extends ModelHandler {
       ScriptElement elem = annotation.elements().get(0);
       int category = elem.properties().category();
       try {
-        mLabelsStream.writeFloat(category);
+        die("but I think this needs to be little-endian");
+        mLabelsStream.writeInt(category);
       } catch (Throwable e) {
         throw Files.asFileException(e);
       }
