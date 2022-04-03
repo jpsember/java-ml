@@ -1,8 +1,4 @@
-enum GenerateType;
-
 fields {
-
-  GenerateType type;
 
   File target_dir = "generated_images";
   int image_total = 20;
@@ -24,11 +20,6 @@ fields {
 
   File inspection_dir;
 
-  // GenerateType = classifier
-  //
-
-  // GenerateType = detector
-  //
   int max_objects = 4;
 
 }

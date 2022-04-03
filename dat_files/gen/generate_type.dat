@@ -1,5 +1,0 @@
-enum {
-  unknown,
-  classifier,
-  detector,
-}

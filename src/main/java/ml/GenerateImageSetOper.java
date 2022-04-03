@@ -10,7 +10,8 @@ import java.util.List;
 import java.util.Random;
 
 import gen.GenerateImagesConfig;
-import gen.GenerateType;
+import gen.NetworkProjectType;
+import gen.Yolo;
 import js.app.AppOper;
 import js.file.Files;
 import js.geometry.IPoint;
@@ -41,19 +42,18 @@ public class GenerateImageSetOper extends AppOper {
 
   @Override
   public void perform() {
-
-    switch (config().type()) {
+    mModelHandler = NetworkUtil.constructModelHandler(null, config().network(), config().networkPath());
+    switch (projectType()) {
     default:
-      throw setError("unsupported type:", config().type());
-    case DETECTOR:
-      if (config().maxObjects() < 1)
-        setError("max_objects bad", config());
-      break;
-    case CLASSIFIER:
+      throw setError("unsupported project type", projectType());
+    case YOLO: {
+      Yolo yolo = model().modelConfig();
+      checkArgument(yolo.categoryCount() == config().categories().length(), "Yolo category count",
+          yolo.categoryCount(), "disagrees with categories string length", config().categories());
+    }
       break;
     }
 
-    mModelHandler = NetworkUtil.constructModelHandler(null, config().network(), config().networkPath());
     mImageSize = modelHandler().model().inputImagePlanarSize();
 
     ModelWrapper model = modelHandler().model();
@@ -68,9 +68,7 @@ public class GenerateImageSetOper extends AppOper {
 
     for (int i = 0; i < config().imageTotal(); i++) {
 
-      int totalObjects = 1;
-      if (config().type() == GenerateType.DETECTOR)
-        totalObjects = 1 + random().nextInt(config().maxObjects());
+      int totalObjects = 1 + random().nextInt(config().maxObjects());
 
       Plotter p = Plotter.build();
       p.withCanvas(mImageSize);
@@ -165,7 +163,7 @@ public class GenerateImageSetOper extends AppOper {
       String imageBaseName = String.format("image_%05d", i);
 
       // If we're doing a classifier, append the class number to the filename
-      if (config().type() == GenerateType.CLASSIFIER) {
+      if (projectType() == NetworkProjectType.CLASSIFIER) {
         imageBaseName += String.format("_%d", first(scriptElements).properties().category());
       }
 
@@ -320,6 +318,14 @@ public class GenerateImageSetOper extends AppOper {
 
   private ModelHandler modelHandler() {
     return mModelHandler;
+  }
+
+  private NetworkProjectType projectType() {
+    return model().projectType();
+  }
+
+  private ModelWrapper model() {
+    return modelHandler().model();
   }
 
   private ModelHandler mModelHandler;

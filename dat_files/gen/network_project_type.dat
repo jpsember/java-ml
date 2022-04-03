@@ -1,4 +1,5 @@
 enum {
   unknown;    // to ensure an explicit value was given
+  classifier;
   yolo;
 }
