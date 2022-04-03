@@ -16,9 +16,9 @@ import js.file.Files;
 import js.geometry.IPoint;
 import js.geometry.MyMath;
 import js.graphics.ImgUtil;
-import js.graphics.ScriptElement;
 import js.graphics.ScriptUtil;
 import js.graphics.gen.Script;
+import js.graphics.gen.ScriptElementList;
 
 public class ImageCompiler extends BaseObject {
 
@@ -57,13 +57,19 @@ public class ImageCompiler extends BaseObject {
     DataOutputStream labelsStream = new DataOutputStream(files().outputStream(labelsPath));
 
     ModelWrapper model = modelHandler().model();
+
+    ModelInputReceiver modelInputReceiver = modelHandler().buildModelInputReceiver(imagesStream,
+        labelsStream);
+    todo("perhaps do something with inspection here");
+    //modelInputReceiver.setInspector(mInspectionManager);
+
     for (Entry entry : entries) {
       BufferedImage img = ImgUtil.read(entry.imageFile);
       checkImageSizeAndType(entry.imageFile, img, model.inputImagePlanarSize(), model.inputImageChannels());
       todo("transform image randomly if training image");
       mWorkArray = ImgUtil.floatPixels(img, model.inputImageChannels(), mWorkArray);
-      files().writeFloatsLittleEndian(mWorkArray, imagesStream);
-      todo("write something to labels", entry.scriptElements.size());
+      modelInputReceiver.accept(mWorkArray, entry.scriptElements);
+      todo("apply annotations; see TrainStreamService");
     }
     Files.close(imagesStream, labelsStream);
   }
@@ -81,9 +87,8 @@ public class ImageCompiler extends BaseObject {
         File scriptFile = ScriptUtil.scriptPathForImage(f);
         if (scriptFile.exists()) {
           Script script = ScriptUtil.from(scriptFile);
-          ent.scriptElements = script.items();
-        } else
-          ent.scriptElements = arrayList();
+          ent.scriptElements = ScriptUtil.extractScriptElementList(script);
+        }
         ents.add(ent);
       }
       int testCount = Math.min(config().maxTestImagesCount(),
@@ -151,7 +156,7 @@ public class ImageCompiler extends BaseObject {
 
   private static class Entry {
     File imageFile;
-    List<ScriptElement> scriptElements;
+    ScriptElementList scriptElements = ScriptElementList.DEFAULT_INSTANCE;
   }
 
   private ModelHandler modelHandler() {

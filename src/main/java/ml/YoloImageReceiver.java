@@ -68,7 +68,7 @@ public final class YoloImageReceiver extends BaseObject implements ModelInputRec
     prepare();
     mAnnotations.add(annotation);
     writeImage(image);
-    writeAnnotations(annotation);
+    writeScriptElements(annotation);
 
     mInspector.create();
     if (mInspector.used()) {
@@ -87,22 +87,20 @@ public final class YoloImageReceiver extends BaseObject implements ModelInputRec
 
   // ------------------------------------------------------------------
 
-  private void writeAnnotations(ScriptElementList annotation) {
-    log("writeAnnotations", INDENT, annotation);
+  private void writeScriptElements(ScriptElementList scriptElements) {
+    log("writeScriptElements", INDENT, scriptElements);
 
     clearOutputLayer();
-    ScriptUtil.assertNoMixing(annotation.elements());
+    ScriptUtil.assertNoMixing(scriptElements.elements());
 
     // Compile annotations into ones that have a single bounding box
     List<RectElement> boxes = arrayList();
 
-    for (ScriptElement elem : annotation.elements()) {
+    for (ScriptElement elem : scriptElements.elements()) {
       switch (elem.tag()) {
       default:
         throw badArg("unsupported element type", elem);
       case RectElement.TAG:
-        //        boxes.add(labelledBox(elem.bounds(), ScriptUtil.category(elem), 1f, ScriptUtil.rotationDegreesOrZero(elem));
-        //        break;
       case PolygonElement.TAG:
         // We will assume that the polygon bounding box is a good enough approximation of the
         // object's bounding rectangle.  We hopefully have used the 'truncate box, then rotate its points'
