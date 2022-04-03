@@ -14,11 +14,6 @@ public final class NetworkUtil {
 
   public final static int VERSION = 0;
 
-  public static ModelHandler constructModelHandler(File baseDirectoryOrNull, NeuralNetwork networkOrNull,
-      File networkPath) {
-    return ModelHandler.construct(resolveNetwork(baseDirectoryOrNull, networkOrNull, networkPath));
-  }
-
   public static NeuralNetwork resolveNetwork(File baseDirectoryOrNull, NeuralNetwork networkOrNull,
       File networkPath) {
     NeuralNetwork network = DataUtil.resolveField(baseDirectoryOrNull, NeuralNetwork.DEFAULT_INSTANCE,
@@ -26,7 +21,12 @@ public final class NetworkUtil {
     return checkNotNull(network, "Cannot find network in path:", networkPath);
   }
 
-  public static NeuralNetwork applyDefaults(NeuralNetwork network) {
+  public static ModelHandler constructModelHandler(File baseDirectoryOrNull, NeuralNetwork networkOrNull,
+      File networkPath) {
+    return ModelHandler.construct(resolveNetwork(baseDirectoryOrNull, networkOrNull, networkPath));
+  }
+
+  public static NeuralNetwork validateNetwork(NeuralNetwork network) {
     if (network.version() != VERSION)
       throw die("Unexpected version:", network.version(), "Expected:", VERSION);
     if (network.projectType() == NetworkProjectType.UNKNOWN)
@@ -44,12 +44,6 @@ public final class NetworkUtil {
   public static void calcWeightsForFC(Layer.Builder layer, int inputVolume, int outputVolume) {
     // Add one for bias
     layer.numWeights((inputVolume + 1) * outputVolume);
-  }
-
-  public static NeuralNetwork ensureValid(NeuralNetwork n) {
-    if (n.alpha() < 0 || n.dropoutConv() < 0 || n.dropoutFc() < 0)
-      throw die("no-longer-supported negative values:", INDENT, n);
-    return n.build();
   }
 
   public static double ensureFinite(double value, double argument, String prompt) {

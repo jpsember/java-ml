@@ -24,7 +24,6 @@ import js.json.JSMap;
 import ml.ModelHandler;
 import ml.ModelWrapper;
 import gen.AugmentationConfig;
-import gen.Stats;
 
 /**
  * An implementation of ImageTransformer to work with 16-bit grayscale
@@ -43,21 +42,12 @@ public class MonochromeImageTransformer extends ImageTransformer<BufferedImage> 
     mModel = modelHandler.model();
   }
 
-  public MonochromeImageTransformer withImageStats(Stats stats) {
-    mStats = StatCalculator.verify(stats);
-    return this;
-  }
-
   public AugmentationConfig augmentationConfig() {
     return mAugConfig;
   }
 
   public Random random() {
     return mRandom;
-  }
-
-  public Stats imageStats() {
-    return mStats;
   }
 
   private void prepare() {
@@ -310,6 +300,5 @@ public class MonochromeImageTransformer extends ImageTransformer<BufferedImage> 
   private boolean mPrepared;
   private float[] mDestination;
   private BufferedImage mTargetImage;
-  private Stats mStats;
 
 }

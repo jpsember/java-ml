@@ -18,9 +18,7 @@ import gen.*;
 public final class ModelWrapper extends BaseObject {
 
   public ModelWrapper(NeuralNetwork network) {
-    if (network.projectType() == NetworkProjectType.UNKNOWN)
-      throw die("Unknown project type for network:", INDENT, network);
-    mNetwork = network.build();
+    mNetwork = NetworkUtil.validateNetwork(network);
     mInputImageVolume = determineInputImageVolume(network);
     mInputImageChannels = network.modelConfig().getInt("image_channels");
     mInputImagePlanarSize = VolumeUtil.spatialDimension(mInputImageVolume);

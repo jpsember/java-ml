@@ -57,7 +57,7 @@ public final class ImageRecord {
   }
 
   public void setAnnotations(ScriptElementList annotation) {
-    mAnnotations = annotation;
+    mScriptElements = annotation;
   }
 
   private boolean hasPolygon() {
@@ -69,9 +69,9 @@ public final class ImageRecord {
   }
 
   public ScriptElementList annotations() {
-    if (mAnnotations == ScriptElementList.DEFAULT_INSTANCE && !alert("option to omit this check"))
+    if (mScriptElements == ScriptElementList.DEFAULT_INSTANCE && !alert("option to omit this check"))
       throw die("probably unexpected: no annotation provided");
-    return mAnnotations;
+    return mScriptElements;
   }
 
   /**
@@ -91,18 +91,6 @@ public final class ImageRecord {
       if (image.getType() != BufferedImage.TYPE_USHORT_GRAY)
         image = toIntermediateImageType(image);
       mSourceBufferedImage = image;
-
-      // Delete this old code if things seem to be working
-      //
-      //      String ext = getExtension(mSourceImageFile);
-      //      if (ext.equals("raw") || ext.equals("rax")) {
-      //        byte[] bytes = Files.toByteArray(mSourceImageFile);
-      //        MonoImage monoImage = ImgUtil.decompressRAX(bytes, null);
-      //        mSourceBufferedImage = MonoImageUtil.to16BitGrayscaleBufferedImage(monoImage);
-      //      } else {
-      //        BufferedImage image = ImgUtil.read(mSourceImageFile);
-      //        mSourceBufferedImage = toIntermediateImageType(image);
-      //      }
     }
     return mSourceBufferedImage;
   }
@@ -301,7 +289,7 @@ public final class ImageRecord {
     }
     croppedImage = imageFit.apply(sourceImage, targetType);
     ImageRecord outputRecord = new ImageRecord(mImageProcessor, sourceImageFile());
-    outputRecord.setAnnotations(Util.transform(mAnnotations, imageFit.matrix(), 0));
+    outputRecord.setAnnotations(Util.transform(mScriptElements, imageFit.matrix(), 0));
     outputRecord.mSourceBufferedImage = croppedImage;
     return outputRecord;
   }
@@ -314,7 +302,7 @@ public final class ImageRecord {
   private String mRejectionReason = "";
   private Script mScript;
   private File mLogDisplayFilename;
-  private ScriptElementList mAnnotations = ScriptElementList.DEFAULT_INSTANCE;
+  private ScriptElementList mScriptElements = ScriptElementList.DEFAULT_INSTANCE;
   private File mScriptPath;
 
 }
