@@ -10,7 +10,6 @@ import java.util.Map;
 import java.util.Random;
 
 import gen.CompileImagesConfig;
-import gen.Vol;
 import js.base.BaseObject;
 import js.file.DirWalk;
 import js.file.Files;
@@ -37,9 +36,9 @@ public class ImageCompiler extends BaseObject {
   }
 
   public void setFiles(Files files) {
-    mFiles = nullTo(Files.S,  files);
+    mFiles = nullTo(Files.S, files);
   }
-  
+
   public void compileTrainSet(File targetDir) {
     auxCompile(targetDir, trainEntries(), true);
   }
@@ -58,10 +57,10 @@ public class ImageCompiler extends BaseObject {
 
     for (Entry entry : entries) {
       BufferedImage img = ImgUtil.read(entry.imageFile);
-      checkImageSizeAndType(entry.imageFile, img, config().imageVol());
+      checkImageSizeAndType(entry.imageFile, img, config().imageSize(), config().imageChannels());
 
       todo("transform image randomly if training image");
-      mWorkArray = ImgUtil.floatPixels(img, config().imageVol().depth(), mWorkArray);
+      mWorkArray = ImgUtil.floatPixels(img, config().imageChannels(), mWorkArray);
       files().writeFloatsLittleEndian(mWorkArray, imagesStream);
       todo("write something to labels", entry.scriptElements.size());
     }
@@ -122,15 +121,16 @@ public class ImageCompiler extends BaseObject {
     return mRandom;
   }
 
-  private void checkImageSizeAndType(File imageFile, BufferedImage img, Vol expectedVol) {
+  private void checkImageSizeAndType(File imageFile, BufferedImage img, IPoint expectedImageSize,
+      int expectedImageChannels) {
     IPoint imgSize = ImgUtil.size(img);
     if (mExpectedImageSize == null) {
-      mExpectedImageSize = new IPoint(expectedVol.width(), expectedVol.height());
+      mExpectedImageSize = expectedImageSize;
       Integer channels = sImgChannelsMap.get(img.getType());
       if (channels == null)
         throw badArg("Unsupported image type:", INDENT, ImgUtil.toJson(img));
-      if (channels != expectedVol.depth())
-        throw badArg("Unsupported image type; wanted depth:", expectedVol.depth(), "got:", INDENT,
+      if (channels != expectedImageChannels)
+        throw badArg("Unsupported image type; wanted channels:", expectedImageChannels, "got:", INDENT,
             ImgUtil.toJson(img));
       mExpectedImageType = img.getType();
     }

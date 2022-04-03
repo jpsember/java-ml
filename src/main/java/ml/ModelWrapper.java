@@ -82,20 +82,6 @@ public final class ModelWrapper extends BaseObject {
     return shape;
   }
 
-  public IPoint blockGrid() {
-    if (mBlockGrid == null) {
-      JSMap m = mModelConfig.toJson().asMap();
-      mBlockSize = IPoint.get(m, "block_size");
-      mBlockGrid = new IPoint(mInputImagePlanarSize.x / mBlockSize.x, mInputImagePlanarSize.y / mBlockSize.y);
-    }
-    return mBlockGrid;
-  }
-
-  public IPoint blockSize() {
-    blockGrid();
-    return mBlockSize;
-  }
-
   public int imageLabelFloatCount() {
     switch (network().projectType()) {
     case YOLO:
@@ -119,6 +105,4 @@ public final class ModelWrapper extends BaseObject {
   private final int mInputImageChannels;
   private final int mInputImageVolumeProduct;
 
-  private IPoint mBlockGrid;
-  private IPoint mBlockSize;
 }

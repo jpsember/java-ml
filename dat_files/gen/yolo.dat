@@ -1,12 +1,24 @@
-// YOLO-specific layer fields
+// YOLO implementation of the abstract network model
+//
 //
 
 fields {
 
-  IPoint block_size = [32,32];
+  // ------------------------------------------------
+  //
+  // Abstract network model required fields
+  //
+  // (datagen classes don't support inheritance, so we must
+  // reproduce these fields manually)
+  //
 
   IPoint image_size;
-  int image_channels; // or depth, i.e. 1 for monochrome, 3 for rgb
+  int image_channels;
+
+  //
+  // ------------------------------------------------
+
+  IPoint block_size = [32,32];
 
   int category_count;
 

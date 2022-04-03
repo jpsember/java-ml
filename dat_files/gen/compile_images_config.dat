@@ -1,7 +1,8 @@
 fields {
   File source_dir;
 
-  Vol image_vol;
+  IPoint image_size;
+  int image_channels;
 
   int max_test_images_count = 100;
   int max_test_images_pct = 10;
