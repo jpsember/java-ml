@@ -25,7 +25,6 @@ public class Main extends App {
   @Override
   protected void registerOperations() {
     registerOper(new GenerateImageSetOper());
-    registerOper(new GenerateTrainingSetOper());
     registerOper(new CompileImagesOper());
   }
 
