@@ -37,6 +37,7 @@ import js.graphics.gen.ScriptElementList;
  * Designed to be run as a separate process, to provide data to a train
  * operation (i.e. Python).
  */
+@Deprecated
 public final class TrainStreamServiceOper extends AppOper {
 
   @Override

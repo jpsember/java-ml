@@ -1,4 +1,8 @@
 fields {
+
+  ? NeuralNetwork network;
+  File network_path;
+
   File source_dir;
 
   int max_test_images_count = 100;
@@ -9,6 +13,13 @@ fields {
   File target_dir_train = "train_data";
   File target_dir_test = "test_data";
 
-  ? NeuralNetwork network;
-  File network_path;
+  // If true, loops forever, generating subdirectories within the
+  // target_train_dir containing additional images and labels
+  //
+  bool train_service;
+
+  // If train_service is active, it attempts to maintain this many
+  // sets in the directory
+  //
+  int max_train_sets = 2;
 }

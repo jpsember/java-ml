@@ -27,7 +27,6 @@ public class Main extends App {
     registerOper(new GenerateImageSetOper());
     registerOper(new GenerateTrainingSetOper());
     registerOper(new CompileImagesOper());
-    registerOper(new TrainStreamServiceOper());
   }
 
 }

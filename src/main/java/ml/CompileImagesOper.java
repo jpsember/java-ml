@@ -2,8 +2,12 @@ package ml;
 
 import static js.base.Tools.*;
 
+import java.io.File;
+
 import gen.CompileImagesConfig;
 import js.app.AppOper;
+import js.base.DateTimeTools;
+import js.file.DirWalk;
 
 public class CompileImagesOper extends AppOper {
 
@@ -22,9 +26,12 @@ public class CompileImagesOper extends AppOper {
 
     ImageCompiler c = new ImageCompiler(config());
     c.setFiles(files());
-    c.compileTrainSet(config().targetDirTrain());
     c.compileTestSet(config().targetDirTest());
-    todo("Option to support streaming service");
+    if (config().trainService()) {
+      performTrainService(c);
+    } else {
+      c.compileTrainSet(config().targetDirTrain());
+    }
   }
 
   @Override
@@ -38,4 +45,56 @@ public class CompileImagesOper extends AppOper {
     return super.config();
   }
 
+  private void performTrainService(ImageCompiler c) {
+
+    // Choose a temporary filename that can be atomically renamed when it is complete
+    File tempDir = new File(config().targetDirTrain(), "_temp_");
+    // Clean up any old directory
+    files().deleteDirectory(tempDir);
+
+    long endTimestamp = System.currentTimeMillis() + 120000;
+    while (true) {
+      if (System.currentTimeMillis() > endTimestamp)
+        break;
+
+      int k = countTrainSets();
+      if (k >= config().maxTrainSets()) {
+        DateTimeTools.sleepForRealMs(100);
+        continue;
+      }
+
+      c.compileTrainSet(tempDir);
+
+      // Choose a name for the new set
+      //
+      File newSetDir = null;
+      while (true) {
+        newSetDir = new File(config().targetDirTrain(), STREAM_PREFIX + mSetNumber);
+        mSetNumber++;
+        if (!newSetDir.exists())
+          break;
+        pr("??? directory already exists:", newSetDir);
+      }
+      files().moveDirectory(tempDir, newSetDir);
+      //      if (alert("sleeping a bit"))
+      //        DateTimeTools.sleepForRealMs(1500);
+    }
+  }
+
+  private static final String STREAM_PREFIX = "set_";
+
+  /**
+   * Count the number of subdirectories with prefix "set_"
+   */
+  private int countTrainSets() {
+    int count = 0;
+    DirWalk w = new DirWalk(config().targetDirTrain()).includeDirectories().withRecurse(false);
+    for (File f : w.files()) {
+      if (f.isDirectory() && f.getName().startsWith(STREAM_PREFIX))
+        count++;
+    }
+    return count;
+  }
+
+  private int mSetNumber;
 }
