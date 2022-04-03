@@ -2,9 +2,11 @@
 //
 fields {
 
-  NeuralNetwork architecture;
+  // Path to network; can contain a comma with keys as well, see DataUtil.resolveField
+  //
+  File path;
 
   // If not zero, desired limit on the size of the network's weights (in MB)
   //
-  int max_size_mb;
+  int max_size_mb = 300;
 }

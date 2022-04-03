@@ -16,11 +16,14 @@ public final class NetworkUtil {
 
   public static ModelHandler constructModelHandler(File baseDirectoryOrNull, NeuralNetwork networkOrNull,
       File networkPath) {
+    return ModelHandler.construct(resolveNetwork(baseDirectoryOrNull, networkOrNull, networkPath));
+  }
+
+  public static NeuralNetwork resolveNetwork(File baseDirectoryOrNull, NeuralNetwork networkOrNull,
+      File networkPath) {
     NeuralNetwork network = DataUtil.resolveField(baseDirectoryOrNull, NeuralNetwork.DEFAULT_INSTANCE,
         networkOrNull, networkPath);
-    if (network == null)
-      throw badArg("Cannot construct model handler");
-    return ModelHandler.construct(network);
+    return checkNotNull(network, "Cannot find network in path:", networkPath);
   }
 
   public static NeuralNetwork applyDefaults(NeuralNetwork network) {

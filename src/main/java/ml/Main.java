@@ -26,6 +26,7 @@ public class Main extends App {
   protected void registerOperations() {
     registerOper(new GenerateImageSetOper());
     registerOper(new CompileImagesOper());
+    registerOper(new DescribeNetworkOper());
   }
 
 }

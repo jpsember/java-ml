@@ -1,6 +1,5 @@
 package ml;
 
-
 import static js.base.Tools.*;
 
 import java.io.File;
@@ -14,14 +13,9 @@ import js.file.Files;
 import js.app.AppOper;
 import js.base.BasePrinter;
 import js.data.DataUtil;
-import js.json.JSMap;
 import ml.VolumeUtil;
 
 public class DescribeNetworkOper extends AppOper {
-
-  public static final NetworkArgs DEFAULT_OPTIONS = NetworkArgs.newBuilder() //
-      .maxSizeMb(300)//
-      .build();
 
   @Override
   public String userCommand() {
@@ -34,21 +28,11 @@ public class DescribeNetworkOper extends AppOper {
   }
 
   @Override
-  protected List<Object> getAdditionalArgs() {
-    return arrayList("[param <json file containing architecture, image_bitmap_config keys>]");
-  }
-
-  @Override
   public NetworkArgs defaultArgs() {
-    return DEFAULT_OPTIONS;
+    return NetworkArgs.DEFAULT_INSTANCE;
   }
 
   private static final int MAX_COL = 4;
-
-  @Override
-  protected void processAdditionalArgs() {
-    mAltParamPath = cmdLineArgs().nextArgIf("param", "");
-  }
 
   @Override
   public void perform() {
@@ -271,37 +255,19 @@ public class DescribeNetworkOper extends AppOper {
 
   private NeuralNetwork architecture() {
     if (mArchitecture == null) {
-      mArchitecture = mConfig.architecture();
-      if (hasOverrideMap()) {
-        JSMap listOfLayers = overrideMap().optJSMap("architecture");
-        if (listOfLayers != null)
-          mArchitecture = NeuralNetwork.DEFAULT_INSTANCE.parse(listOfLayers);
-        else
-          throw die("No 'architecture' key found in: ", Files.infoMap(mAltParamPath));
-      }
+      File path = mConfig.path();
+      if (Files.empty(path))
+        throw setError("No network_path defined");
+      mArchitecture = NetworkUtil.resolveNetwork(null, null, path);
     }
     return mArchitecture;
   }
 
-  private JSMap overrideMap() {
-    if (mOverrideMap == null) {
-      mOverrideMap = map();
-      if (hasOverrideMap())
-        mOverrideMap = JSMap.from(new File(mAltParamPath));
-    }
-    return mOverrideMap;
-  }
 
-  private boolean hasOverrideMap() {
-    return !mAltParamPath.isEmpty();
-  }
-
-  private JSMap mOverrideMap;
   private NeuralNetwork mArchitecture;
   private NetworkArgs mConfig;
   private List<String> mFields = arrayList();
   private int mRow, mColumn;
   private List<String> mMessages = arrayList();
-  private String mAltParamPath;
   private NetworkAnalyzer mNetworkAnalyzer;
 }

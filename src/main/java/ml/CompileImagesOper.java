@@ -9,6 +9,11 @@ import js.app.AppOper;
 import js.base.DateTimeTools;
 import js.file.DirWalk;
 
+/**
+ * Compiles images into a form to be consumed by pytorch. Partitions images into
+ * train and test sets; optionally generates training sets to be consumed by an
+ * external training session running in parallel
+ */
 public final class CompileImagesOper extends AppOper {
 
   @Override
@@ -61,7 +66,8 @@ public final class CompileImagesOper extends AppOper {
 
     while (true) {
       if (countTrainSets() >= config().maxTrainSets()) {
-        if (stopIfInactive()) break;
+        if (stopIfInactive())
+          break;
         DateTimeTools.sleepForRealMs(100);
         continue;
       }
