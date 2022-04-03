@@ -9,7 +9,7 @@ import js.app.AppOper;
 import js.base.DateTimeTools;
 import js.file.DirWalk;
 
-public class CompileImagesOper extends AppOper {
+public final class CompileImagesOper extends AppOper {
 
   @Override
   public String userCommand() {
@@ -45,43 +45,43 @@ public class CompileImagesOper extends AppOper {
     return super.config();
   }
 
-  private void performTrainService(ImageCompiler c) {
+  private long currentTime() {
+    return System.currentTimeMillis();
+  }
+
+  private void performTrainService(ImageCompiler imageCompiler) {
 
     // Choose a temporary filename that can be atomically renamed when it is complete
+    //
     File tempDir = new File(config().targetDirTrain(), "_temp_");
+
     // Clean up any old directory
+    //
     files().deleteDirectory(tempDir);
 
-    long endTimestamp = System.currentTimeMillis() + 120000;
     while (true) {
-      if (System.currentTimeMillis() > endTimestamp)
-        break;
-
-      int k = countTrainSets();
-      if (k >= config().maxTrainSets()) {
+      if (countTrainSets() >= config().maxTrainSets()) {
+        if (stopIfInactive()) break;
         DateTimeTools.sleepForRealMs(100);
         continue;
       }
 
-      c.compileTrainSet(tempDir);
+      imageCompiler.compileTrainSet(tempDir);
 
       // Choose a name for the new set
       //
-      File newSetDir = null;
+      File newDir = null;
       while (true) {
-        newSetDir = new File(config().targetDirTrain(), STREAM_PREFIX + mSetNumber);
-        mSetNumber++;
-        if (!newSetDir.exists())
+        newDir = new File(config().targetDirTrain(), STREAM_PREFIX + mNextStreamSetNumber);
+        mNextStreamSetNumber++;
+        if (!newDir.exists())
           break;
-        pr("??? directory already exists:", newSetDir);
+        alert("Stream directory already exists:", newDir);
       }
-      files().moveDirectory(tempDir, newSetDir);
-      //      if (alert("sleeping a bit"))
-      //        DateTimeTools.sleepForRealMs(1500);
+      files().moveDirectory(tempDir, newDir);
+      mLastGeneratedFilesTime = currentTime();
     }
   }
-
-  private static final String STREAM_PREFIX = "set_";
 
   /**
    * Count the number of subdirectories with prefix "set_"
@@ -96,5 +96,19 @@ public class CompileImagesOper extends AppOper {
     return count;
   }
 
-  private int mSetNumber;
+  private boolean stopIfInactive() {
+    long curr = currentTime();
+    if (mLastGeneratedFilesTime == 0)
+      mLastGeneratedFilesTime = curr;
+    if (curr - mLastGeneratedFilesTime > DateTimeTools.MINUTES(5)) {
+      pr("...a lot of time has elapsed since we had to generate files; assuming client is not running");
+      return true;
+    }
+    return false;
+  }
+
+  private static final String STREAM_PREFIX = "set_";
+
+  private int mNextStreamSetNumber;
+  private long mLastGeneratedFilesTime;
 }
