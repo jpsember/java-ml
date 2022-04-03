@@ -1,7 +1,7 @@
-package ml;
+package ml.yolo;
 
 import static js.base.Tools.*;
-import static ml.YoloUtil.*;
+import static ml.yolo.YoloUtil.*;
 
 import java.util.Collections;
 import java.util.List;
@@ -17,6 +17,7 @@ import js.graphics.ScriptElement;
 import js.graphics.gen.CategoryConfidence;
 import js.graphics.gen.ElementProperties;
 import js.json.JSMap;
+import ml.NetworkUtil;
 import gen.Yolo;
 
 /**

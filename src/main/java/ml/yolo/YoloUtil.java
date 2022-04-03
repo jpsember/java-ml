@@ -1,4 +1,4 @@
-package ml;
+package ml.yolo;
 
 import static js.base.Tools.*;
 
@@ -15,6 +15,7 @@ import js.graphics.RectElement;
 import js.graphics.ScriptElement;
 import js.graphics.ScriptUtil;
 import js.graphics.gen.ElementProperties;
+import ml.NetworkUtil;
 import gen.Yolo;
 
 public final class YoloUtil {

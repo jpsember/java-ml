@@ -1,4 +1,4 @@
-package ml;
+package ml.yolo;
 
 import static js.base.Tools.*;
 
@@ -20,7 +20,7 @@ import js.graphics.ScriptUtil;
 import js.graphics.gen.ElementProperties;
 import js.json.JSMap;
 import ml.ModelInputReceiver;
-import ml.YoloUtil;
+import ml.yolo.YoloUtil;
 import js.graphics.gen.ScriptElementList;
 import gen.Yolo;
 

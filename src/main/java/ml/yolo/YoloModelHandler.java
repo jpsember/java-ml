@@ -1,4 +1,4 @@
-package ml;
+package ml.yolo;
 
 import java.awt.image.BufferedImage;
 import java.io.DataInputStream;
@@ -18,11 +18,11 @@ import js.graphics.ScriptUtil;
 import js.graphics.gen.ElementProperties;
 import js.graphics.gen.Script;
 import ml.Util;
+import ml.ImageHandler;
+import ml.ImageRecord;
 import ml.ModelHandler;
 import ml.ModelInputReceiver;
 import ml.NetworkAnalyzer;
-import ml.YoloResultParser;
-import ml.YoloUtil;
 import gen.Layer;
 import gen.LayerType;
 import gen.PlotInferenceResultsConfig;
@@ -30,6 +30,8 @@ import gen.Vol;
 import gen.Yolo;
 import ml.NetworkUtil;
 import ml.VolumeUtil;
+import ml.yolo.YoloResultParser;
+import ml.yolo.YoloUtil;
 
 public final class YoloModelHandler extends ModelHandler {
 

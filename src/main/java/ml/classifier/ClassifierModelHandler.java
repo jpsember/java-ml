@@ -1,10 +1,13 @@
-package ml;
+package ml.classifier;
 
 import static js.base.Tools.*;
 
 import java.io.DataOutputStream;
 
 import gen.PlotInferenceResultsConfig;
+import ml.ImageHandler;
+import ml.ModelHandler;
+import ml.ModelInputReceiver;
 
 public final class ClassifierModelHandler extends ModelHandler {
 
