@@ -20,7 +20,7 @@ public interface ModelInputReceiver {
   /**
    * Fill in information fields.  Some fields may have already been filled in; e.g. the image count, and the 
    */
-  void storeImageSetInfo(ImageSetInfo.Builder imageSetInfo);
+  void storeImageSetInfo(ModelWrapper model, ImageSetInfo.Builder imageSetInfo);
   
   /**
    * Get the (possibly transformed) annotations

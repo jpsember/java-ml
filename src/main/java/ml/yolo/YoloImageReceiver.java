@@ -20,6 +20,7 @@ import js.graphics.ScriptUtil;
 import js.graphics.gen.ElementProperties;
 import js.json.JSMap;
 import ml.ModelInputReceiver;
+import ml.ModelWrapper;
 import ml.yolo.YoloUtil;
 import js.graphics.gen.ScriptElementList;
 import gen.ImageSetInfo;
@@ -77,7 +78,7 @@ public final class YoloImageReceiver extends BaseObject implements ModelInputRec
   }
 
   @Override
-  public void storeImageSetInfo(ImageSetInfo.Builder imageSetInfo) {
+  public void storeImageSetInfo(ModelWrapper model, ImageSetInfo.Builder imageSetInfo) {
     imageSetInfo.labelLengthBytes(Float.BYTES * mFieldsPerImage);
   }
 

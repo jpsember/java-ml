@@ -12,6 +12,7 @@ import js.graphics.gen.ScriptElementList;
 import ml.ImageHandler;
 import ml.ModelHandler;
 import ml.ModelInputReceiver;
+import ml.ModelWrapper;
 
 public final class ClassifierModelHandler extends ModelHandler {
 
@@ -39,7 +40,7 @@ public final class ClassifierModelHandler extends ModelHandler {
     }
 
     @Override
-    public void storeImageSetInfo(ImageSetInfo.Builder imageSetInfo) {
+    public void storeImageSetInfo(ModelWrapper model, ImageSetInfo.Builder imageSetInfo) {
       imageSetInfo.labelLengthBytes(Float.BYTES * 1);
     }
 
