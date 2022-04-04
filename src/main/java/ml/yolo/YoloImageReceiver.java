@@ -79,7 +79,10 @@ public final class YoloImageReceiver extends BaseObject implements ModelInputRec
 
   @Override
   public void storeImageSetInfo(ModelWrapper model, ImageSetInfo.Builder imageSetInfo) {
-    imageSetInfo.labelLengthBytes(Float.BYTES * mFieldsPerImage);
+    imageSetInfo //
+        .labelLengthBytes(Float.BYTES * mFieldsPerImage) //
+        .imageLengthBytes(model.inputImagePlanarSize().product() * Float.BYTES) //
+    ;
   }
 
   @Override

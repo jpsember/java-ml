@@ -41,7 +41,10 @@ public final class ClassifierModelHandler extends ModelHandler {
 
     @Override
     public void storeImageSetInfo(ModelWrapper model, ImageSetInfo.Builder imageSetInfo) {
-      imageSetInfo.labelLengthBytes(Float.BYTES * 1);
+      imageSetInfo //
+          .labelLengthBytes(Float.BYTES * 1) //
+          .imageLengthBytes(model.inputImagePlanarSize().product() * Float.BYTES) //
+      ;
     }
 
     @Override

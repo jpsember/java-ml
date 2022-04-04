@@ -80,7 +80,9 @@ public class ImageCompiler extends BaseObject {
     }
     Files.close(imagesStream, labelsStream);
 
-    imageSetInfo.imageLengthBytes(mWorkArray.length);
+    if (imageSetInfo.imageLengthBytes() <= 0 || imageSetInfo.labelLengthBytes() <= 0)
+      throw badState("ImageSetInfo hasn't been completely filled out:", INDENT, imageSetInfo);
+
     files().writePretty(infoPath, imageSetInfo.build());
   }
 
