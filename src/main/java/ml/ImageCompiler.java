@@ -49,7 +49,7 @@ public class ImageCompiler extends BaseObject {
   }
 
   private void auxCompile(File targetDir, List<Entry> entries, boolean training) {
-    files().mkdirs(targetDir);
+    files().remakeDirs(targetDir);
     File imagePath = new File(targetDir, "images.bin");
     File labelsPath = new File(targetDir, "labels.bin");
 
@@ -63,13 +63,13 @@ public class ImageCompiler extends BaseObject {
     todo("perhaps do something with inspection here");
     //modelInputReceiver.setInspector(mInspectionManager);
 
+    todo("transform image randomly if training image");
+    todo("apply annotations; see TrainStreamService");
     for (Entry entry : entries) {
       BufferedImage img = ImgUtil.read(entry.imageFile);
       checkImageSizeAndType(entry.imageFile, img, model.inputImagePlanarSize(), model.inputImageChannels());
-      todo("transform image randomly if training image");
       mWorkArray = ImgUtil.floatPixels(img, model.inputImageChannels(), mWorkArray);
       modelInputReceiver.accept(mWorkArray, entry.scriptElements);
-      todo("apply annotations; see TrainStreamService");
     }
     Files.close(imagesStream, labelsStream);
   }

@@ -44,12 +44,9 @@ public final class ClassifierModelHandler extends ModelHandler {
         throw badArg("expected single element:", INDENT, annotation);
       ScriptElement elem = annotation.elements().get(0);
       int category = elem.properties().category();
-      try {
-        die("but I think this needs to be little-endian");
-        mLabelsStream.writeInt(category);
-      } catch (Throwable e) {
-        throw Files.asFileException(e);
-      }
+      int[] intArray = new int[1];
+      intArray[0] = category;
+      Files.S.writeIntsLittleEndian(intArray, mLabelsStream);
     }
 
     private DataOutputStream mImagesStream;
