@@ -22,6 +22,7 @@ import js.json.JSMap;
 import ml.ModelInputReceiver;
 import ml.yolo.YoloUtil;
 import js.graphics.gen.ScriptElementList;
+import gen.ImageSetInfo;
 import gen.Yolo;
 
 /**
@@ -73,6 +74,11 @@ public final class YoloImageReceiver extends BaseObject implements ModelInputRec
           .elements(annotation.elements())//
           .image(image);
     }
+  }
+
+  @Override
+  public void storeImageSetInfo(ImageSetInfo.Builder imageSetInfo) {
+    imageSetInfo.labelLengthBytes(Float.BYTES * mFieldsPerImage);
   }
 
   @Override
@@ -258,8 +264,8 @@ public final class YoloImageReceiver extends BaseObject implements ModelInputRec
   private void constructOutputLayer() {
     mFieldsPerAnchorBox = YoloUtil.valuesPerAnchorBox(mYolo);
     mFieldsPerGridCell = mFieldsPerAnchorBox * numAnchorBoxes();
-    int fieldsPerImage = mFieldsPerGridCell * mGridSize.product();
-    mOutputLayer = new float[fieldsPerImage];
+    mFieldsPerImage = mFieldsPerGridCell * mGridSize.product();
+    mOutputLayer = new float[mFieldsPerImage];
 
     if (verbose()) {
       JSMap m = map();
@@ -414,6 +420,7 @@ public final class YoloImageReceiver extends BaseObject implements ModelInputRec
 
   private int mFieldsPerAnchorBox;
   private int mFieldsPerGridCell;
+  private int mFieldsPerImage;
   private float[] mOutputLayer;
   private List<ScriptElementList> mAnnotations = arrayList();
   private boolean mPrepared;

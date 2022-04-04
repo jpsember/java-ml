@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.Random;
 
 import gen.CompileImagesConfig;
+import gen.ImageSetInfo;
 import js.base.BaseObject;
 import js.file.DirWalk;
 import js.file.Files;
@@ -52,6 +53,9 @@ public class ImageCompiler extends BaseObject {
     files().remakeDirs(targetDir);
     File imagePath = new File(targetDir, "images.bin");
     File labelsPath = new File(targetDir, "labels.bin");
+    File infoPath = new File(targetDir, "image_set_info.json");
+    ImageSetInfo.Builder imageSetInfo = ImageSetInfo.newBuilder();
+    imageSetInfo.imageCount(entries.size());
 
     DataOutputStream imagesStream = new DataOutputStream(files().outputStream(imagePath));
     DataOutputStream labelsStream = new DataOutputStream(files().outputStream(labelsPath));
@@ -60,6 +64,9 @@ public class ImageCompiler extends BaseObject {
 
     ModelInputReceiver modelInputReceiver = modelHandler().buildModelInputReceiver(imagesStream,
         labelsStream);
+
+    modelInputReceiver.storeImageSetInfo(imageSetInfo);
+
     todo("perhaps do something with inspection here");
     //modelInputReceiver.setInspector(mInspectionManager);
 
@@ -72,6 +79,9 @@ public class ImageCompiler extends BaseObject {
       modelInputReceiver.accept(mWorkArray, entry.scriptElements);
     }
     Files.close(imagesStream, labelsStream);
+
+    imageSetInfo.imageLengthBytes(mWorkArray.length);
+    files().writePretty(infoPath, imageSetInfo.build());
   }
 
   private List<Entry> entries() {
@@ -153,8 +163,10 @@ public class ImageCompiler extends BaseObject {
   }
 
   private static final Map<Integer, Integer> sImgChannelsMap = mapWith(//
-      BufferedImage.TYPE_INT_RGB, 3, //
-      BufferedImage.TYPE_INT_BGR, 3, //
+      // Let's disable some image types, to make things simpler
+
+      //BufferedImage.TYPE_INT_RGB, 3, //
+      //BufferedImage.TYPE_INT_BGR, 3, //
       BufferedImage.TYPE_3BYTE_BGR, 3, //
       BufferedImage.TYPE_BYTE_GRAY, 1, //
       BufferedImage.TYPE_USHORT_GRAY, 1 //

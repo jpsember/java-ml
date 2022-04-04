@@ -2,6 +2,7 @@ package ml;
 
 import java.util.List;
 
+import gen.ImageSetInfo;
 import js.graphics.gen.ScriptElementList;
 
 /**
@@ -16,6 +17,11 @@ public interface ModelInputReceiver {
    */
   void accept(float[] image, ScriptElementList annotation);
 
+  /**
+   * Fill in information fields.  Some fields may have already been filled in; e.g. the image count, and the 
+   */
+  void storeImageSetInfo(ImageSetInfo.Builder imageSetInfo);
+  
   /**
    * Get the (possibly transformed) annotations
    */

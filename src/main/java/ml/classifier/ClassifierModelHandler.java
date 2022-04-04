@@ -4,6 +4,7 @@ import static js.base.Tools.*;
 
 import java.io.DataOutputStream;
 
+import gen.ImageSetInfo;
 import gen.PlotInferenceResultsConfig;
 import js.file.Files;
 import js.graphics.ScriptElement;
@@ -38,6 +39,11 @@ public final class ClassifierModelHandler extends ModelHandler {
     }
 
     @Override
+    public void storeImageSetInfo(ImageSetInfo.Builder imageSetInfo) {
+      imageSetInfo.labelLengthBytes(Float.BYTES * 1);
+    }
+
+    @Override
     public void accept(float[] image, ScriptElementList annotation) {
       Files.S.writeFloatsLittleEndian(image, mImagesStream);
       if (annotation.elements().size() != 1)
@@ -51,6 +57,7 @@ public final class ClassifierModelHandler extends ModelHandler {
 
     private DataOutputStream mImagesStream;
     private DataOutputStream mLabelsStream;
+
   }
 
 }

@@ -1,0 +1,15 @@
+// Bookkeeping information written to describe a set of images and labels
+//
+
+fields {
+  // Number of images (and labels) written
+  int image_count;
+
+  // Length of each image
+  //
+  int image_length_bytes;
+
+  // Length of each label
+  //
+  int label_length_bytes;
+}
