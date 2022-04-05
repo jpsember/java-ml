@@ -1,8 +1,11 @@
 package ml;
 
+import java.io.File;
 import java.util.List;
 
 import gen.ImageSetInfo;
+import js.file.Files;
+import js.graphics.gen.Script;
 import js.graphics.gen.ScriptElementList;
 
 /**
@@ -18,10 +21,11 @@ public interface ModelInputReceiver {
   void accept(float[] image, ScriptElementList annotation);
 
   /**
-   * Fill in information fields.  Some fields may have already been filled in; e.g. the image count, and the 
+   * Fill in information fields. Some fields may have already been filled in;
+   * e.g. the image count, and the
    */
   void storeImageSetInfo(ModelWrapper model, ImageSetInfo.Builder imageSetInfo);
-  
+
   /**
    * Get the (possibly transformed) annotations
    */
@@ -29,4 +33,12 @@ public interface ModelInputReceiver {
     throw new UnsupportedOperationException();
   }
 
+  default void parseInferenceResult(byte[] modelOutput, Script.Builder script) {
+    throw new UnsupportedOperationException();
+  }
+
+  default void decompileImage(byte[] modelInputImageAsBytes, Files files, File imageFile) {
+    throw new UnsupportedOperationException();
+  }
+  
 }

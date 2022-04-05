@@ -73,7 +73,7 @@ public final class YoloModelHandler extends ModelHandler {
     DataInputStream imagesInput = Files.dataInputStream(imagesFile);
     DataInputStream resultsInput = Files.dataInputStream(resultsFile);
 
-    Files.S.backupAndRebuild(config.outputDir());
+    Files.S.backupAndRemake(config.outputDir());
 
     File annotationDir = ScriptUtil.scriptDirForProject(config.outputDir());
     Files.S.mkdirs(annotationDir);

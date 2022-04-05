@@ -62,6 +62,7 @@ public class ImageCompiler extends BaseObject {
 
     ModelWrapper model = modelHandler().model();
 
+    todo("rename ModelInputReceiver to something more general");
     ModelInputReceiver modelInputReceiver = modelHandler().buildModelInputReceiver(imagesStream,
         labelsStream);
 

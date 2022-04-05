@@ -1,0 +1,9 @@
+fields {
+
+  ? NeuralNetwork network;
+  File network_path;
+
+  File train_test_dir = "test_data";
+
+  File eval_dir = "evaluation";
+}

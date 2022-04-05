@@ -9,10 +9,10 @@ import jstyleson   # pip install jstyleson
 import inspect
 
 
-
 # Define some constants
 #
 BYTES_PER_FLOAT = 4
+BYTES_PER_INT = 4
 
 
 class _StackTrace:
@@ -605,14 +605,6 @@ def bin_write_floats(path, float_array, append=False):
   f.close()
 
 
-def bin_read_floats(path):
-  import struct
-  f = open(path, "rb")
-  ba = bytearray(f.read())
-  f.close()
-  if len(ba) % 4 != 0:
-    die("bad length in:", path)
-  return struct.unpack("<%df" % (len(ba) // BYTES_PER_FLOAT), ba)
 
 def ensure_file_length(path, expected_length, comment="(no comment provided)"):
   file_length = os.stat(path).st_size

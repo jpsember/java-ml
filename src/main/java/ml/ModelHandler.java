@@ -47,6 +47,8 @@ public abstract class ModelHandler extends BaseObject {
   /**
    * Construct a receiver for writing training (or inference) images, to be sent
    * to the Python code
+   * 
+   * DataOutputStreams may be null, since we may be using this for more general purposes
    */
   public abstract ModelInputReceiver buildModelInputReceiver(DataOutputStream imagesStream,
       DataOutputStream labelsStream);
