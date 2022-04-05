@@ -44,6 +44,9 @@ public class ImageCompiler extends BaseObject {
     auxCompile(targetDir, trainEntries(), true);
   }
 
+  /**
+   * Get the list of imageEntries produced by the last compileXxxxSet operation
+   */
   public List<ImageEntry> imageEntries() {
     return mEntries;
   }

@@ -44,7 +44,7 @@ public final class ModelWrapper extends BaseObject {
   }
 
   /**
-   * Get the AbstractMessage representing this model (e.g. Yolo, ImageGrid)
+   * Get the AbstractMessage representing this model (e.g. Yolo, Classifier)
    */
   @SuppressWarnings("unchecked")
   public <T extends AbstractData> T modelConfig() {

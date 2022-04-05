@@ -12,6 +12,7 @@ import js.base.DateTimeTools;
 import js.file.DirWalk;
 import js.file.Files;
 import js.graphics.ImgUtil;
+import js.graphics.ScriptUtil;
 import js.graphics.gen.Script;
 
 /**
@@ -126,30 +127,29 @@ public final class CompileImagesOper extends AppOper {
     File inspectDir = files().remakeDirs(config().targetDirInspect());
     File sourceDir = config().targetDirTest();
 
-    //File imagePath = new File(sourceDir, "images.bin");
     File labelsPath = new File(sourceDir, "labels.bin");
     File infoPath = new File(sourceDir, "image_set_info.json");
     ImageSetInfo imageSetInfo = Files.parseAbstractData(ImageSetInfo.DEFAULT_INSTANCE, infoPath);
 
     ModelServiceProvider p = mImageCompiler.buildModelServiceProvider();
     InputStream labelStream = Files.openInputStream(labelsPath);
+//halt("open stream:",labelsPath,Files.currentDirectory());
 
-    //    long labelOffset = 0;
     int imageNumber = INIT_INDEX;
+    pr("num image ent:",mImageCompiler.imageEntries().size());
     for (ImageCompiler.ImageEntry entry : mImageCompiler.imageEntries()) {
       imageNumber++;
       String name = String.format("%03d", imageNumber);
 
-      File imageFile = new File(inspectDir, Files.setExtension(name, ImgUtil.EXT_JPEG));
-      files().copyFile(entry.imageFile, imageFile);
+      File targetImageFile = new File(inspectDir, Files.setExtension(name, ImgUtil.EXT_JPEG));
+      files().copyFile(entry.imageFile, targetImageFile);
 
       Script.Builder script = Script.newBuilder();
 
       byte[] modelOutput = Files.readBytes(labelStream, imageSetInfo.labelLengthBytes());
+      pr("read bytes:",modelOutput.length);
       p.parseInferenceResult(modelOutput, script);
-      todo("do something witch script");
-
-      //      labelOffset += imageSetInfo.labelLengthBytes();
+      files().writePretty(ScriptUtil.scriptPathForImage(targetImageFile), script.build());
     }
     labelStream = Files.close(labelStream);
   }

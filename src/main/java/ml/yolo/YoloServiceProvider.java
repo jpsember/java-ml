@@ -14,7 +14,9 @@ import js.graphics.PolygonElement;
 import js.graphics.RectElement;
 import js.graphics.ScriptElement;
 import js.graphics.ScriptUtil;
+import js.graphics.TextElement;
 import js.graphics.gen.ElementProperties;
+import js.graphics.gen.Script;
 import js.json.JSMap;
 import ml.ModelServiceProvider;
 import ml.yolo.YoloUtil;
@@ -48,6 +50,24 @@ public final class YoloServiceProvider extends ModelServiceProvider {
         .labelLengthBytes(Float.BYTES * mFieldsPerImage) //
         .imageLengthBytes(model().inputImagePlanarSize().product() * Float.BYTES) //
     ;
+  }
+
+  
+
+  @Override
+  public void parseInferenceResult(byte[] modelOutput, Script.Builder script) {
+   // int[] categories = DataUtil.bytesToIntsLittleEndian(modelOutput);
+    int category = 0; //categories[0];
+    Yolo cl = model().modelConfig();
+    checkArgument(category >= 0 && category < cl.categoryCount());
+
+    ScriptElement elem;
+    if (todo("add support for TextElements to scredit"))
+      elem = new RectElement(null,
+          IRect.withLocAndSize(IPoint.with(10 + category * 30, 5), IPoint.with(5, 5)));
+    else
+      elem = new TextElement("" + category, IPoint.with(20, 30));
+    script.items().add(elem);
   }
 
   // ------------------------------------------------------------------

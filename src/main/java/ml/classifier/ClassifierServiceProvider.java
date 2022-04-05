@@ -2,6 +2,7 @@ package ml.classifier;
 
 import static js.base.Tools.*;
 
+import gen.Classifier;
 import gen.ImageSetInfo;
 import js.data.DataUtil;
 import js.file.Files;
@@ -40,13 +41,15 @@ public class ClassifierServiceProvider extends ModelServiceProvider {
   public void parseInferenceResult(byte[] modelOutput, Script.Builder script) {
     int[] categories = DataUtil.bytesToIntsLittleEndian(modelOutput);
     int category = categories[0];
+    Classifier cl = model().modelConfig();
+    checkArgument(category >= 0 && category < cl.categoryCount());
+
     ScriptElement elem;
     if (todo("add support for TextElements to scredit"))
       elem = new RectElement(null,
           IRect.withLocAndSize(IPoint.with(10 + category * 30, 5), IPoint.with(5, 5)));
     else
-      elem = new TextElement("AB".substring(category, category + 1), IPoint.with(20, 30));
-    todo("pass in model/model wrapper where appropriate");
+      elem = new TextElement("" + category, IPoint.with(20, 30));
     script.items().add(elem);
   }
 
