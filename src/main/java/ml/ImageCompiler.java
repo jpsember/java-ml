@@ -63,10 +63,11 @@ public class ImageCompiler extends BaseObject {
     ModelWrapper model = modelHandler().model();
 
     todo("rename ModelInputReceiver to something more general");
-    ModelInputReceiver modelInputReceiver = modelHandler().buildModelInputReceiver(imagesStream,
-        labelsStream);
-
-    modelInputReceiver.storeImageSetInfo(model, imageSetInfo);
+    ModelInputReceiver modelInputReceiver = modelHandler().buildModelInputReceiver();
+    modelInputReceiver.setModel(model);
+    modelInputReceiver.setImageStream(imagesStream);
+    modelInputReceiver.setLabelStream(labelsStream);
+    modelInputReceiver.storeImageSetInfo(imageSetInfo);
 
     todo("perhaps do something with inspection here");
     //modelInputReceiver.setInspector(mInspectionManager);

@@ -1,7 +1,6 @@
 package ml;
 
 import java.awt.image.BufferedImage;
-import java.io.DataOutputStream;
 import java.util.List;
 import java.util.Random;
 
@@ -45,13 +44,9 @@ public abstract class ModelHandler extends BaseObject {
   }
 
   /**
-   * Construct a receiver for writing training (or inference) images, to be sent
-   * to the Python code
-   * 
-   * DataOutputStreams may be null, since we may be using this for more general purposes
+   * Construct object to provide various model-specific services
    */
-  public abstract ModelInputReceiver buildModelInputReceiver(DataOutputStream imagesStream,
-      DataOutputStream labelsStream);
+  public abstract ModelInputReceiver buildModelInputReceiver();
 
   // ------------------------------------------------------------------
   // Training progress
@@ -129,7 +124,7 @@ public abstract class ModelHandler extends BaseObject {
     case CLASSIFIER:
       handler = new ClassifierModelHandler();
       break;
-      
+
     default:
       throw die("not supported:", model.projectType());
     }

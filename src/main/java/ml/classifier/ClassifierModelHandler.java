@@ -2,8 +2,6 @@ package ml.classifier;
 
 import static js.base.Tools.*;
 
-import java.io.DataOutputStream;
-
 import gen.ImageSetInfo;
 import gen.PlotInferenceResultsConfig;
 import js.data.DataUtil;
@@ -18,7 +16,6 @@ import js.graphics.gen.ScriptElementList;
 import ml.ImageHandler;
 import ml.ModelHandler;
 import ml.ModelInputReceiver;
-import ml.ModelWrapper;
 
 public final class ClassifierModelHandler extends ModelHandler {
 
@@ -28,9 +25,8 @@ public final class ClassifierModelHandler extends ModelHandler {
   }
 
   @Override
-  public ModelInputReceiver buildModelInputReceiver(DataOutputStream imagesStream,
-      DataOutputStream labelsStream) {
-    return new OurModelInputReceiver(imagesStream, labelsStream);
+  public ModelInputReceiver buildModelInputReceiver() {
+    return new OurModelInputReceiver();
   }
 
   @Override
@@ -38,31 +34,26 @@ public final class ClassifierModelHandler extends ModelHandler {
     throw notFinished();
   }
 
-  private class OurModelInputReceiver implements ModelInputReceiver {
-
-    public OurModelInputReceiver(DataOutputStream imagesStream, DataOutputStream labelsStream) {
-      mImagesStream = imagesStream;
-      mLabelsStream = labelsStream;
-    }
+  private class OurModelInputReceiver extends ModelInputReceiver {
 
     @Override
-    public void storeImageSetInfo(ModelWrapper model, ImageSetInfo.Builder imageSetInfo) {
+    public void storeImageSetInfo(ImageSetInfo.Builder imageSetInfo) {
       imageSetInfo //
           .labelLengthBytes(Float.BYTES * 1) //
-          .imageLengthBytes(model.inputImagePlanarSize().product() * Float.BYTES) //
+          .imageLengthBytes(model().inputImagePlanarSize().product() * Float.BYTES) //
       ;
     }
 
     @Override
     public void accept(float[] image, ScriptElementList annotation) {
-      Files.S.writeFloatsLittleEndian(image, mImagesStream);
+      Files.S.writeFloatsLittleEndian(image, imageOutputStream());
       if (annotation.elements().size() != 1)
         throw badArg("expected single element:", INDENT, annotation);
       ScriptElement elem = annotation.elements().get(0);
       int category = elem.properties().category();
       int[] intArray = new int[1];
       intArray[0] = category;
-      Files.S.writeIntsLittleEndian(intArray, mLabelsStream);
+      Files.S.writeIntsLittleEndian(intArray, labelOutputStream());
     }
 
     @Override
@@ -78,9 +69,6 @@ public final class ClassifierModelHandler extends ModelHandler {
       todo("pass in model/model wrapper where appropriate");
       script.items().add(elem);
     }
-
-    private DataOutputStream mImagesStream;
-    private DataOutputStream mLabelsStream;
 
   }
 

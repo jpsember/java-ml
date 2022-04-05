@@ -2,12 +2,10 @@ package ml.yolo;
 
 import static js.base.Tools.*;
 
-import java.io.DataOutputStream;
 import java.util.Arrays;
 import java.util.List;
 
 import js.file.Files;
-import js.base.BaseObject;
 import js.geometry.FPoint;
 import js.geometry.IPoint;
 import js.geometry.IRect;
@@ -20,7 +18,6 @@ import js.graphics.ScriptUtil;
 import js.graphics.gen.ElementProperties;
 import js.json.JSMap;
 import ml.ModelInputReceiver;
-import ml.ModelWrapper;
 import ml.yolo.YoloUtil;
 import js.graphics.gen.ScriptElementList;
 import gen.ImageSetInfo;
@@ -29,40 +26,28 @@ import gen.Yolo;
 /**
  * Converts images and annotations to format for model training
  */
-public final class YoloImageReceiver extends BaseObject implements ModelInputReceiver {
+public final class YoloImageReceiver extends ModelInputReceiver {
 
   public final static boolean CONSTANT_BOX = false
       && alert("Replacing Yolo train labels with single fixed box");
 
-  public YoloImageReceiver(Yolo yolo) {
-    mYolo = yolo;
+  public void prepareModel() {
+    mYolo = model().modelConfig();
+    Yolo yolo = mYolo;
     log("Yolo:", INDENT, yolo);
     mAnchorBoxes = YoloUtil.anchorBoxesRelativeToImageSize(yolo);
     mBlockSize = mYolo.blockSize();
     mPixelToGridCellScale = new FPoint(1f / mBlockSize.x, 1f / mBlockSize.y);
     mGridSize = YoloUtil.gridSize(yolo);
     constructOutputLayer();
-  }
 
-  public void setImageOutput(DataOutputStream stream) {
-    mutable();
-    mOutputImagesStream = stream;
-  }
-
-  public void setLabelOutput(DataOutputStream stream) {
-    mutable();
-    mOutputLayerStream = stream;
+    todo("Add support for inspector; maybe it should be done in the base class?");
   }
 
   private Inspector mInspector = Inspector.NULL_INSPECTOR;
 
-  // ------------------------------------------------------------------
-  // ModelInputReceiver interface
-  // ------------------------------------------------------------------
-
   @Override
   public void accept(float[] image, ScriptElementList annotation) {
-    prepare();
     mAnnotations.add(annotation);
     writeImage(image);
     writeScriptElements(annotation);
@@ -78,10 +63,10 @@ public final class YoloImageReceiver extends BaseObject implements ModelInputRec
   }
 
   @Override
-  public void storeImageSetInfo(ModelWrapper model, ImageSetInfo.Builder imageSetInfo) {
+  public void storeImageSetInfo(ImageSetInfo.Builder imageSetInfo) {
     imageSetInfo //
         .labelLengthBytes(Float.BYTES * mFieldsPerImage) //
-        .imageLengthBytes(model.inputImagePlanarSize().product() * Float.BYTES) //
+        .imageLengthBytes(model().inputImagePlanarSize().product() * Float.BYTES) //
     ;
   }
 
@@ -212,7 +197,7 @@ public final class YoloImageReceiver extends BaseObject implements ModelInputRec
   }
 
   private void writeOutputGrid() {
-    Files.S.writeFloatsLittleEndian(mOutputLayer, mOutputLayerStream);
+    Files.S.writeFloatsLittleEndian(mOutputLayer, labelOutputStream());
   }
 
   private void writeBoxToFieldsBuffer(RectElement box) {
@@ -262,7 +247,7 @@ public final class YoloImageReceiver extends BaseObject implements ModelInputRec
   }
 
   private void writeImage(float[] image) {
-    Files.S.writeFloatsLittleEndian(image, mOutputImagesStream);
+    Files.S.writeFloatsLittleEndian(image, imageOutputStream());
   }
 
   private void constructOutputLayer() {
@@ -387,34 +372,16 @@ public final class YoloImageReceiver extends BaseObject implements ModelInputRec
     log("    I over U:", mIOverU);
   }
 
-  // ------------------------------------------------------------------
-  // Object lifecycle state
-  // ------------------------------------------------------------------
-
-  private void prepare() {
-    if (mPrepared)
-      return;
-    mPrepared = true;
-  }
-
-  private void mutable() {
-    if (mPrepared)
-      throw die("already prepared");
-  }
-
   private static RectElement labelledBox(IRect box, int category, float confidence, int rotationDegrees) {
     return new RectElement(ElementProperties.newBuilder().category(category)
         .confidence(MyMath.parameterToPercentage(confidence)).rotation(rotationDegrees), box);
   }
 
-  private final Yolo mYolo;
-  private final float[] mAnchorBoxes;
-  private final IPoint mGridSize;
-  private final IPoint mBlockSize;
-  private final FPoint mPixelToGridCellScale;
-
-  private DataOutputStream mOutputImagesStream = Files.NULL_DATA_OUTPUT_STREAM;
-  private DataOutputStream mOutputLayerStream = Files.NULL_DATA_OUTPUT_STREAM;
+  private Yolo mYolo;
+  private float[] mAnchorBoxes;
+  private IPoint mGridSize;
+  private IPoint mBlockSize;
+  private FPoint mPixelToGridCellScale;
 
   private IPoint mBoxGridCell;
   private FPoint mBoxLocationRelativeToCell;
@@ -427,5 +394,4 @@ public final class YoloImageReceiver extends BaseObject implements ModelInputRec
   private int mFieldsPerImage;
   private float[] mOutputLayer;
   private List<ScriptElementList> mAnnotations = arrayList();
-  private boolean mPrepared;
 }

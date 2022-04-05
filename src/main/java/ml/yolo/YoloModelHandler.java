@@ -2,7 +2,6 @@ package ml.yolo;
 
 import java.awt.image.BufferedImage;
 import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.File;
 import java.util.List;
 
@@ -46,12 +45,9 @@ public final class YoloModelHandler extends ModelHandler {
   }
 
   @Override
-  public ModelInputReceiver buildModelInputReceiver(DataOutputStream imagesStream,
-      DataOutputStream labelsStream) {
-    Yolo yolo = model().modelConfig();
-    YoloImageReceiver r = new YoloImageReceiver(yolo);
-    r.setImageOutput(imagesStream);
-    r.setLabelOutput(labelsStream);
+  public ModelInputReceiver buildModelInputReceiver() {
+    YoloImageReceiver r = new YoloImageReceiver();
+    todo("do we need to call storeImageSetInfo?");
     return r;
   }
 
@@ -170,10 +166,10 @@ public final class YoloModelHandler extends ModelHandler {
     int valuesPerBlock = YoloUtil.valuesPerBlock(yol);
     IPoint grid = YoloUtil.gridSize(yol);
 
-      // I think what happens here is we apply 1x1 spatial filters to the input volume
-      // to produce an output volume that has the same spatial dimension as the input,
-      // but with the number of filters chosen to equal valuesPerBlock
-     int numFilters = valuesPerBlock;
+    // I think what happens here is we apply 1x1 spatial filters to the input volume
+    // to produce an output volume that has the same spatial dimension as the input,
+    // but with the number of filters chosen to equal valuesPerBlock
+    int numFilters = valuesPerBlock;
 
     if (layer.filters() != 0 && layer.filters() != numFilters) {
       analyzer.addProblem("Unexpected Yolo filters:", layer.filters(), "!=", numFilters);

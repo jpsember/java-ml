@@ -44,8 +44,9 @@ public class EvalModelOper extends AppOper {
     // Read and parse label information
 
     ImageSetInfo.Builder infoBuilder = ImageSetInfo.newBuilder();
-    ModelInputReceiver modelService = modelHandler().buildModelInputReceiver(null, null);
-    modelService.storeImageSetInfo(model, infoBuilder);
+    ModelInputReceiver modelService = modelHandler().buildModelInputReceiver();
+    modelService.setModel(model);
+    modelService.storeImageSetInfo(infoBuilder);
     ImageSetInfo imageSetInfo = infoBuilder.build();
     File imagesPath = Files.join(config().trainTestDir(), "images.bin");
     File labelsPath = Files.join(config().trainTestDir(), "results.bin");
@@ -53,7 +54,7 @@ public class EvalModelOper extends AppOper {
     int numImages = calcRecordsInFile(imagesPath, imageSetInfo.imageLengthBytes());
     int numLabels = calcRecordsInFile(labelsPath, imageSetInfo.labelLengthBytes());
     checkArgument(numImages == numLabels, "number of images != number of labels");
-    
+
     InputStream imagesStream = Files.openInputStream(imagesPath);
     InputStream labelsStream = Files.openInputStream(labelsPath);
 
@@ -61,24 +62,22 @@ public class EvalModelOper extends AppOper {
     files().mkdirs(ScriptUtil.scriptDirForProject(targetDir));
 
     for (int imageNumber = 0; imageNumber < numImages; imageNumber++) {
-      float[] imageFloats = Files.readFloatsLittleEndian(imagesStream, imageSetInfo.imageLengthBytes() / Float.BYTES);
+      float[] imageFloats = Files.readFloatsLittleEndian(imagesStream,
+          imageSetInfo.imageLengthBytes() / Float.BYTES);
       byte[] labelBytes = Files.readBytes(labelsStream, imageSetInfo.labelLengthBytes());
       Script.Builder script = Script.newBuilder();
       modelService.parseInferenceResult(labelBytes, script);
       Script s = script.build();
 
-      BufferedImage bufferedImage = 
-       ImgUtil.floatsToBufferedImage(
-           imageFloats,
-           model.inputImagePlanarSize(), model.inputImageChannels());
-      File outputImage = new File(targetDir, String.format("%03d.jpg",imageNumber));
-      ImgUtil.writeImage(files(), bufferedImage,  outputImage);
+      BufferedImage bufferedImage = ImgUtil.floatsToBufferedImage(imageFloats, model.inputImagePlanarSize(),
+          model.inputImageChannels());
+      File outputImage = new File(targetDir, String.format("%03d.jpg", imageNumber));
+      ImgUtil.writeImage(files(), bufferedImage, outputImage);
       if (ScriptUtil.isUseful(s)) {
         ScriptUtil.writeIfUseful(files(), s.build(), ScriptUtil.scriptPathForImage(outputImage));
       }
     }
-
-   }
+  }
 
   @Override
   public EvalModelConfig defaultArgs() {
