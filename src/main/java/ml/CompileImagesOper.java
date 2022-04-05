@@ -2,6 +2,7 @@ package ml;
 
 import static js.base.Tools.*;
 
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.InputStream;
 
@@ -127,31 +128,28 @@ public final class CompileImagesOper extends AppOper {
     File inspectDir = files().remakeDirs(config().targetDirInspect());
     File sourceDir = config().targetDirTest();
 
+    File imagesPath = new File(sourceDir, "images.bin");
     File labelsPath = new File(sourceDir, "labels.bin");
     File infoPath = new File(sourceDir, "image_set_info.json");
     ImageSetInfo imageSetInfo = Files.parseAbstractData(ImageSetInfo.DEFAULT_INSTANCE, infoPath);
 
     ModelServiceProvider p = mImageCompiler.buildModelServiceProvider();
+    InputStream imageStream = Files.openInputStream(imagesPath);
     InputStream labelStream = Files.openInputStream(labelsPath);
-//halt("open stream:",labelsPath,Files.currentDirectory());
 
-    int imageNumber = INIT_INDEX;
-    pr("num image ent:",mImageCompiler.imageEntries().size());
-    for (ImageCompiler.ImageEntry entry : mImageCompiler.imageEntries()) {
-      imageNumber++;
-      String name = String.format("%03d", imageNumber);
-
-      File targetImageFile = new File(inspectDir, Files.setExtension(name, ImgUtil.EXT_JPEG));
-      files().copyFile(entry.imageFile, targetImageFile);
+    for (int imageNumber = 0; imageNumber < imageSetInfo.imageCount(); imageNumber++) {
+      BufferedImage image = p.decodeImage(Files.readBytes(imageStream, imageSetInfo.imageLengthBytes()));
+      File targetImageFile = new File(inspectDir,
+          Files.setExtension(String.format("%03d", imageNumber), ImgUtil.EXT_JPEG));
+      ImgUtil.writeImage(files(), image, targetImageFile);
 
       Script.Builder script = Script.newBuilder();
 
       byte[] modelOutput = Files.readBytes(labelStream, imageSetInfo.labelLengthBytes());
-      pr("read bytes:",modelOutput.length);
       p.parseInferenceResult(modelOutput, script);
       files().writePretty(ScriptUtil.scriptPathForImage(targetImageFile), script.build());
     }
-    labelStream = Files.close(labelStream);
+    Files.close(labelStream, imageStream);
   }
 
   private static final String STREAM_PREFIX = "set_";

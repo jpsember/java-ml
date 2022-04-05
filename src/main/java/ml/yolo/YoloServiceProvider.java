@@ -2,14 +2,17 @@ package ml.yolo;
 
 import static js.base.Tools.*;
 
+import java.awt.image.BufferedImage;
 import java.util.Arrays;
 import java.util.List;
 
+import js.data.DataUtil;
 import js.file.Files;
 import js.geometry.FPoint;
 import js.geometry.IPoint;
 import js.geometry.IRect;
 import js.geometry.MyMath;
+import js.graphics.ImgUtil;
 import js.graphics.PolygonElement;
 import js.graphics.RectElement;
 import js.graphics.ScriptElement;
@@ -48,16 +51,15 @@ public final class YoloServiceProvider extends ModelServiceProvider {
   public void storeImageSetInfo(ImageSetInfo.Builder imageSetInfo) {
     imageSetInfo //
         .labelLengthBytes(Float.BYTES * mFieldsPerImage) //
-        .imageLengthBytes(model().inputImagePlanarSize().product() * Float.BYTES) //
+        .imageLengthBytes(
+            model().inputImageVolumeProduct() * Float.BYTES) //
     ;
   }
 
-  
-
   @Override
   public void parseInferenceResult(byte[] modelOutput, Script.Builder script) {
-   // int[] categories = DataUtil.bytesToIntsLittleEndian(modelOutput);
-    int category = 0; //categories[0];
+todo("this is temporary code stolen from classifier");
+    int category = 0; 
     Yolo cl = model().modelConfig();
     checkArgument(category >= 0 && category < cl.categoryCount());
 
@@ -68,6 +70,13 @@ public final class YoloServiceProvider extends ModelServiceProvider {
     else
       elem = new TextElement("" + category, IPoint.with(20, 30));
     script.items().add(elem);
+  }
+
+  @Override
+  public BufferedImage decodeImage(byte[] imageBytes) {
+    float[] floats = DataUtil.bytesToFloatsLittleEndian(imageBytes);
+    return ImgUtil.floatsToBufferedImage(floats, model().inputImagePlanarSize(),
+        model().inputImageChannels());
   }
 
   // ------------------------------------------------------------------

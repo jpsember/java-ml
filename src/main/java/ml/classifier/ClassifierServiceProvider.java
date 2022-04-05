@@ -21,7 +21,7 @@ public class ClassifierServiceProvider extends ModelServiceProvider {
   public void storeImageSetInfo(ImageSetInfo.Builder imageSetInfo) {
     imageSetInfo //
         .labelLengthBytes(Float.BYTES * 1) //
-        .imageLengthBytes(model().inputImagePlanarSize().product() * Float.BYTES) //
+        .imageLengthBytes(model().inputImageVolumeProduct() * Float.BYTES) //
     ;
   }
 

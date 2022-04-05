@@ -45,7 +45,6 @@ public final class YoloModelHandler extends ModelHandler {
   @Override
   public ModelServiceProvider buildModelServiceProvider() {
     YoloServiceProvider r = new YoloServiceProvider();
-    todo("do we need to call storeImageSetInfo?");
     todo("Refactor plotInferenceResults method so it is part of the YoloServiceProvider instead");
     return r;
   }

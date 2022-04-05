@@ -1,5 +1,6 @@
 package ml;
 
+import java.awt.image.BufferedImage;
 import java.io.DataOutputStream;
 
 import gen.ImageSetInfo;
@@ -62,6 +63,19 @@ public abstract class ModelServiceProvider extends BaseObject {
    * Parse model output to a Script
    */
   public void parseInferenceResult(byte[] modelOutput, Script.Builder script) {
+    failNotSupported();
+  }
+
+  /**
+   * Generate a BufferedImage from an array of bytes taken from a compiled image
+   * file
+   */
+  public BufferedImage decodeImage(byte[] imageBytes) {
+    failNotSupported();
+    return null;
+  }
+
+  private void failNotSupported() {
     throw notSupported("subclass:", getClass().getName());
   }
 
