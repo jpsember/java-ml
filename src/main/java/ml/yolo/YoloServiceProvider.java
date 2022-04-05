@@ -17,7 +17,6 @@ import js.graphics.PolygonElement;
 import js.graphics.RectElement;
 import js.graphics.ScriptElement;
 import js.graphics.ScriptUtil;
-import js.graphics.TextElement;
 import js.graphics.gen.ElementProperties;
 import js.graphics.gen.Script;
 import js.json.JSMap;
@@ -25,6 +24,7 @@ import ml.ModelServiceProvider;
 import ml.yolo.YoloUtil;
 import js.graphics.gen.ScriptElementList;
 import gen.ImageSetInfo;
+import gen.PlotInferenceResultsConfig;
 import gen.Yolo;
 
 public final class YoloServiceProvider extends ModelServiceProvider {
@@ -51,25 +51,18 @@ public final class YoloServiceProvider extends ModelServiceProvider {
   public void storeImageSetInfo(ImageSetInfo.Builder imageSetInfo) {
     imageSetInfo //
         .labelLengthBytes(Float.BYTES * mFieldsPerImage) //
-        .imageLengthBytes(
-            model().inputImageVolumeProduct() * Float.BYTES) //
+        .imageLengthBytes(model().inputImageVolumeProduct() * Float.BYTES) //
     ;
   }
 
   @Override
   public void parseInferenceResult(byte[] modelOutput, Script.Builder script) {
-todo("this is temporary code stolen from classifier");
-    int category = 0; 
-    Yolo cl = model().modelConfig();
-    checkArgument(category >= 0 && category < cl.categoryCount());
-
-    ScriptElement elem;
-    if (todo("add support for TextElements to scredit"))
-      elem = new RectElement(null,
-          IRect.withLocAndSize(IPoint.with(10 + category * 30, 5), IPoint.with(5, 5)));
-    else
-      elem = new TextElement("" + category, IPoint.with(20, 30));
-    script.items().add(elem);
+    float[] imageLabelData = DataUtil.bytesToFloatsLittleEndian(modelOutput);
+    List<ScriptElement> boxList = resultParser().readImageResult(imageLabelData);
+    if (mParserConfig.maxIOverU() > 0) {
+      boxList = YoloUtil.performNonMaximumSuppression(boxList, mParserConfig.maxIOverU());
+    }
+    script.items(boxList);
   }
 
   @Override
@@ -78,6 +71,18 @@ todo("this is temporary code stolen from classifier");
     return ImgUtil.floatsToBufferedImage(floats, model().inputImagePlanarSize(),
         model().inputImageChannels());
   }
+
+  private YoloResultParser resultParser() {
+    if (mYoloResultParser == null) {
+      YoloResultParser yr = new YoloResultParser(mYolo);
+      yr.withConfidenceFilter(mParserConfig.confidencePct() / 100f);
+      mYoloResultParser = yr;
+    }
+    return mYoloResultParser;
+  }
+
+  private YoloResultParser mYoloResultParser;
+  private PlotInferenceResultsConfig mParserConfig = PlotInferenceResultsConfig.DEFAULT_INSTANCE;
 
   // ------------------------------------------------------------------
 
