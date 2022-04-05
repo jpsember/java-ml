@@ -1,12 +1,11 @@
 package ml;
 
-import java.io.File;
 import java.util.List;
 
 import gen.ImageSetInfo;
-import js.file.Files;
 import js.graphics.gen.Script;
 import js.graphics.gen.ScriptElementList;
+import static js.base.Tools.*;
 
 /**
  * Receives annotated image, suitable for applying to a model (for training or
@@ -30,15 +29,11 @@ public interface ModelInputReceiver {
    * Get the (possibly transformed) annotations
    */
   default List<ScriptElementList> annotations() {
-    throw new UnsupportedOperationException();
+    throw notSupported("subclass:", getClass().getName());
   }
 
   default void parseInferenceResult(byte[] modelOutput, Script.Builder script) {
-    throw new UnsupportedOperationException();
+    throw notSupported("subclass:", getClass().getName());
   }
 
-  default void decompileImage(byte[] modelInputImageAsBytes, Files files, File imageFile) {
-    throw new UnsupportedOperationException();
-  }
-  
 }

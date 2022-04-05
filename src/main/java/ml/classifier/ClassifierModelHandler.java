@@ -6,8 +6,14 @@ import java.io.DataOutputStream;
 
 import gen.ImageSetInfo;
 import gen.PlotInferenceResultsConfig;
+import js.data.DataUtil;
 import js.file.Files;
+import js.geometry.IPoint;
+import js.geometry.IRect;
+import js.graphics.RectElement;
 import js.graphics.ScriptElement;
+import js.graphics.TextElement;
+import js.graphics.gen.Script;
 import js.graphics.gen.ScriptElementList;
 import ml.ImageHandler;
 import ml.ModelHandler;
@@ -57,6 +63,20 @@ public final class ClassifierModelHandler extends ModelHandler {
       int[] intArray = new int[1];
       intArray[0] = category;
       Files.S.writeIntsLittleEndian(intArray, mLabelsStream);
+    }
+
+    @Override
+    public void parseInferenceResult(byte[] modelOutput, Script.Builder script) {
+      int[] categories = DataUtil.bytesToIntsLittleEndian(modelOutput);
+      int category = categories[0];
+      ScriptElement elem;
+      if (todo("add support for TextElements to scredit"))
+        elem = new RectElement(null,
+            IRect.withLocAndSize(IPoint.with(10 + category * 30, 5), IPoint.with(5, 5)));
+      else
+        elem = new TextElement("AB".substring(category, category + 1), IPoint.with(20, 30));
+      todo("pass in model/model wrapper where appropriate");
+      script.items().add(elem);
     }
 
     private DataOutputStream mImagesStream;

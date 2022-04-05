@@ -2,6 +2,7 @@ package ml;
 
 import static js.base.Tools.*;
 
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.InputStream;
 
@@ -9,6 +10,7 @@ import gen.EvalModelConfig;
 import gen.ImageSetInfo;
 import js.app.AppOper;
 import js.file.Files;
+import js.graphics.ImgUtil;
 import js.graphics.ScriptUtil;
 import js.graphics.gen.Script;
 
@@ -59,14 +61,18 @@ public class EvalModelOper extends AppOper {
     files().mkdirs(ScriptUtil.scriptDirForProject(targetDir));
 
     for (int imageNumber = 0; imageNumber < numImages; imageNumber++) {
-      byte[] imageBytes = Files.readBytes(imagesStream, imageSetInfo.imageLengthBytes());
+      float[] imageFloats = Files.readFloatsLittleEndian(imagesStream, imageSetInfo.imageLengthBytes() / Float.BYTES);
       byte[] labelBytes = Files.readBytes(labelsStream, imageSetInfo.labelLengthBytes());
       Script.Builder script = Script.newBuilder();
       modelService.parseInferenceResult(labelBytes, script);
       Script s = script.build();
-      
+
+      BufferedImage bufferedImage = 
+       ImgUtil.floatsToBufferedImage(
+           imageFloats,
+           model.inputImagePlanarSize(), model.inputImageChannels());
       File outputImage = new File(targetDir, String.format("%03d.jpg",imageNumber));
-      modelService.decompileImage(imageBytes, files(), outputImage);
+      ImgUtil.writeImage(files(), bufferedImage,  outputImage);
       if (ScriptUtil.isUseful(s)) {
         ScriptUtil.writeIfUseful(files(), s.build(), ScriptUtil.scriptPathForImage(outputImage));
       }
