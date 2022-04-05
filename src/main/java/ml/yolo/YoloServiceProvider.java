@@ -22,25 +22,18 @@ import js.graphics.gen.ScriptElementList;
 import gen.ImageSetInfo;
 import gen.Yolo;
 
-/**
- * Converts images and annotations to format for model training
- */
 public final class YoloServiceProvider extends ModelServiceProvider {
-
-  public final static boolean CONSTANT_BOX = false
-      && alert("Replacing Yolo train labels with single fixed box");
 
   public void prepareModel() {
     mYolo = model().modelConfig();
     Yolo yolo = mYolo;
     log("Yolo:", INDENT, yolo);
+
     mAnchorBoxes = YoloUtil.anchorBoxesRelativeToImageSize(yolo);
     mBlockSize = mYolo.blockSize();
     mPixelToGridCellScale = new FPoint(1f / mBlockSize.x, 1f / mBlockSize.y);
     mGridSize = YoloUtil.gridSize(yolo);
     constructOutputLayer();
-
-    todo("Add support for inspector; maybe it should be done in the base class?");
   }
 
   @Override
@@ -95,16 +88,6 @@ public final class YoloServiceProvider extends ModelServiceProvider {
     boxes.sort((a, b) -> -Integer.compare(ScriptUtil.confidence(a), ScriptUtil.confidence(b)));
     log("sorted boxes, including neighbors:", INDENT, boxes);
 
-    if (CONSTANT_BOX && !boxes.isEmpty()) {
-      IRect rect = new IRect(52, 58, 88, 46);
-      boxes.clear();
-      boxes.add(labelledBox(rect, 0, 1f, 0));
-      once(() -> {
-        pr("generating constant box:", rect);
-        pr("cp:", rect.center());
-      });
-    }
-
     for (RectElement box : boxes) {
 
       if (verbose()) {
@@ -118,8 +101,6 @@ public final class YoloServiceProvider extends ModelServiceProvider {
 
     writeOutputGrid();
   }
-
-  private static int nb[] = { -1, 0, 0, -1, 1, 0, 0, 1 };
 
   private List<RectElement> generateNeighborVersions(List<RectElement> boxes) {
     List<RectElement> neighborList = arrayList();
@@ -137,8 +118,8 @@ public final class YoloServiceProvider extends ModelServiceProvider {
       IRect obox = original.bounds();
       IPoint cp = obox.center();
 
-      for (int nbInd = 0; nbInd < nb.length; nbInd += 2) {
-        IPoint ngridCell = mBoxGridCell.sumWith(nb[nbInd], nb[nbInd + 1]);
+      for (int nbInd = 0; nbInd < sNeighborCellOffsets.length; nbInd += 2) {
+        IPoint ngridCell = mBoxGridCell.sumWith(sNeighborCellOffsets[nbInd], sNeighborCellOffsets[nbInd + 1]);
 
         if (!cellWithinGrid(ngridCell))
           continue;
@@ -183,6 +164,8 @@ public final class YoloServiceProvider extends ModelServiceProvider {
     }
     return neighborList;
   }
+
+  private static int sNeighborCellOffsets[] = { -1, 0, 0, -1, 1, 0, 0, 1 };
 
   private void writeOutputGrid() {
     Files.S.writeFloatsLittleEndian(mOutputLayer, labelOutputStream());
