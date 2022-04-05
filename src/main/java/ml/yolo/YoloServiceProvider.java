@@ -17,7 +17,7 @@ import js.graphics.ScriptElement;
 import js.graphics.ScriptUtil;
 import js.graphics.gen.ElementProperties;
 import js.json.JSMap;
-import ml.ModelInputReceiver;
+import ml.ModelServiceProvider;
 import ml.yolo.YoloUtil;
 import js.graphics.gen.ScriptElementList;
 import gen.ImageSetInfo;
@@ -26,7 +26,7 @@ import gen.Yolo;
 /**
  * Converts images and annotations to format for model training
  */
-public final class YoloImageReceiver extends ModelInputReceiver {
+public final class YoloServiceProvider extends ModelServiceProvider {
 
   public final static boolean CONSTANT_BOX = false
       && alert("Replacing Yolo train labels with single fixed box");

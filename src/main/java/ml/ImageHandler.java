@@ -13,7 +13,7 @@ import js.geometry.IPoint;
 import js.geometry.Matrix;
 import js.geometry.MyMath;
 import ml.ModelHandler;
-import ml.ModelInputReceiver;
+import ml.ModelServiceProvider;
 import ml.ModelWrapper;
 import gen.AugmentationConfig;
 import gen.NeuralNetwork;
@@ -43,7 +43,7 @@ public final class ImageHandler extends BaseObject {
    * Generate annotated images for training or inference
    */
   public final void applyCompileImagePipeline(BufferedImage srcImage, ScriptElementList annotations,
-      TransformWrapper aug, ImageTransformer<BufferedImage> imageTransformer, ModelInputReceiver receiver,
+      TransformWrapper aug, ImageTransformer<BufferedImage> imageTransformer, ModelServiceProvider receiver,
       ImageRecord sourceImage) {
     annotations = Util.transform(annotations, aug.inverse(), -aug.rotationDegrees()).build();
     imageTransformer.withPendingAnnotation(annotations);

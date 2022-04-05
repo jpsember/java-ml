@@ -25,7 +25,6 @@ public class ImageCompiler extends BaseObject {
 
   public ImageCompiler() {
     this(null);
-    todo("better to use image_size and depth, instead of vol");
   }
 
   public ImageCompiler(CompileImagesConfig config) {
@@ -62,28 +61,23 @@ public class ImageCompiler extends BaseObject {
 
     ModelWrapper model = modelHandler().model();
 
-    todo("rename ModelInputReceiver to something more general");
-    ModelInputReceiver modelInputReceiver = modelHandler().buildModelInputReceiver();
-    modelInputReceiver.setModel(model);
-    modelInputReceiver.setImageStream(imagesStream);
-    modelInputReceiver.setLabelStream(labelsStream);
-    modelInputReceiver.storeImageSetInfo(imageSetInfo);
-
-    todo("perhaps do something with inspection here");
-    //modelInputReceiver.setInspector(mInspectionManager);
+    ModelServiceProvider provider = modelHandler().buildModelInputReceiver();
+    provider.setModel(model);
+    provider.setImageStream(imagesStream);
+    provider.setLabelStream(labelsStream);
+    provider.storeImageSetInfo(imageSetInfo);
+    if (imageSetInfo.imageLengthBytes() <= 0 || imageSetInfo.labelLengthBytes() <= 0)
+      throw badState("ImageSetInfo hasn't been completely filled out:", INDENT, imageSetInfo);
 
     todo("transform image randomly if training image");
-    todo("apply annotations; see TrainStreamService");
+    
     for (Entry entry : entries) {
       BufferedImage img = ImgUtil.read(entry.imageFile);
       checkImageSizeAndType(entry.imageFile, img, model.inputImagePlanarSize(), model.inputImageChannels());
       mWorkArray = ImgUtil.floatPixels(img, model.inputImageChannels(), mWorkArray);
-      modelInputReceiver.accept(mWorkArray, entry.scriptElements);
+      provider.accept(mWorkArray, entry.scriptElements);
     }
     Files.close(imagesStream, labelsStream);
-
-    if (imageSetInfo.imageLengthBytes() <= 0 || imageSetInfo.labelLengthBytes() <= 0)
-      throw badState("ImageSetInfo hasn't been completely filled out:", INDENT, imageSetInfo);
 
     files().writePretty(infoPath, imageSetInfo.build());
   }

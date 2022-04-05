@@ -46,7 +46,7 @@ public abstract class ModelHandler extends BaseObject {
   /**
    * Construct object to provide various model-specific services
    */
-  public abstract ModelInputReceiver buildModelInputReceiver();
+  public abstract ModelServiceProvider buildModelInputReceiver();
 
   // ------------------------------------------------------------------
   // Training progress
@@ -55,6 +55,7 @@ public abstract class ModelHandler extends BaseObject {
   /**
    * Plot inference results in some user-friendly form (e.g. a scredit project)
    */
+  @Deprecated // This is subsumed by the ModelServiceProvider.parseInferenceResult()
   public abstract void plotInferenceResults(PlotInferenceResultsConfig config);
 
   protected BufferedImage constructBufferedImage(float[] pixels) {

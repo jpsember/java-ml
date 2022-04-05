@@ -12,7 +12,7 @@ import static js.base.Tools.*;
 /**
  * Model-specific operations
  */
-public abstract class ModelInputReceiver extends BaseObject {
+public abstract class ModelServiceProvider extends BaseObject {
 
   public final void setModel(ModelWrapper model) {
     checkState(mModel == null, "model already defined");
@@ -55,8 +55,7 @@ public abstract class ModelInputReceiver extends BaseObject {
   public abstract void accept(float[] image, ScriptElementList annotation);
 
   /**
-   * Fill in information fields. Some fields may have already been filled in;
-   * e.g. the image count, and the
+   * Fill in information fields. Some fields may have already been filled in
    */
   public abstract void storeImageSetInfo(ImageSetInfo.Builder imageSetInfo);
 

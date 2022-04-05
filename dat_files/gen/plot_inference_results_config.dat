@@ -1,3 +1,5 @@
+// NOTE: this class may end up being unused, as I am going to replace ModelHandler.plotInferenceResults()
+
 fields {
   File inference_input_dir;
   File inference_results_dir;

@@ -44,7 +44,7 @@ public class EvalModelOper extends AppOper {
     // Read and parse label information
 
     ImageSetInfo.Builder infoBuilder = ImageSetInfo.newBuilder();
-    ModelInputReceiver modelService = modelHandler().buildModelInputReceiver();
+    ModelServiceProvider modelService = modelHandler().buildModelInputReceiver();
     modelService.setModel(model);
     modelService.storeImageSetInfo(infoBuilder);
     ImageSetInfo imageSetInfo = infoBuilder.build();

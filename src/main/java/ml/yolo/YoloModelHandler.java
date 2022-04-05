@@ -20,7 +20,7 @@ import ml.Util;
 import ml.ImageHandler;
 import ml.ImageRecord;
 import ml.ModelHandler;
-import ml.ModelInputReceiver;
+import ml.ModelServiceProvider;
 import ml.NetworkAnalyzer;
 import gen.Layer;
 import gen.LayerType;
@@ -36,8 +36,6 @@ public final class YoloModelHandler extends ModelHandler {
 
   @Override
   public void addImageRecordFilters(ImageHandler p) {
-    todo("move yolo-related classes to own subpackage");
-    loadTools();
     p.withFilter(ImageRecord.FILTER_SCRIPT_REQUIRED);
     p.withFilter(ImageRecord.FILTER_SHAPE_OR_RETAIN_REQUIRED);
     // Read the image last, in case already filtered
@@ -45,9 +43,10 @@ public final class YoloModelHandler extends ModelHandler {
   }
 
   @Override
-  public ModelInputReceiver buildModelInputReceiver() {
-    YoloImageReceiver r = new YoloImageReceiver();
+  public ModelServiceProvider buildModelInputReceiver() {
+    YoloServiceProvider r = new YoloServiceProvider();
     todo("do we need to call storeImageSetInfo?");
+    todo("Refactor plotInferenceResults method so it is part of the YoloServiceProvider instead");
     return r;
   }
 
