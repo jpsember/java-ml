@@ -15,7 +15,7 @@ public final class ClassifierModelHandler extends ModelHandler {
   }
 
   @Override
-  public ModelServiceProvider buildModelInputReceiver() {
+  public ModelServiceProvider buildModelServiceProvider() {
     return new ClassifierServiceProvider();
   }
 

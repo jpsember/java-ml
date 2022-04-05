@@ -3,11 +3,16 @@ package ml;
 import static js.base.Tools.*;
 
 import java.io.File;
+import java.io.InputStream;
 
 import gen.CompileImagesConfig;
+import gen.ImageSetInfo;
 import js.app.AppOper;
 import js.base.DateTimeTools;
 import js.file.DirWalk;
+import js.file.Files;
+import js.graphics.ImgUtil;
+import js.graphics.gen.Script;
 
 /**
  * Compiles images into a form to be consumed by pytorch. Partitions images into
@@ -29,13 +34,16 @@ public final class CompileImagesOper extends AppOper {
   @Override
   public void perform() {
 
-    ImageCompiler c = new ImageCompiler(config());
-    c.setFiles(files());
-    c.compileTestSet(config().targetDirTest());
+    mImageCompiler = new ImageCompiler(config());
+    mImageCompiler.setFiles(files());
+    mImageCompiler.compileTestSet(config().targetDirTest());
+    if (Files.nonEmpty(config().targetDirInspect()))
+      generateInspection();
+
     if (config().trainService()) {
-      performTrainService(c);
+      performTrainService();
     } else {
-      c.compileTrainSet(config().targetDirTrain());
+      mImageCompiler.compileTrainSet(config().targetDirTrain());
     }
   }
 
@@ -54,7 +62,7 @@ public final class CompileImagesOper extends AppOper {
     return System.currentTimeMillis();
   }
 
-  private void performTrainService(ImageCompiler imageCompiler) {
+  private void performTrainService() {
 
     // Choose a temporary filename that can be atomically renamed when it is complete
     //
@@ -72,7 +80,7 @@ public final class CompileImagesOper extends AppOper {
         continue;
       }
 
-      imageCompiler.compileTrainSet(tempDir);
+      mImageCompiler.compileTrainSet(tempDir);
 
       // Choose a name for the new set
       //
@@ -113,8 +121,42 @@ public final class CompileImagesOper extends AppOper {
     return false;
   }
 
+  private void generateInspection() {
+
+    File inspectDir = files().remakeDirs(config().targetDirInspect());
+    File sourceDir = config().targetDirTest();
+
+    //File imagePath = new File(sourceDir, "images.bin");
+    File labelsPath = new File(sourceDir, "labels.bin");
+    File infoPath = new File(sourceDir, "image_set_info.json");
+    ImageSetInfo imageSetInfo = Files.parseAbstractData(ImageSetInfo.DEFAULT_INSTANCE, infoPath);
+
+    ModelServiceProvider p = mImageCompiler.buildModelServiceProvider();
+    InputStream labelStream = Files.openInputStream(labelsPath);
+
+    //    long labelOffset = 0;
+    int imageNumber = INIT_INDEX;
+    for (ImageCompiler.ImageEntry entry : mImageCompiler.imageEntries()) {
+      imageNumber++;
+      String name = String.format("%03d", imageNumber);
+
+      File imageFile = new File(inspectDir, Files.setExtension(name, ImgUtil.EXT_JPEG));
+      files().copyFile(entry.imageFile, imageFile);
+
+      Script.Builder script = Script.newBuilder();
+
+      byte[] modelOutput = Files.readBytes(labelStream, imageSetInfo.labelLengthBytes());
+      p.parseInferenceResult(modelOutput, script);
+      todo("do something witch script");
+
+      //      labelOffset += imageSetInfo.labelLengthBytes();
+    }
+    labelStream = Files.close(labelStream);
+  }
+
   private static final String STREAM_PREFIX = "set_";
 
+  private ImageCompiler mImageCompiler;
   private int mNextStreamSetNumber;
   private long mLastGeneratedFilesTime;
 }

@@ -46,7 +46,7 @@ public abstract class ModelHandler extends BaseObject {
   /**
    * Construct object to provide various model-specific services
    */
-  public abstract ModelServiceProvider buildModelInputReceiver();
+  public abstract ModelServiceProvider buildModelServiceProvider();
 
   // ------------------------------------------------------------------
   // Training progress

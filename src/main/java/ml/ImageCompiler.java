@@ -44,11 +44,24 @@ public class ImageCompiler extends BaseObject {
     auxCompile(targetDir, trainEntries(), true);
   }
 
+  public List<ImageEntry> imageEntries() {
+    return mEntries;
+  }
+
   public void compileTestSet(File targetDir) {
     auxCompile(targetDir, testEntries(), false);
   }
 
-  private void auxCompile(File targetDir, List<Entry> entries, boolean training) {
+  /**
+   * Construct a ModelServiceProvider for the compiler's model type
+   */
+  public ModelServiceProvider buildModelServiceProvider() {
+    ModelServiceProvider provider = modelHandler().buildModelServiceProvider();
+    provider.setModel(modelHandler().model());
+    return provider;
+  }
+
+  private void auxCompile(File targetDir, List<ImageEntry> entries, boolean training) {
     files().remakeDirs(targetDir);
     File imagePath = new File(targetDir, "images.bin");
     File labelsPath = new File(targetDir, "labels.bin");
@@ -61,8 +74,7 @@ public class ImageCompiler extends BaseObject {
 
     ModelWrapper model = modelHandler().model();
 
-    ModelServiceProvider provider = modelHandler().buildModelInputReceiver();
-    provider.setModel(model);
+    ModelServiceProvider provider = buildModelServiceProvider();
     provider.setImageStream(imagesStream);
     provider.setLabelStream(labelsStream);
     provider.storeImageSetInfo(imageSetInfo);
@@ -70,8 +82,8 @@ public class ImageCompiler extends BaseObject {
       throw badState("ImageSetInfo hasn't been completely filled out:", INDENT, imageSetInfo);
 
     todo("transform image randomly if training image");
-    
-    for (Entry entry : entries) {
+
+    for (ImageEntry entry : entries) {
       BufferedImage img = ImgUtil.read(entry.imageFile);
       checkImageSizeAndType(entry.imageFile, img, model.inputImagePlanarSize(), model.inputImageChannels());
       mWorkArray = ImgUtil.floatPixels(img, model.inputImageChannels(), mWorkArray);
@@ -82,15 +94,15 @@ public class ImageCompiler extends BaseObject {
     files().writePretty(infoPath, imageSetInfo.build());
   }
 
-  private List<Entry> entries() {
+  private List<ImageEntry> entries() {
     if (mEntries == null) {
-      List<Entry> ents = arrayList();
+      List<ImageEntry> ents = arrayList();
       File imageDir = Files.assertDirectoryExists(config().sourceDir());
       File scriptDir = ScriptUtil.scriptDirForProject(imageDir);
       Files.assertDirectoryExists(scriptDir, "script directory");
       DirWalk w = new DirWalk(imageDir).withRecurse(false).withExtensions(ImgUtil.EXT_JPEG);
       for (File f : w.files()) {
-        Entry ent = new Entry();
+        ImageEntry ent = new ImageEntry();
         ent.imageFile = f;
         File scriptFile = ScriptUtil.scriptPathForImage(f);
         if (scriptFile.exists()) {
@@ -113,12 +125,12 @@ public class ImageCompiler extends BaseObject {
     return mEntries;
   }
 
-  private List<Entry> trainEntries() {
+  private List<ImageEntry> trainEntries() {
     entries();
     return mTrainEntries;
   }
 
-  private List<Entry> testEntries() {
+  private List<ImageEntry> testEntries() {
     entries();
     return mTestEntries;
   }
@@ -170,7 +182,7 @@ public class ImageCompiler extends BaseObject {
       BufferedImage.TYPE_USHORT_GRAY, 1 //
   );
 
-  private static class Entry {
+  public static class ImageEntry {
     File imageFile;
     ScriptElementList scriptElements = ScriptElementList.DEFAULT_INSTANCE;
   }
@@ -183,9 +195,9 @@ public class ImageCompiler extends BaseObject {
   private final Random mRandom;
   private final ModelHandler mModelHandler;
   private Files mFiles = Files.S;
-  private List<Entry> mEntries;
-  private List<Entry> mTestEntries;
-  private List<Entry> mTrainEntries;
+  private List<ImageEntry> mEntries;
+  private List<ImageEntry> mTestEntries;
+  private List<ImageEntry> mTrainEntries;
   private int mExpectedImageType;
   private IPoint mExpectedImageSize = null;
   private float[] mWorkArray;
