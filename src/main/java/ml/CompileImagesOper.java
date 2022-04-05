@@ -39,8 +39,11 @@ public final class CompileImagesOper extends AppOper {
     mImageCompiler = new ImageCompiler(config());
     mImageCompiler.setFiles(files());
     mImageCompiler.compileTestSet(config().targetDirTest());
-    if (Files.nonEmpty(config().targetDirInspect()))
+    if (Files.nonEmpty(config().targetDirInspect())) {
       generateInspection();
+      if (alert("temporarily skipping training stuff"))
+        return;
+    }
 
     if (config().trainService()) {
       performTrainService();
@@ -125,6 +128,8 @@ public final class CompileImagesOper extends AppOper {
 
   private void generateInspection() {
 
+    todo("bad assumption being made here: the output labels are NOT directly equivalent to the input labels.");
+    
     File inspectDir = files().remakeDirs(config().targetDirInspect());
     File sourceDir = config().targetDirTest();
 

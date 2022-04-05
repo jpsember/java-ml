@@ -36,7 +36,6 @@ public final class YoloResultParser extends BaseObject {
   }
 
   public List<ScriptElement> readImageResult(float[] imageData) {
-
     log("Constructing YOLO result for image");
     log("...confidence threshold %", pct(mConfidenceThreshold));
 
@@ -131,6 +130,16 @@ public final class YoloResultParser extends BaseObject {
           float by = NetworkUtil.sigmoid(f[k + 1]);
           float ws = NetworkUtil.exp(f[k + 2]);
           float hs = NetworkUtil.exp(f[k + 3]);
+          
+          if (alert("temporarily NOT performing sigmoid etc")) {
+            todo("but can we precalculate the training labels to save some calc?");
+            bx =  f[k + 0] ;
+            by =  f[k + 1] ;
+            ws =  f[k + 2] ;
+           hs =  f[k + 3] ;
+           }
+          
+          
           if (verbose()) {
             sbLine.append(String.format("sg/ex[%4.2f %4.2f %4.2f %4.2f]  ", bx, by, ws, hs));
           }
