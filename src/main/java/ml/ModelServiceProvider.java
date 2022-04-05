@@ -1,7 +1,6 @@
 package ml;
 
 import java.io.DataOutputStream;
-import java.util.List;
 
 import gen.ImageSetInfo;
 import js.base.BaseObject;
@@ -58,13 +57,6 @@ public abstract class ModelServiceProvider extends BaseObject {
    * Fill in information fields. Some fields may have already been filled in
    */
   public abstract void storeImageSetInfo(ImageSetInfo.Builder imageSetInfo);
-
-  /**
-   * Get the (possibly transformed) annotations
-   */
-  public List<ScriptElementList> annotations() {
-    throw notSupported("subclass:", getClass().getName());
-  }
 
   public void parseInferenceResult(byte[] modelOutput, Script.Builder script) {
     throw notSupported("subclass:", getClass().getName());

@@ -38,7 +38,6 @@ public final class YoloServiceProvider extends ModelServiceProvider {
 
   @Override
   public void accept(float[] image, ScriptElementList annotation) {
-    mAnnotations.add(annotation);
     writeImage(image);
     writeScriptElements(annotation);
   }
@@ -49,11 +48,6 @@ public final class YoloServiceProvider extends ModelServiceProvider {
         .labelLengthBytes(Float.BYTES * mFieldsPerImage) //
         .imageLengthBytes(model().inputImagePlanarSize().product() * Float.BYTES) //
     ;
-  }
-
-  @Override
-  public List<ScriptElementList> annotations() {
-    return mAnnotations;
   }
 
   // ------------------------------------------------------------------
@@ -364,5 +358,4 @@ public final class YoloServiceProvider extends ModelServiceProvider {
   private int mFieldsPerGridCell;
   private int mFieldsPerImage;
   private float[] mOutputLayer;
-  private List<ScriptElementList> mAnnotations = arrayList();
 }
