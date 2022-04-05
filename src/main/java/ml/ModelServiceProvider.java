@@ -58,6 +58,9 @@ public abstract class ModelServiceProvider extends BaseObject {
    */
   public abstract void storeImageSetInfo(ImageSetInfo.Builder imageSetInfo);
 
+  /**
+   * Parse model output to a Script
+   */
   public void parseInferenceResult(byte[] modelOutput, Script.Builder script) {
     throw notSupported("subclass:", getClass().getName());
   }

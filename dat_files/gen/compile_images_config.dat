@@ -13,6 +13,11 @@ fields {
   File target_dir_train = "train_data";
   File target_dir_test = "test_data";
 
+  // If defined, generates a project by parsing the test data
+  // to confirm the encode/decode algorithms are working
+  //
+  File target_dir_inspect;
+
   // If true, loops forever, generating subdirectories within the
   // target_train_dir containing additional images and labels
   //
