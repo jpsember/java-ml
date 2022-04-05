@@ -10,7 +10,6 @@ import js.geometry.FPoint;
 import js.geometry.IPoint;
 import js.geometry.IRect;
 import js.geometry.MyMath;
-import js.graphics.Inspector;
 import js.graphics.PolygonElement;
 import js.graphics.RectElement;
 import js.graphics.ScriptElement;
@@ -44,22 +43,11 @@ public final class YoloServiceProvider extends ModelServiceProvider {
     todo("Add support for inspector; maybe it should be done in the base class?");
   }
 
-  private Inspector mInspector = Inspector.NULL_INSPECTOR;
-
   @Override
   public void accept(float[] image, ScriptElementList annotation) {
     mAnnotations.add(annotation);
     writeImage(image);
     writeScriptElements(annotation);
-
-    mInspector.create();
-    if (mInspector.used()) {
-      mInspector//
-          .imageSize(mYolo.imageSize())//
-          .channels(mYolo.imageChannels())//
-          .elements(annotation.elements())//
-          .image(image);
-    }
   }
 
   @Override
