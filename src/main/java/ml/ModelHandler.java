@@ -29,6 +29,7 @@ public abstract class ModelHandler extends BaseObject {
   }
 
   public final void setModel(ModelWrapper model) {
+    todo("Should this class and ModelWrapper be merged?");
     mModelConfig = model;
   }
 

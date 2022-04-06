@@ -1,0 +1,8 @@
+// Arguments for CompileNetworkOper
+//
+fields {
+
+  // Path to network to parse
+  //
+  File path;
+}
