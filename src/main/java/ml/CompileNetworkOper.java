@@ -29,12 +29,21 @@ public class CompileNetworkOper extends AppOper {
   @Override
   public void perform() {
     mConfig = config();
-    
-    pr("parsed:", network());
+
+    NeuralNetwork netIn = network();
+    NetworkAnalyzer analyzer = NetworkAnalyzer.build(netIn);
+    NeuralNetwork netOut = analyzer.result();
+    if (netIn.equals(netOut)) {
+      pr("...no changes");
+      return;
+    }
+    mNetwork = netOut;
+
+    pr("...writing changed version");
+    files().writePretty(networkArgs().path(), mNetwork);
   }
 
-  //private
-  CompileNetworkConfig networkArgs() {
+  private CompileNetworkConfig networkArgs() {
     return mConfig;
   }
 
