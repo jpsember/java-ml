@@ -35,8 +35,17 @@ public final class YoloResultParser extends BaseObject {
     mConfidenceThreshold = confidence;
   }
 
+  public List<ScriptElement> parseTrainingLabels(float[] imageData) {
+    return auxParse(imageData, true);
+  }
+
   public List<ScriptElement> readImageResult(float[] imageData) {
-    log("Constructing YOLO result for image");
+    return auxParse(imageData, false);
+  }
+
+  private List<ScriptElement> auxParse(float[] imageData, boolean inputsFlag) {
+
+    log("Constructing YOLO result for image; inputsFlag:", inputsFlag);
     log("...confidence threshold %", pct(mConfidenceThreshold));
 
     int expectedDataLength = mGridSize.product() * YoloUtil.valuesPerBlock(mYolo);
@@ -52,7 +61,7 @@ public final class YoloResultParser extends BaseObject {
     int anchorBoxCount = YoloUtil.anchorBoxCount(mYolo);
     int fieldsPerBox = YoloUtil.valuesPerAnchorBox(mYolo);
 
-    final float logitMinForResult = NetworkUtil .logit(mConfidenceThreshold);
+    final float logitMinForResult = NetworkUtil.logit(mConfidenceThreshold);
 
     int categoryCount = mYolo.categoryCount();
 
@@ -80,9 +89,12 @@ public final class YoloResultParser extends BaseObject {
         for (int anchorBox = 0; anchorBox < anchorBoxCount; anchorBox++, fieldSetIndex += fieldsPerBox) {
 
           float objectnessLogit = f[fieldSetIndex + F_CONFIDENCE];
+          // Note, this check will cause us to skip a lot of computation, which
+          // suggests we probably don't want to embed the sigmoid/exp postprocessing steps into the model
           if (objectnessLogit < logitMinForResult)
             continue;
           highestObjectnessLogitSeen = Math.max(highestObjectnessLogitSeen, objectnessLogit);
+          todo("do we always want to perform sigmoid here, i.e., is it in input or an output?");
           float objectnessConfidence = NetworkUtil.sigmoid(objectnessLogit);
 
           if (verbose()) {
@@ -126,20 +138,20 @@ public final class YoloResultParser extends BaseObject {
           // Note that the x,y (centerpoints) are relative to the cell,
           // while the width and height are relative to the anchor box size
 
-          float bx = NetworkUtil.sigmoid(f[k + 0]);
-          float by = NetworkUtil.sigmoid(f[k + 1]);
-          float ws = NetworkUtil.exp(f[k + 2]);
-          float hs = NetworkUtil.exp(f[k + 3]);
-          
-          if (alert("temporarily NOT performing sigmoid etc")) {
-            todo("but can we precalculate the training labels to save some calc?");
-            bx =  f[k + 0] ;
-            by =  f[k + 1] ;
-            ws =  f[k + 2] ;
-           hs =  f[k + 3] ;
-           }
-          
-          
+          float bx = f[k + 0];
+          float by = f[k + 1];
+          float ws = f[k + 2];
+          float hs = f[k + 3];
+
+          if (!inputsFlag) {
+            bx = NetworkUtil.sigmoid(bx);
+            by = NetworkUtil.sigmoid(by);
+            ws = NetworkUtil.exp(ws);
+            hs = NetworkUtil.exp(hs);
+          }
+
+          todo("but can we precalculate the training labels to save some calc?");
+
           if (verbose()) {
             sbLine.append(String.format("sg/ex[%4.2f %4.2f %4.2f %4.2f]  ", bx, by, ws, hs));
           }
@@ -184,7 +196,8 @@ public final class YoloResultParser extends BaseObject {
       pr(gridMap);
       pr();
       pr("Valid anchor boxes:", boxList.size());
-      pr("Highest conf:", pct(NetworkUtil .sigmoid(highestObjectnessLogitSeen)));
+      todo("do we always want to perform sigmoid here, i.e., is it in input or an output?");
+      pr("Highest conf:", pct(NetworkUtil.sigmoid(highestObjectnessLogitSeen)));
       if (boxList.isEmpty())
         pr("*** No boxes detected");
     }

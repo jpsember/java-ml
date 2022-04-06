@@ -150,8 +150,8 @@ public final class CompileImagesOper extends AppOper {
 
       Script.Builder script = Script.newBuilder();
 
-      byte[] modelOutput = Files.readBytes(labelStream, imageSetInfo.labelLengthBytes());
-      p.parseInferenceResult(modelOutput, script);
+      byte[] trainingLabels = Files.readBytes(labelStream, imageSetInfo.labelLengthBytes());
+      p.parseTrainingLabels(trainingLabels, script);
       files().writePretty(ScriptUtil.scriptPathForImage(targetImageFile), script.build());
     }
     Files.close(labelStream, imageStream);

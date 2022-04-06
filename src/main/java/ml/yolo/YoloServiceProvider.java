@@ -23,6 +23,7 @@ import js.json.JSMap;
 import ml.ModelServiceProvider;
 import ml.yolo.YoloUtil;
 import js.graphics.gen.ScriptElementList;
+import js.graphics.gen.Script.Builder;
 import gen.ImageSetInfo;
 import gen.PlotInferenceResultsConfig;
 import gen.Yolo;
@@ -56,9 +57,19 @@ public final class YoloServiceProvider extends ModelServiceProvider {
   }
 
   @Override
+  public void parseTrainingLabels(byte[] inputLabels, Builder script) {
+    auxParseLabels(inputLabels, script, true);
+  }
+
+  @Override
   public void parseInferenceResult(byte[] modelOutput, Script.Builder script) {
+    auxParseLabels(modelOutput, script, false);
+  }
+
+  private void auxParseLabels(byte[] modelOutput, Script.Builder script, boolean inputsFlag) {
     float[] imageLabelData = DataUtil.bytesToFloatsLittleEndian(modelOutput);
-    List<ScriptElement> boxList = resultParser().readImageResult(imageLabelData);
+    List<ScriptElement> boxList = inputsFlag ? resultParser().parseTrainingLabels(imageLabelData)
+        : resultParser().readImageResult(imageLabelData);
     if (mParserConfig.maxIOverU() > 0) {
       boxList = YoloUtil.performNonMaximumSuppression(boxList, mParserConfig.maxIOverU());
     }
