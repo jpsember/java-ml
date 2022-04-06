@@ -67,15 +67,6 @@ public abstract class ModelServiceProvider extends BaseObject {
   }
 
   /**
-   * Parse the training label model input to a Script
-   * 
-   * (This is not necessarily the same as parsing the model output labels)
-   */
-  public void parseTrainingLabels(byte[] inputLabels, Script.Builder script) {
-    failNotSupported();
-  }
-
-  /**
    * Generate a BufferedImage from an array of bytes taken from a compiled image
    * file
    */

@@ -178,7 +178,7 @@ public class ImageCompiler extends BaseObject {
       BufferedImage.TYPE_USHORT_GRAY, 1 //
   );
 
-  public static class ImageEntry {
+  private static class ImageEntry {
     File imageFile;
     ScriptElementList scriptElements = ScriptElementList.DEFAULT_INSTANCE;
   }

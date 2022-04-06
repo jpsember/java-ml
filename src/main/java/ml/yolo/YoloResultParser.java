@@ -35,17 +35,10 @@ public final class YoloResultParser extends BaseObject {
     mConfidenceThreshold = confidence;
   }
 
-  public List<ScriptElement> parseTrainingLabels(float[] imageData) {
-    return auxParse(imageData, true);
-  }
 
   public List<ScriptElement> readImageResult(float[] imageData) {
-    return auxParse(imageData, false);
-  }
-
-  private List<ScriptElement> auxParse(float[] imageData, boolean inputsFlag) {
-
-    log("Constructing YOLO result for image; inputsFlag:", inputsFlag);
+ 
+    log("Constructing YOLO result for image");
     log("...confidence threshold %", pct(mConfidenceThreshold));
 
     int expectedDataLength = mGridSize.product() * YoloUtil.valuesPerBlock(mYolo);
@@ -138,17 +131,10 @@ public final class YoloResultParser extends BaseObject {
           // Note that the x,y (centerpoints) are relative to the cell,
           // while the width and height are relative to the anchor box size
 
-          float bx = f[k + 0];
-          float by = f[k + 1];
-          float ws = f[k + 2];
-          float hs = f[k + 3];
-
-          if (!inputsFlag) {
-            bx = NetworkUtil.sigmoid(bx);
-            by = NetworkUtil.sigmoid(by);
-            ws = NetworkUtil.exp(ws);
-            hs = NetworkUtil.exp(hs);
-          }
+          float bx = NetworkUtil.sigmoid(f[k + 0]);
+          float by = NetworkUtil.sigmoid(f[k + 1]);
+          float ws = NetworkUtil.exp(f[k + 2]);
+          float hs = NetworkUtil.exp(f[k + 3]);
 
           todo("but can we precalculate the training labels to save some calc?");
 
