@@ -4,5 +4,6 @@ fields {
 
   // Path to network to parse
   //
-  File network_file = "network.json";
+  File path = "network.json";
+
 }
