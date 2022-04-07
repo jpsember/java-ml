@@ -23,9 +23,9 @@ fields {
   //
   float alpha = 0.01;
 
-  // For MAXPOOL, the stride to apply
+  // Default stride to apply for MAXPOOL, or CONV layers when pool=true
   //
-  int stride = 2;
+  IPoint stride = [2, 2];
 
   // If nonzero, and network is for training, a dropout layer is added to the end of the layer to randomly drop out
   // elements with this probability (distinct defaults for CONV vs FC).

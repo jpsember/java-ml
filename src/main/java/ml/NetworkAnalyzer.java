@@ -2,6 +2,7 @@ package ml;
 
 import js.base.BaseObject;
 import js.base.BasePrinter;
+import js.geometry.IPoint;
 
 import static js.base.Tools.*;
 import java.util.List;
@@ -136,16 +137,12 @@ public final class NetworkAnalyzer extends BaseObject {
       Vol inBox = volume();
       Vol workVolume = inBox;
       int numFilters = builder.filters();
-      if (builder.pool()) {
-        if (builder.strideX() != 1) {
-          builder.strideX(network().stride());
-        }
-        if (builder.strideY() != 1) {
-          builder.strideY(network().stride());
-        }
-        workVolume = reduceVolumeForPooling(workVolume, builder.strideX(), builder.strideY());
-      } else {
-        builder.strideX(1).strideY(1);
+      {
+        IPoint stride = builder.stride();
+        if (stride.x <= 0 || stride.y <= 0)
+          throw badArg("unexpected stride, layer", mLayerIndex, INDENT, builder);
+        // We should be able to call this even if stride is (1,1)
+        workVolume = reduceVolumeForPooling(workVolume, builder.stride());
       }
 
       Vol outBox = VolumeUtil.withDepth(workVolume, numFilters);
@@ -159,7 +156,11 @@ public final class NetworkAnalyzer extends BaseObject {
       break;
 
     case MAXPOOL: {
-      builder.outputVolume(reduceVolumeForPooling(volume(), builder.strideX(), builder.strideY()));
+      IPoint stride = builder.stride();
+      if (stride.x <= 0 || stride.y <= 0)
+        throw badArg("unexpected stride, layer", mLayerIndex, INDENT, builder);
+      builder.stride(stride);
+      builder.outputVolume(reduceVolumeForPooling(volume(), stride));
     }
       break;
 
@@ -265,6 +266,15 @@ public final class NetworkAnalyzer extends BaseObject {
         layer.filters(layer.inputVolume().depth());
       if (layer.kernelWidth() == 0)
         layer.kernelWidth(network().kernelWidth());
+
+      IPoint stride = layer.stride();
+      if (stride == null) {
+        if (layer.pool())
+          stride = network().stride();
+        else
+          stride = IPoint.with(1, 1);
+        layer.stride(stride);
+      }
       applyDropoutAndBatchNormDefaults(layer);
       break;
 
@@ -274,10 +284,9 @@ public final class NetworkAnalyzer extends BaseObject {
       break;
 
     case MAXPOOL:
-      if (layer.strideX() == 0)
-        layer.strideX(network().stride());
-      if (layer.strideY() == 0)
-        layer.strideY(layer.strideX());
+      if (layer.stride() == null) {
+        layer.stride(network().stride());
+      }
       break;
 
     case FC:
@@ -301,9 +310,9 @@ public final class NetworkAnalyzer extends BaseObject {
   /**
    * Wraps VolumeUtil method, reporting exceptions as problems
    */
-  private Vol reduceVolumeForPooling(Vol volume, int strideX, int strideY) {
+  private Vol reduceVolumeForPooling(Vol volume, IPoint stride) {
     try {
-      return VolumeUtil.reducedForPooling(volume, strideX, strideY);
+      return VolumeUtil.reducedForPooling(volume, stride.x, stride.y);
     } catch (Throwable t) {
       addProblem(t.getMessage());
       return volume;

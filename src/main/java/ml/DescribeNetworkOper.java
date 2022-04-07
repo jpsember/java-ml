@@ -10,6 +10,7 @@ import gen.LayerType;
 import gen.DescribeNetworkConfig;
 import gen.NeuralNetwork;
 import js.file.Files;
+import js.geometry.IPoint;
 import js.app.AppOper;
 import js.base.BasePrinter;
 import js.data.DataUtil;
@@ -122,10 +123,11 @@ public class DescribeNetworkOper extends AppOper {
 
   private void addPoolStride(StringBuilder sb, Layer layer) {
     sb.append(" stride:");
-    sb.append(layer.strideX());
-    if (layer.strideY() != layer.strideX()) {
+    IPoint stride = layer.stride();
+    sb.append(stride.x);
+    if (stride.y != stride.x) {
       sb.append(",");
-      sb.append(layer.strideY());
+      sb.append(stride.y);
     }
   }
 
