@@ -279,7 +279,7 @@ public final class NetworkAnalyzer extends BaseObject {
       break;
 
     case LEAKY_RELU:
-      if (layer.alpha() == 0)
+      if (layer.alpha() == null)
         layer.alpha(network().alpha());
       break;
 

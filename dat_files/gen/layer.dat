@@ -25,10 +25,9 @@ fields {
   //
   bool pool;
 
-  // For LEAKY_RELU layers; if zero, uses neural_network.alpha
-  //  ** TODO: make optional to use default
+  // For LEAKY_RELU layers; if null, uses neural_network.alpha
   //
-  float alpha;
+  ? float alpha;
 
   // For CONV, MAXPOOL layers; if absent, uses [1,1] or network default respectively
   //
