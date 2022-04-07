@@ -3,13 +3,18 @@ package ml;
 import static js.base.Tools.*;
 
 import java.io.File;
+import java.util.Map;
+import java.util.Map.Entry;
 
 import gen.CompileImagesConfig;
 import gen.NeuralNetwork;
 import js.app.AppOper;
 import js.base.DateTimeTools;
+import js.data.AbstractData;
+import js.data.DataUtil;
 import js.file.DirWalk;
 import js.file.Files;
+import js.json.JSMap;
 
 /**
  * Compiles images into a form to be consumed by pytorch. Partitions images into
@@ -47,6 +52,12 @@ public final class CompileImagesOper extends AppOper {
   }
 
   private void writeModelData() {
+
+    if (alert("experiment")) {
+      experiment(network().layers().get(0));
+      halt();
+    }
+
     File modelDataDir = Files.assertNonEmpty(config().targetDirModel(), "target_dir_model");
     files().remakeDirs(modelDataDir);
     files().writePretty(new File(modelDataDir, "network.json"), network());
@@ -141,4 +152,30 @@ public final class CompileImagesOper extends AppOper {
   private int mNextStreamSetNumber;
   private long mLastGeneratedFilesTime;
   private NeuralNetwork mCompiledNetwork;
+
+  private void experiment(AbstractData data) {
+    AbstractData defInst = DataUtil.defaultInstance(data);
+
+    JSMap output = null;
+    {
+      JSMap fullMap = data.toJson().asMap();
+      JSMap defMap = defInst.toJson().asMap();
+      pr("inputFull:",INDENT,fullMap);
+      pr("defMap   :",INDENT,defMap);
+      
+      Map<String, Object> defW = defMap.wrappedMap();
+      output = map();
+      Map<String, Object> reduced = output.wrappedMap();
+
+      for (Entry<String, Object> en : fullMap.wrappedMap().entrySet()) {
+        Object val = en.getValue();
+        if (val.equals(defW.get(en.getKey()))) {
+          continue;
+        }
+        reduced.put(en.getKey(), val);
+      }
+    }
+    pr("trimmed:", INDENT, output);
+  }
+
 }
