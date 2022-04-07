@@ -11,6 +11,7 @@ import java.util.Random;
 
 import gen.CompileImagesConfig;
 import gen.ImageSetInfo;
+import gen.NeuralNetwork;
 import js.base.BaseObject;
 import js.file.DirWalk;
 import js.file.Files;
@@ -23,17 +24,13 @@ import js.graphics.gen.ScriptElementList;
 
 public class ImageCompiler extends BaseObject {
 
-  public ImageCompiler() {
-    this(null);
-  }
-
-  public ImageCompiler(CompileImagesConfig config) {
+  public ImageCompiler(CompileImagesConfig config, NeuralNetwork network) {
     mConfig = nullTo(config, CompileImagesConfig.DEFAULT_INSTANCE).build();
     int seed = config().seed();
     if (seed <= 0)
       seed = 1965;
     mRandom = new Random(seed);
-    mModelHandler = NetworkUtil.constructModelHandler(null, mConfig.network(), mConfig.networkPath());
+    mModelHandler = ModelHandler.construct(network);
   }
 
   public void setFiles(Files files) {

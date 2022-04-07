@@ -5,9 +5,11 @@ import static js.base.Tools.*;
 import java.io.File;
 
 import gen.CompileImagesConfig;
+import gen.NeuralNetwork;
 import js.app.AppOper;
 import js.base.DateTimeTools;
 import js.file.DirWalk;
+import js.file.Files;
 
 /**
  * Compiles images into a form to be consumed by pytorch. Partitions images into
@@ -28,8 +30,12 @@ public final class CompileImagesOper extends AppOper {
 
   @Override
   public void perform() {
+    writeModelData();
 
-    mImageCompiler = new ImageCompiler(config());
+    if (config().modelDataOnly())
+      return;
+
+    mImageCompiler = new ImageCompiler(config(), network());
     mImageCompiler.setFiles(files());
     mImageCompiler.compileTestSet(config().targetDirTest());
 
@@ -38,6 +44,21 @@ public final class CompileImagesOper extends AppOper {
     } else {
       mImageCompiler.compileTrainSet(config().targetDirTrain());
     }
+  }
+
+  private void writeModelData() {
+    File modelDataDir = Files.assertNonEmpty(config().targetDirModel(), "target_dir_model");
+    files().remakeDirs(modelDataDir);
+    files().writePretty(new File(modelDataDir, "network.json"), network());
+  }
+
+  private NeuralNetwork network() {
+    if (mCompiledNetwork == null) {
+      NeuralNetwork netIn = NetworkUtil.resolveNetwork(null, config().network(), config().networkPath());
+      NetworkAnalyzer analyzer = NetworkAnalyzer.build(netIn);
+      mCompiledNetwork = analyzer.result();
+    }
+    return mCompiledNetwork;
   }
 
   @Override
@@ -119,4 +140,5 @@ public final class CompileImagesOper extends AppOper {
   private ImageCompiler mImageCompiler;
   private int mNextStreamSetNumber;
   private long mLastGeneratedFilesTime;
+  private NeuralNetwork mCompiledNetwork;
 }

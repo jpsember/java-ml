@@ -9,6 +9,7 @@ import gen.NeuralNetwork;
 import js.file.Files;
 import js.app.AppOper;
 
+@Deprecated
 public class CompileNetworkOper extends AppOper {
 
   @Override

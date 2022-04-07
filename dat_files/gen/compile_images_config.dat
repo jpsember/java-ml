@@ -12,6 +12,11 @@ fields {
 
   File target_dir_train = "train_data";
   File target_dir_test = "test_data";
+  File target_dir_model = "model_data";
+
+  // If true, only generates the model directory
+  //
+  bool model_data_only;
 
   // If true, loops forever, generating subdirectories within the
   // target_train_dir containing additional images and labels

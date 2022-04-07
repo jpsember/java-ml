@@ -28,7 +28,7 @@ public class Main extends App {
     registerOper(new CompileImagesOper());
     registerOper(new DescribeNetworkOper());
     registerOper(new EvalModelOper());
-    registerOper(new CompileNetworkOper());
+    //registerOper(new CompileNetworkOper());
   }
 
 }
