@@ -131,8 +131,8 @@ public class DescribeNetworkOper extends AppOper {
     }
   }
 
-  private static void appendDropout(StringBuilder sb, float dropout) {
-    if (dropout > 0)
+  private static void appendDropout(StringBuilder sb, Float dropout) {
+    if (dropout != null)
       sb.append(" dropout:" + String.format("%4.2f", dropout));
   }
 

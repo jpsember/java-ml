@@ -58,7 +58,7 @@ public final class NetworkAnalyzer extends BaseObject {
     if (layerCount() <= 1)
       addProblem("too few layers");
 
-    if (network().alpha() < 0 || network().dropoutConv() < 0 || network().dropoutFc() < 0)
+    if (network().alpha() < 0 || network().dropoutHidden() < 0 || network().dropoutInput() < 0)
       addProblem("Deprecated negative values found in network fields");
 
     NeuralNetwork.Builder b = network().toBuilder();
@@ -231,7 +231,7 @@ public final class NetworkAnalyzer extends BaseObject {
     if (i >= 0) {
       Layer.Builder b = layerBuilder(i);
       if (b.type() == LayerType.FC || b.type() == LayerType.CONV) {
-        b.dropout(0);
+        b.dropout(null);
       }
     }
   }
@@ -298,13 +298,15 @@ public final class NetworkAnalyzer extends BaseObject {
       break;
     }
 
-    if (layer.dropout() > 0.5f)
+    if (layer.dropout() != null && layer.dropout() > 0.5f)
       throw die("Suspected incorrect dropout value:", layer);
   }
 
   private void applyDropoutAndBatchNormDefaults(Layer.Builder layer) {
-    if (layer.dropout() == 0)
-      layer.dropout(network().dropoutConv());
+    if (layer.dropout() == null) {
+      float defValue = (mLayerIndex == 0) ? network().dropoutInput() : network().dropoutHidden();
+      layer.dropout(defValue);
+    }
   }
 
   /**

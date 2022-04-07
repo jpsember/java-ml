@@ -28,12 +28,10 @@ fields {
   IPoint stride = [2, 2];
 
   // If nonzero, and network is for training, a dropout layer is added to the end of the layer to randomly drop out
-  // elements with this probability (distinct defaults for CONV vs FC).
+  // elements with these probabilities
   //
-  // A value of -1 is equivalent to 0, and has the advantage of not being replaced by pojo 'apply defaults' operations.
-  //
-  float dropout_conv;
-  float dropout_fc;
+  float dropout_input = 0.2;
+  float dropout_hidden = 0.5;
 
   JSMap model_config;
 
