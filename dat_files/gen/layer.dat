@@ -10,7 +10,7 @@ fields {
 
   LayerType type;
 
-  // For CONV layers; if absent, uses neural_network.kernel_width
+  // For CONV layers; if absent, uses neural_network value
   //
   ? int kernel_width;
 
@@ -25,18 +25,18 @@ fields {
   //
   bool pool;
 
-  // For LEAKY_RELU layers; if null, uses neural_network.alpha
+  // For LEAKY_RELU layers; if null, uses neural_network value
   //
   ? float alpha;
 
-  // For CONV, MAXPOOL layers; if absent, uses [1,1] or network default respectively
+  // For CONV, MAXPOOL layers; if absent, uses neural_network value
   //
   ? IPoint stride;
 
   // For CONV, FC layers
   //
-  // If nonzero, and network is for training, a dropout layer is added to the end of the layer to randomly drop out
-  // elements with this probability.
+  // If network is for training, a dropout layer is added to the end of the layer to randomly drop out
+  // elements with this probability.  If absent, uses neural_network value
   //
   ? float dropout;
 
