@@ -10,10 +10,9 @@ fields {
 
   LayerType type;
 
-  // For CONV layers; if zero, uses neural_network.kernel_width
-  //  ** TODO: make optional to use default
+  // For CONV layers; if absent, uses neural_network.kernel_width
   //
-  int kernel_width;
+  ? int kernel_width;
 
   // For CONV, the number of filters in this layer (the kernel's depth extent).
   // For FC or OUTPUT, the number of values in the output 'fibre' (1 x 1 x n)

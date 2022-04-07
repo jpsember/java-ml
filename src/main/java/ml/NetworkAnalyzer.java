@@ -264,7 +264,7 @@ public final class NetworkAnalyzer extends BaseObject {
     case CONV:
       if (layer.filters() == 0)
         layer.filters(layer.inputVolume().depth());
-      if (layer.kernelWidth() == 0)
+      if (layer.kernelWidth() == null)
         layer.kernelWidth(network().kernelWidth());
 
       IPoint stride = layer.stride();
