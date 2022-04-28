@@ -39,6 +39,10 @@ class IPoint(AbstractData):
     return self._y
 
 
+  def tuple(self):
+    return self._x, self._y
+
+
   def to_json(self):
     return [self._x, self._y]
 
