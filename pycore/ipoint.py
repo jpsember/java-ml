@@ -1,7 +1,5 @@
 from pycore.base import *
 
-import json
-
 class IPoint(AbstractData):
 
   _key_x = "x"
@@ -17,10 +15,10 @@ class IPoint(AbstractData):
   def new_builder(cls):
     return IPointBuilder()
 
-  def parse(self, list):
-    if len(list) != 2:
-      die("can't parse IPoint from:", list)
-    return IPoint.with_x_y(list[0],list[1])
+  def parse(self, lst):
+    if len(lst) != 2:
+      die("can't parse IPoint from:", lst)
+    return IPoint.with_x_y(lst[0],lst[1])
 
 
   @classmethod

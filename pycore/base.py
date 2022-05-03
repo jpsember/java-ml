@@ -185,6 +185,13 @@ def opt_value(dictionary, key, default_value=None):
   return default_value
 
 
+def none_to(value, default_value):
+  """Return value, unless it is None, in which case return default_value"""
+  if value is None:
+    return not_none(default_value)
+  return value
+
+
 def warning(*args):
   one_time_alert(1, "WARNING", *args)
   return True
