@@ -7,7 +7,6 @@ import js.base.BaseObject;
 import js.data.AbstractData;
 import js.geometry.IPoint;
 import js.json.JSMap;
-import ml.VolumeUtil;
 import ml.yolo.YoloUtil;
 import gen.*;
 
@@ -27,7 +26,6 @@ public final class ModelWrapper extends BaseObject {
     mModelConfig = parseModelConfig(network.projectType(), network.modelConfig());
   }
 
-  @SuppressWarnings("unchecked")
   public static <T extends AbstractData> T parseModelConfig(NetworkProjectType projectType, JSMap jsMap) {
     AbstractData prototype;
     switch (projectType) {
@@ -46,7 +44,6 @@ public final class ModelWrapper extends BaseObject {
   /**
    * Get the AbstractMessage representing this model (e.g. Yolo, Classifier)
    */
-  @SuppressWarnings("unchecked")
   public <T extends AbstractData> T modelConfig() {
     return (T) mModelConfig;
   }

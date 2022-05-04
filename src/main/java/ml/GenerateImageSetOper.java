@@ -228,7 +228,6 @@ public class GenerateImageSetOper extends AppOper {
     return GenerateImagesConfig.DEFAULT_INSTANCE;
   }
 
-  @SuppressWarnings("unchecked")
   @Override
   public GenerateImagesConfig config() {
     return super.config();

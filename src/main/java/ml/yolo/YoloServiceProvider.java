@@ -21,7 +21,6 @@ import js.graphics.gen.ElementProperties;
 import js.graphics.gen.Script;
 import js.json.JSMap;
 import ml.ModelServiceProvider;
-import ml.yolo.YoloUtil;
 import js.graphics.gen.ScriptElementList;
 import gen.ImageSetInfo;
 import gen.PlotInferenceResultsConfig;

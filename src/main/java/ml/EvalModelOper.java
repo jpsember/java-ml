@@ -84,7 +84,6 @@ public class EvalModelOper extends AppOper {
     return EvalModelConfig.DEFAULT_INSTANCE;
   }
 
-  @SuppressWarnings("unchecked")
   @Override
   public EvalModelConfig config() {
     return super.config();

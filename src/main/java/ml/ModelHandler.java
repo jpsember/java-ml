@@ -11,7 +11,6 @@ import js.graphics.ScriptElement;
 import js.graphics.ScriptUtil;
 import js.graphics.gen.Script;
 import js.base.BaseObject;
-import ml.ModelWrapper;
 import ml.classifier.ClassifierModelHandler;
 import ml.yolo.YoloModelHandler;
 import gen.AugmentationConfig;

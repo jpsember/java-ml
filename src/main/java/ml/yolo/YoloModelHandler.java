@@ -29,8 +29,6 @@ import gen.Vol;
 import gen.Yolo;
 import ml.NetworkUtil;
 import ml.VolumeUtil;
-import ml.yolo.YoloResultParser;
-import ml.yolo.YoloUtil;
 
 public final class YoloModelHandler extends ModelHandler {
 

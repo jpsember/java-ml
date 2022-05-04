@@ -66,7 +66,6 @@ public final class CompileImagesOper extends AppOper {
     return CompileImagesConfig.DEFAULT_INSTANCE;
   }
 
-  @SuppressWarnings("unchecked")
   @Override
   public CompileImagesConfig config() {
     return super.config();
