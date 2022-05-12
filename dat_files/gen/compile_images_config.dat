@@ -5,14 +5,16 @@ fields {
 
   File source_dir;
 
-  int max_test_images_count = 100;
-  int max_test_images_pct = 10;
-
   int seed;
 
   File target_dir_train = "train_data";
-  File target_dir_test = "test_data";
   File target_dir_model = "model_data";
+
+  // If a test directory is specified, it generates a test set as well
+  //
+  File target_dir_test;
+  int max_test_images_count = 100;
+  int max_test_images_pct = 10;
 
   // If true, only generates the model directory
   //

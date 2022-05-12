@@ -42,6 +42,7 @@ public class ImageCompiler extends BaseObject {
   }
 
   public void compileTestSet(File targetDir) {
+    checkArgument(includeTestSets(), "no test set is to be included");
     auxCompile(targetDir, testEntries(), false);
   }
 
@@ -104,18 +105,30 @@ public class ImageCompiler extends BaseObject {
         }
         ents.add(ent);
       }
-      int testCount = Math.min(config().maxTestImagesCount(),
-          (config().maxTestImagesPct() * ents.size()) / 100);
+
+      int testCount = 0;
+      if (includeTestSets())
+        testCount = Math.min(config().maxTestImagesCount(),
+            (config().maxTestImagesPct() * ents.size()) / 100);
       int trainCount = ents.size() - testCount;
-      checkArgument(Math.min(testCount, trainCount) > 0, "insufficient images:", ents.size(), "train:",
-          trainCount, "test:", testCount);
+
+      int minVal = includeTestSets() ? testCount : trainCount;
+      checkArgument(minVal > 0, "insufficient images:", ents.size());
       MyMath.permute(ents, random());
 
       mEntries = ents;
-      mTrainEntries = ents.subList(0, trainCount);
-      mTestEntries = ents.subList(trainCount, ents.size());
+      if (includeTestSets()) {
+        mTrainEntries = ents.subList(0, trainCount);
+        mTestEntries = ents.subList(trainCount, ents.size());
+      } else {
+        mTrainEntries = ents;
+      }
     }
     return mEntries;
+  }
+
+  private boolean includeTestSets() {
+    return Files.nonEmpty(config().targetDirTest());
   }
 
   private List<ImageEntry> trainEntries() {

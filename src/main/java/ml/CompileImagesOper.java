@@ -37,17 +37,26 @@ public final class CompileImagesOper extends AppOper {
 
     mImageCompiler = new ImageCompiler(config(), network());
     mImageCompiler.setFiles(files());
-    mImageCompiler.compileTestSet(config().targetDirTest());
 
     if (config().trainService()) {
       performTrainService();
     } else {
+      if (includeTestSets())
+        mImageCompiler.compileTestSet(config().targetDirTest());
       mImageCompiler.compileTrainSet(config().targetDirTrain());
     }
   }
 
+  private boolean includeTestSets() {
+    return Files.nonEmpty(config().targetDirTest());
+  }
+
+  private File modelDataDir() {
+    return Files.assertNonEmpty(config().targetDirModel(), "target_dir_model");
+  }
+
   private void writeModelData() {
-    File modelDataDir = Files.assertNonEmpty(config().targetDirModel(), "target_dir_model");
+    File modelDataDir = modelDataDir();
     files().remakeDirs(modelDataDir);
     files().writePretty(new File(modelDataDir, "network.json"), network());
   }
@@ -77,6 +86,8 @@ public final class CompileImagesOper extends AppOper {
 
   private void performTrainService() {
 
+    createSignatureFile();
+
     // Choose a temporary filename that can be atomically renamed when it is complete
     //
     File tempDir = new File(config().targetDirTrain(), "_temp_");
@@ -85,7 +96,7 @@ public final class CompileImagesOper extends AppOper {
     //
     files().deleteDirectory(tempDir);
 
-    while (true) {
+    while (!stopDetected()) {
       if (countTrainSets() >= config().maxTrainSets()) {
         if (stopIfInactive())
           break;
@@ -105,6 +116,7 @@ public final class CompileImagesOper extends AppOper {
           break;
         alert("Stream directory already exists:", newDir);
       }
+      log("Generated set:", newDir.getName());
       files().moveDirectory(tempDir, newDir);
       mLastGeneratedFilesTime = currentTime();
     }
@@ -133,6 +145,71 @@ public final class CompileImagesOper extends AppOper {
     }
     return false;
   }
+
+  // ------------------------------------------------------------------
+  // Signature file, a signal sent by client to stop service
+  // ------------------------------------------------------------------
+
+  private void createSignatureFile() {
+
+    // Write a new signature file
+    mSignatureFile = new File(config().targetDirTrain(), System.currentTimeMillis() + "." + EXT_SIG);
+    files().writeString(mSignatureFile, "");
+
+    boolean staleFilesFound = false;
+
+    Integer oldestIndexFound = null;
+
+    {// Delete any other signature files and generated directories; try to do this as quickly as possible
+     //
+      DirWalk w = new DirWalk(config().targetDirTrain()).withRecurse(false).includeDirectories();
+      for (File f : w.files()) {
+        String name = f.getName();
+        if (name.startsWith("set_")) {
+          staleFilesFound = true;
+          log("deleting stale training set:", name);
+          files().deleteDirectory(f);
+          // Avoid reusing indexes close to ones we found
+          oldestIndexFound = Integer.parseInt(chompPrefix(name, "set_"));
+        }
+      }
+    }
+    if (oldestIndexFound != null)
+      mNextStreamSetNumber = oldestIndexFound + 100;
+
+    {
+      pr("signature file:", mSignatureFile);
+      DirWalk w = new DirWalk(config().targetDirTrain()).withRecurse(false).withExtensions(EXT_SIG);
+      if (!w.files().isEmpty()) {
+        for (File f : w.files()) {
+          if (f.getName().equals(mSignatureFile.getName()))
+            continue;
+          pr("f:", f);
+          pr("s:", mSignatureFile);
+          log("deleting stale signature file:", f.getName());
+          files().deleteFile(f);
+        }
+        staleFilesFound = true;
+      }
+    }
+
+    if (staleFilesFound) {
+      // Sleep for a bit to let some other service notice we've deleted their signature file
+      log("sleeping for a bit to let other services shut down gracefully");
+      DateTimeTools.sleepForRealMs(5000);
+    }
+  }
+
+  private boolean stopDetected() {
+    boolean detected = !mSignatureFile.exists();
+    if (detected)
+      pr("...stop signal detected, file has disappeared:", mSignatureFile.getName());
+    return detected;
+  }
+
+  private static final String EXT_SIG = "sig";
+  private File mSignatureFile;
+  // ------------------------------------------------------------------
 
   private static final String STREAM_PREFIX = "set_";
 

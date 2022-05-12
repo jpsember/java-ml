@@ -252,7 +252,7 @@ def error_if(cond, msg=None):
 
 
 def error_unless(cond, msg=None):
-  error_if(not cond, msg)
+  check_state(cond, msg)
 
 
 def die(*args):
@@ -600,6 +600,19 @@ def clean_directory(directory, extension):
     if f.endswith(suffix):
       os.remove(os.path.join(directory, f))
 
+
+def delete_directory(directory, prefix):
+  """
+  Deletes a directory (and its contents), if it exists.  Directory name must have the specified prefix (as a safety feature)
+  """
+  error_unless(len(prefix) >= 3, f"bad prefix: {prefix}")
+  if not os.path.exists(directory):
+    return
+  error_unless(os.path.isdir(directory), f"not a directory: {directory}")
+  basename = os.path.basename(directory)
+  error_unless(basename.startswith(prefix), f"unexpected prefix: {basename}")
+  import shutil
+  shutil.rmtree(directory)
 
 
 def bin_write_floats(path, float_array, append=False):
