@@ -30,6 +30,11 @@ public final class CompileImagesOper extends AppOper {
 
   @Override
   public void perform() {
+    if (config().prepare()) {
+      prepareTrainService();
+      return;
+    }
+
     writeModelData();
 
     if (config().modelDataOnly())
@@ -84,10 +89,31 @@ public final class CompileImagesOper extends AppOper {
     return System.currentTimeMillis();
   }
 
+  private void prepareTrainService() {
+
+    // Delete any existing signature file
+    File sigFile = sigFile();
+    files().deletePeacefully(sigFile);
+
+    // Delete existing training set subdirectories, or any temporary file associated with them
+    {
+      DirWalk w = new DirWalk(config().targetDirTrain()).includeDirectories().withRecurse(false);
+      for (File f : w.files()) {
+        if (!f.isDirectory())
+          continue;
+        if (f.getName().equals("_temp_") || f.getName().startsWith(STREAM_PREFIX))
+          files().deleteDirectory(f);
+      }
+    }
+
+    // Write a new signature file with the current time
+    files().writeString(sigFile, "" + System.currentTimeMillis());
+  }
+
   private void performTrainService() {
     String signature = readSignature();
     if (nullOrEmpty(signature))
-      setError("No signature file found:",sigFile());
+      setError("No signature file found:", sigFile());
 
     // Choose a temporary filename that can be atomically renamed when it is complete
     //
@@ -98,9 +124,11 @@ public final class CompileImagesOper extends AppOper {
     files().deleteDirectory(tempDir);
 
     while (true) {
-      if (!signature.equals(readSignature()))
+      if (!signature.equals(readSignature())) {
+        pr("signature file has changed or disappeared, stopping");
         break;
-      
+      }
+
       if (countTrainSets() >= config().maxTrainSets()) {
         if (stopIfInactive())
           break;

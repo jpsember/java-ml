@@ -25,6 +25,10 @@ fields {
   //
   bool train_service;
 
+  // Prepares for train service (write signature file, discard old sets), and exit
+  //
+  bool prepare;
+
   // If train_service is active, it attempts to maintain this many
   // sets in the directory
   //
