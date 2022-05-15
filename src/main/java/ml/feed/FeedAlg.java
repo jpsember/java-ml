@@ -22,7 +22,7 @@ public abstract class FeedAlg {
     pushEvent(EVT_PRODUCER, 0);
     pushEvent(EVT_CONSUMER, 0);
 
-    for (int evtCount = 0; mConsumerLogicCount - mStalledCount < config().objConsumedTotal(); evtCount++) {
+    for (int evtCount = 0; consumedObjCount() < config().objConsumedTotal(); evtCount++) {
       checkState(evtCount < 20000);
 
       long time = mEventQueue.firstKey();
@@ -39,8 +39,8 @@ public abstract class FeedAlg {
     }
 
     out("Consumer:", mConsumerEventLog);
-    out("Efficiency %:", (100 * (mConsumerLogicCount - mStalledCount)) / mConsumerLogicCount);
-
+    out("Efficiency %:", (100 * consumedObjCount()) / mConsumerLogicCount);
+    out("Avg dist:", mDistSum / (float) (consumedObjCount() - 1));
     pr(mLog);
   }
 
@@ -49,6 +49,10 @@ public abstract class FeedAlg {
   }
 
   private FeedConfig mConfig;
+
+  private int consumedObjCount() {
+    return mConsumerLogicCount - mStalledCount;
+  }
 
   public final FeedConfig config() {
     return mConfig;
@@ -260,7 +264,26 @@ public abstract class FeedAlg {
     mLastConsumerIdProcessed = obj.id;
     out("updating " + obj.id);
     outConsumerObj();
+
+    // record distance from last use of this object
+    {
+      List<Integer> list = mConsumedIdsList;
+      if (!list.isEmpty()) {
+        int i = list.size() - 1;
+        while (i >= 0) {
+          if (list.get(i) == obj.id)
+            break;
+          i--;
+        }
+        int dist = Math.min(list.size() - i, config().consumeSetSize());
+        mDistSum += dist;
+      }
+      list.add(obj.id);
+    }
   }
+
+  private List<Integer> mConsumedIdsList = arrayList();
+  private int mDistSum;
 
   public final void stalled(Object... msgs) {
     setConsumerStatus(STATUS_STALLED, msgs);
