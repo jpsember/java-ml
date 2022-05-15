@@ -26,7 +26,7 @@ fields {
 
   // Number of objects to consume before ending simulation
   //
-  int obj_consumed_total = 50;
+  int obj_consumed_total = 80;
 
   // Random number seed
   //

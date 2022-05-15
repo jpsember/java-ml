@@ -274,8 +274,8 @@ public abstract class FeedAlg {
     checkArgument(obj.defined());
     obj.used++;
     checkState(obj.used <= config().recycle());
-    setConsumerStatus(STATUS_CONSUMED, msgs);
     mLastConsumerIdProcessed = obj.id;
+    setConsumerStatus(STATUS_CONSUMED, msgs);
     out("updating " + obj.id);
     outConsumerObj();
 
@@ -296,13 +296,16 @@ public abstract class FeedAlg {
     mStalledCount++;
   }
 
+  private static String sNames = "abcdefghikmjlnorpstquwxyuz";
+
   private void setConsumerStatus(int status, Object... msgs) {
     checkState(mStatus == STATUS_NONE);
     if (msgs.length != 0)
       out(msgs);
     mStatus = status;
     mConsumerLogicCount++;
-    mConsumerEventLog.append(status == STATUS_STALLED ? 'X' : '█');
+    mConsumerEventLog
+        .append(status == STATUS_STALLED ? '█' : sNames.charAt(mLastConsumerIdProcessed % sNames.length()));
   }
 
   // Id of most recent consumer object processed
