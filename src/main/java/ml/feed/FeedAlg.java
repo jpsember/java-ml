@@ -10,7 +10,7 @@ import gen.FeedConfig;
 import js.base.BasePrinter;
 import js.geometry.MyMath;
 
-public class FeedAlg {
+public abstract class FeedAlg {
 
   public final void perform() {
 
@@ -90,7 +90,7 @@ public class FeedAlg {
     int i = INIT_INDEX;
     for (Obj obj : mConsumerObjList) {
       i++;
-      sb.append(String.format("%c%s ", i == mCursor ? '*' : ' ', (summary(obj))));
+      sb.append(String.format("%c%s ", i == cursor() ? '*' : ' ', (summary(obj))));
     }
     out(sb.toString());
   }
@@ -235,13 +235,17 @@ public class FeedAlg {
 
   public final Obj claimObj(Obj obj) {
     checkArgument(obj.defined());
-    mConsumerObjList.set(mCursor, obj);
+    mConsumerObjList.set(cursor(), obj);
     out("claiming " + obj.id);
     return obj;
   }
 
   public final Obj objAtCursor() {
-    return mConsumerObjList.get(mCursor);
+    return mConsumerObjList.get(cursor());
+  }
+
+  public final int cursor() {
+    return mCursor;
   }
 
   public final void setCursor(int value) {
@@ -284,28 +288,6 @@ public class FeedAlg {
   private static final int STATUS_STALLED = 1;
   private static final int STATUS_CONSUMED = 2;
 
-  public void updateConsumerLogic() {
-
-    Obj cursorObject = objAtCursor();
-
-    if (cursorObject.isNull()) {
-      Obj obj = findUnclaimedObj();
-      if (obj.defined())
-        cursorObject = claimObj(obj);
-    }
-
-    if (cursorObject.isNull()) {
-      stalled("no obj avail");
-      return;
-    }
-
-    if (isLastConsumed(cursorObject)) {
-      stalled("same as last");
-      return;
-    }
-
-    consume(cursorObject);
-    setCursor(mCursor + 1);
-  }
+  public abstract void updateConsumerLogic();
 
 }

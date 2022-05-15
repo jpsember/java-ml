@@ -21,7 +21,7 @@ public class FeedOper extends AppOper {
   @Override
   public void perform() {
     FeedAlg alg;
-    alg = new FeedAlg();
+    alg = new Alg1();
     alg.setConfig(config());
     alg.perform();
   }
