@@ -9,6 +9,7 @@ import java.util.SortedMap;
 import gen.FeedConfig;
 import js.app.AppOper;
 import js.base.BasePrinter;
+import js.geometry.MyMath;
 
 public class FeedOper extends AppOper {
 
@@ -25,24 +26,33 @@ public class FeedOper extends AppOper {
 
   @Override
   public void perform() {
-    int maxEvents = 500;
+
+    // Ensure consumer has objects, even if they are null ones
+    //
+    while (mConsumerObjList.size() < config().consumeSetSize())
+      mConsumerObjList.add(Obj.NULL);
 
     pushEvent(EVT_PRODUCER, 0);
     pushEvent(EVT_CONSUMER, 0);
 
-    for (int evtCount = 0; evtCount < maxEvents; evtCount++) {
-      long time = mQueue.firstKey();
-      int code = mQueue.get(time);
-      mQueue.remove(time);
-      mCurrentTime = time;
-      if (code == EVT_PRODUCER)
-        updateProducer();
-      else
-        updateConsumer();
+    for (int evtCount = 0; mConsumerLogicCount - mStalledCount < config().objConsumedTotal(); evtCount++) {
+      checkState(evtCount < 20000);
 
-      if (false && mLog.length() > 5000)
-        break;
+      long time = mEventQueue.firstKey();
+      int code = mEventQueue.get(time);
+      mEventQueue.remove(time);
+      mCurrentTimestamp = time;
+      if (code == EVT_PRODUCER) {
+        mActor = "producer";
+        updateProducer();
+      } else {
+        mActor = "consumer";
+        updateConsumer();
+      }
     }
+
+    out("Consumer:", mConsumerEventLog);
+    out("Efficiency %:", (100 * (mConsumerLogicCount - mStalledCount)) / mConsumerLogicCount);
 
     pr(mLog);
   }
@@ -57,28 +67,11 @@ public class FeedOper extends AppOper {
     return super.config();
   }
 
-  private void pushEvent(int code, long delay) {
-    delay += rand(50);
-    long targTime = mCurrentTime + delay;
-    int mod = (int) (targTime & 1);
-    int targMod = code & 1;
-    if (mod != targMod)
-      targTime++;
-    mQueue.put(targTime, code);
-  }
-
-  private int rand(int range) {
-    if (mRandom == null)
-      mRandom = new Random(config().seed());
-    return mRandom.nextInt(range);
-  }
-
   private void updateProducer() {
-    mActor = "producer";
     long delay = 0;
-    if (mItems.size() < config().produceSetSize()) {
+    if (mActiveObjList.size() < config().produceSetSize()) {
       Obj ent = new Obj(mNextIdProduced++);
-      mItems.add(ent);
+      mActiveObjList.add(ent);
       out("creating " + ent.id);
       delay = config().produceTimeMs();
     }
@@ -90,7 +83,7 @@ public class FeedOper extends AppOper {
    */
   private void discardStaleConsumerObjects() {
     List<Obj> filtered = arrayList();
-    for (Obj obj : mItems) {
+    for (Obj obj : mActiveObjList) {
       if (obj.used < config().objMaxUse())
         filtered.add(obj);
       else {
@@ -98,61 +91,47 @@ public class FeedOper extends AppOper {
         discardConsumerObj(obj.id);
       }
     }
-    mItems.clear();
-    mItems.addAll(filtered);
+    mActiveObjList.clear();
+    mActiveObjList.addAll(filtered);
   }
 
-  private void showConsumerList() {
-
+  /**
+   * Output summary of consumer's objects
+   */
+  private void outConsumerObj() {
     StringBuilder sb = new StringBuilder();
     int i = INIT_INDEX;
-    for (Obj obj : mConsumerList) {
+    for (Obj obj : mConsumerObjList) {
       i++;
       sb.append(String.format("%c%s ", i == mCursor ? '*' : ' ', (summary(obj))));
     }
     out(sb.toString());
   }
 
+  /**
+   * Update the consumer's logic
+   */
   private void updateConsumer() {
-    mActor = "consumer";
-
-    // Ensure consumer list has objects, even if they are null ones
-    while (mConsumerList.size() < config().consumeSetSize())
-      mConsumerList.add(NULL_ENTRY);
-
-    showConsumerList();
+    prepareConsumerVars();
+    outConsumerObj();
     discardStaleConsumerObjects();
+    performConsumerLogic();
+    checkState(mStatus != STATUS_NONE);
+    scheduleNextConsumerEvent();
+  }
 
-    Obj currEnt = mConsumerList.get(mCursor);
+  private void scheduleNextConsumerEvent() {
+    pushEvent(EVT_CONSUMER, mStatus == STATUS_CONSUMED ? config().consumeTimeMs() : 100);
+  }
 
-    if (undefined(currEnt)) {
-      for (Obj ent : mItems) {
-        if (!feedEntryActive(ent.id)) {
-          mConsumerList.set(mCursor, ent);
-          out("activating " + ent.id);
-          currEnt = ent;
-          break;
-        }
-      }
-    }
-
-    long nextDelay = 100;
-    if (undefined(currEnt)) {
-      out("stalled");
-    } else {
-      currEnt.used++;
-      mCursor = (1 + mCursor) % config().consumeSetSize();
-      nextDelay = config().consumeTimeMs();
-      out("updating " + currEnt.id);
-      showConsumerList();
-    }
-    pushEvent(EVT_CONSUMER, nextDelay);
+  private void prepareConsumerVars() {
+    mStatus = 0;
   }
 
   private void discardConsumerObj(int id) {
-    for (int i = 0; i < mConsumerList.size(); i++)
-      if (mConsumerList.get(i).id == id)
-        mConsumerList.set(i, NULL_ENTRY);
+    for (int i = 0; i < mConsumerObjList.size(); i++)
+      if (mConsumerObjList.get(i).id == id)
+        mConsumerObjList.set(i, Obj.NULL);
   }
 
   private String summary(Obj ent) {
@@ -172,62 +151,213 @@ public class FeedOper extends AppOper {
   }
 
   private void out(Object... msgs) {
-    if (mCurrentTime != mPrevTime) {
+    if (mCurrentTimestamp != mPrevLogTime) {
       mLog.append("_\n");
     }
-    mPrevTime = mCurrentTime;
+    mPrevLogTime = mCurrentTimestamp;
 
     String s = BasePrinter.toString(msgs);
-    mLog.append(String.format("%6d: (%s)  %s\n", mCurrentTime, mActor, s));
+    mLog.append(String.format("%6d: (%s)  %s\n", mCurrentTimestamp, mActor, s));
   }
 
-  private boolean undefined(Obj ent) {
-    return !isDefined(ent);
+  // ------------------------------------------------------------------
+  // Event queue, sorted by timestamp
+  // ------------------------------------------------------------------
+
+  /**
+   * Schedule another producer or consumer logic update event
+   */
+  private void pushEvent(int code, long delay) {
+    delay += rand().nextInt(50);
+    long targTime = mCurrentTimestamp + delay;
+    int mod = (int) (targTime & 1);
+    int targMod = code & 1;
+    if (mod != targMod)
+      targTime++;
+    mEventQueue.put(targTime, code);
   }
 
-  private boolean isDefined(Obj ent) {
-    return ent != null && ent.id != 0;
+  private Random rand() {
+    if (mRandom == null)
+      mRandom = new Random(config().seed());
+    return mRandom;
   }
 
-  private boolean feedEntryActive(int id) {
-    for (Obj ent : mConsumerList)
-      if (ent.id == id)
-        return true;
-    return false;
-  }
+  private Random mRandom;
 
+  // Current time being processed
+  //
+  private long mCurrentTimestamp;
+
+  /**
+   * Event codes
+   */
   private static final int EVT_PRODUCER = 1;
   private static final int EVT_CONSUMER = 2;
 
+  private SortedMap<Long, Integer> mEventQueue = treeMap();
+
+  // ------------------------------------------------------------------
+  // Object representing work generated by producer, manipulated by
+  // consumer
+  // ------------------------------------------------------------------
+
+  /**
+   * Object generated by producer
+   */
   private static class Obj {
+
     public Obj(int id) {
       this.id = id;
     }
 
-    int id;
-    int used;
+    public boolean defined() {
+      return id != 0;
+    }
+
+    public boolean isNull() {
+      return !defined();
+    }
+
+    public int id;
+    public int used;
+
+    public static final Obj NULL = new Obj(0);
   }
 
-  private static final Obj NULL_ENTRY = new Obj(0);
-
-  private SortedMap<Long, Integer> mQueue = treeMap();
-
-  // Items currently in existence
+  // Items generated by producer that haven't yet been deleted
   //
-  private List<Obj> mItems = arrayList();
+  private List<Obj> mActiveObjList = arrayList();
 
-  //  private Map<Integer, Obj> mItems = hashMap();
+  // ------------------------------------------------------------------
 
-  private long mCurrentTime;
-  private Random mRandom;
-
-  // Items being tracked by consumer; id is zero if slot is vacant
+  // Items being tracked by consumer; if slot is vacant, it will contain the NULL obj
   //
-  private List<Obj> mConsumerList = arrayList();
+  private List<Obj> mConsumerObjList = arrayList();
 
-  private int mCursor = 0;
+  private int mCursor;
   private StringBuilder mLog = new StringBuilder();
   private int mNextIdProduced = 500;
+
+  // Name of entity being updated (PRODUCER, CONSUMER)
+  //
   private String mActor = "!!unknown!!";
-  private long mPrevTime;
+
+  private long mPrevLogTime;
+
+  // ------------------------------------------------------------------
+  // Consumer logic 
+  // ------------------------------------------------------------------
+
+  /**
+   * Attempt to find an object in the active object list that does not appear in
+   * the consumer list. Returns Obj.NULL if none found
+   */
+  private Obj findUnclaimedObj() {
+    for (Obj obj : mActiveObjList) {
+      if (!inConsumerObjList(obj)) {
+        return obj;
+      }
+    }
+    return Obj.NULL;
+  }
+
+  /**
+   * Determine if an object is within the consumer list
+   */
+  private boolean inConsumerObjList(Obj obj) {
+    for (Obj ent : mConsumerObjList)
+      if (ent.id == obj.id)
+        return true;
+    return false;
+  }
+
+  private void performConsumerLogic() {
+
+    Obj cursorObject = objAtCursor();
+
+    if (cursorObject.isNull()) {
+      Obj obj = findUnclaimedObj();
+      if (obj.defined())
+        cursorObject = claimObj(obj);
+    }
+
+    if (cursorObject.isNull()) {
+      stalled("no obj avail");
+      return;
+    }
+
+    if (isLastConsumed(cursorObject)) {
+      stalled("same as last");
+      return;
+    }
+
+    consume(cursorObject);
+    setCursor(mCursor + 1);
+  }
+
+  /**
+   * Determine if an object was the last one consumed
+   */
+  private boolean isLastConsumed(Obj obj) {
+    checkArgument(obj.defined());
+    return obj.id == mLastConsumerIdProcessed;
+  }
+
+  private Obj claimObj(Obj obj) {
+    checkArgument(obj.defined());
+    mConsumerObjList.set(mCursor, obj);
+    out("claiming " + obj.id);
+    return obj;
+  }
+
+  private Obj objAtCursor() {
+    return mConsumerObjList.get(mCursor);
+  }
+
+  /**
+   * Set cursor within consumer object list
+   */
+  private void setCursor(int value) {
+    mCursor = MyMath.myMod(value, config().consumeSetSize());
+  }
+
+  /**
+   * Have consumer 'use' an object; increment its usage counter
+   */
+  private void consume(Obj obj, Object... msgs) {
+    checkArgument(obj.defined());
+obj.used++;
+    checkState(obj.used <= config().objMaxUse());
+    setConsumerStatus(STATUS_CONSUMED, msgs);
+    mLastConsumerIdProcessed = obj.id;
+    out("updating " + obj.id);
+    outConsumerObj();
+  }
+
+  private void stalled(Object... msgs) {
+    setConsumerStatus(STATUS_STALLED, msgs);
+    mStalledCount++;
+  }
+
+  private void setConsumerStatus(int status, Object... msgs) {
+    checkState(mStatus == STATUS_NONE);
+    if (msgs.length != 0)
+      out(msgs);
+    mStatus = status;
+    mConsumerLogicCount++;
+    mConsumerEventLog.append(status == STATUS_STALLED ? 'X' : '█');
+  }
+
+  // Id of most recent consumer object processed
+  //
+  private int mLastConsumerIdProcessed;
+
+  private StringBuilder mConsumerEventLog = new StringBuilder();
+  private int mConsumerLogicCount;
+  private int mStalledCount;
+  private int mStatus;
+  private static final int STATUS_NONE = 0;
+  private static final int STATUS_STALLED = 1;
+  private static final int STATUS_CONSUMED = 2;
 }

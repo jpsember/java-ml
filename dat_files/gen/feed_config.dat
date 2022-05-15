@@ -1,8 +1,9 @@
 fields {
-  int produce_time_ms = 1000;
+  int produce_time_ms = 1200;
   int consume_time_ms = 500;
   int produce_set_size = 3;
   int consume_set_size = 2;
   int seed = 1965;
   int obj_max_use = 3;
+  int obj_consumed_total = 50;
 }
