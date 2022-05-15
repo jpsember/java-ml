@@ -8,7 +8,6 @@ import java.util.Random;
 import java.util.SortedMap;
 
 import gen.FeedConfig;
-import gen.FeedEntry;
 import js.app.AppOper;
 import js.base.BasePrinter;
 
@@ -42,7 +41,7 @@ public class FeedOper extends AppOper {
       else
         updateConsumer();
 
-      if (mLog.length() > 1000)
+      if (mLog.length() > 5000)
         break;
     }
 
@@ -76,35 +75,37 @@ public class FeedOper extends AppOper {
   }
 
   private void updateProducer() {
-    if (mItems.size() == config().produceSetSize()) {
-      pushEvent(EVT_PRODUCER, 0);
-      return;
-    }
-
-    FeedEntry.Builder ent = FeedEntry.newBuilder().id(mNextIdProduced++);
-    mItems.put(ent.id(), ent);
-    addEvent("producer creating", summary(ent));
-
-    pushEvent(EVT_PRODUCER, config().produceTimeMs());
+    actor = "producer";
+    long delay = 0;
+    if (mItems.size() < config().produceSetSize()) {
+      FeedEntry ent = new FeedEntry(mNextIdProduced++);
+      mItems.put(ent.id, ent);
+      addEvent("creating", summary(ent));
+      delay = config().produceTimeMs();
+    } else
+      addEvent("set full");
+    pushEvent(EVT_PRODUCER, delay);
   }
 
   private void updateConsumer() {
-    List<FeedEntry.Builder> ents = getEntries();
+    actor = "consumer";
+
+    List<FeedEntry> ents = getEntries();
 
     if (mWorkList.isEmpty()) {
       while (mWorkList.size() < config().consumeSetSize()) {
-        mWorkList.add(FeedEntry.newBuilder());
+        mWorkList.add(NULL_ENTRY);
       }
     }
 
-    FeedEntry.Builder currEnt = mWorkList.get(mCursor);
+    FeedEntry currEnt = mWorkList.get(mCursor);
     addEvent("cursor:", mCursor, "entry:", summary(currEnt));
     if (undefined(currEnt)) {
-      addEvent("looking for an inactive entry to fill slot, from set of size", mItems.size(), "ents size:",
-          ents.size());
-      for (FeedEntry.Builder ent : ents) {
-        if (!feedEntryActive(ent.id())) {
-          // ent.active(true);
+      if (false)
+        addEvent("looking for an inactive entry to fill slot, from set of size", mItems.size(), "ents size:",
+            ents.size());
+      for (FeedEntry ent : ents) {
+        if (!feedEntryActive(ent.id)) {
           mWorkList.add(ent);
           addEvent("making active:", summary(ent));
           currEnt = ent;
@@ -115,25 +116,25 @@ public class FeedOper extends AppOper {
 
     long nextDelay = 100;
     if (undefined(currEnt)) {
-      addEvent("consumer stalled");
+      addEvent("stalled");
     } else {
-      currEnt.used(currEnt.used() + 1);
+      currEnt.used++;
       mCursor = (1 + mCursor) % config().consumeSetSize();
       nextDelay = config().consumeTimeMs();
-      addEvent("consumer updating", summary(currEnt));
+      addEvent("updating", summary(currEnt));
     }
     pushEvent(EVT_CONSUMER, nextDelay);
   }
 
   private String summary(FeedEntry ent) {
-    if (ent.id() == 0)
+    if (ent.id == 0)
       return "---";
-    return String.format("%4d (%d)", ent.id(), ent.used());
+    return String.format("%4d (%d)", ent.id, ent.used);
   }
 
   private void addEvent(Object... msgs) {
     String s = BasePrinter.toString(msgs);
-    mLog.append(String.format("%6d: %s\n", mCurrentTime, s));
+    mLog.append(String.format("%6d: (%s)  %s\n", mCurrentTime, actor, s));
   }
 
   private boolean undefined(FeedEntry ent) {
@@ -141,18 +142,18 @@ public class FeedOper extends AppOper {
   }
 
   private boolean isDefined(FeedEntry ent) {
-    return ent != null && ent.id() != 0;
+    return ent != null && ent.id != 0;
   }
 
   private boolean feedEntryActive(int id) {
     for (FeedEntry ent : mWorkList)
-      if (ent.id() == id)
+      if (ent.id == id)
         return true;
     return false;
   }
 
-  private List<FeedEntry.Builder> getEntries() {
-    List<FeedEntry.Builder> ents = arrayList();
+  private List<FeedEntry> getEntries() {
+    List<FeedEntry> ents = arrayList();
     ents.addAll(mItems.values());
     return ents;
   }
@@ -164,16 +165,29 @@ public class FeedOper extends AppOper {
 
   // Items currently in existence
   //
-  private Map<Integer, FeedEntry.Builder> mItems = hashMap();
+  private Map<Integer, FeedEntry> mItems = hashMap();
 
   private long mCurrentTime;
   private Random mRandom;
 
   // Items being tracked by consumer; id is zero if slot is vacant
   //
-  private List<FeedEntry.Builder> mWorkList = arrayList();
-  
+  private List<FeedEntry> mWorkList = arrayList();
+
   private int mCursor = 0;
   private StringBuilder mLog = new StringBuilder();
   private int mNextIdProduced = 500;
+  private String actor = "???";
+
+  private static class FeedEntry {
+    public FeedEntry(int id) {
+      this.id = id;
+    }
+
+    int id;
+    int used;
+  }
+
+  private static final FeedEntry NULL_ENTRY = new FeedEntry(0);
+
 }
