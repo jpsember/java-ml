@@ -39,6 +39,7 @@ public abstract class FeedAlg extends BaseObject {
       }
     }
 
+    out("Producer count:",mProducerTasks);
     out("Consumer:", mConsumerEventLog);
     out("Efficiency %:", (100 * consumedObjCount()) / mConsumerLogicCount);
     out("Avg dist:", mDistSum / (float) (consumedObjCount() - 1));
@@ -66,9 +67,12 @@ public abstract class FeedAlg extends BaseObject {
       mActiveObjList.add(ent);
       out2("creating " + ent.id);
       delay = config().produceTimeMs();
+      mProducerTasks++;
     }
     pushEvent(EVT_PRODUCER, delay);
   }
+
+  private int mProducerTasks;
 
   /**
    * Discard objects that have been used the max number of times

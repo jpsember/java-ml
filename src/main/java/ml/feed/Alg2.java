@@ -17,16 +17,18 @@ public class Alg2 extends FeedAlg {
         if (obj.defined())
           cursorObject = claimObj(obj);
       }
-      if (cursorObject.isNull()) continue;
+      if (cursorObject.isNull())
+        continue;
       // There must be at least one object between this one and the last one consumed
-      if (isLastConsumed(cursorObject)) continue;
+      if (isLastConsumed(cursorObject))
+        continue;
       int dist = distanceFromPreviousUse(cursorObject);
       if (dist > maxDist) {
         maxDist = dist;
         bestCursor = cursor();
       }
     }
-    
+
     if (bestCursor < 0) {
       stalled("no different object avail");
       return;
