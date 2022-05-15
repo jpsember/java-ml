@@ -7,10 +7,11 @@ import java.util.Random;
 import java.util.SortedMap;
 
 import gen.FeedConfig;
+import js.base.BaseObject;
 import js.base.BasePrinter;
 import js.geometry.MyMath;
 
-public abstract class FeedAlg {
+public abstract class FeedAlg extends BaseObject {
 
   public final void perform() {
 
@@ -63,7 +64,7 @@ public abstract class FeedAlg {
     if (mActiveObjList.size() < config().produceSetSize()) {
       Obj ent = new Obj(mNextIdProduced++);
       mActiveObjList.add(ent);
-      out("creating " + ent.id);
+      out2("creating " + ent.id);
       delay = config().produceTimeMs();
     }
     pushEvent(EVT_PRODUCER, delay);
@@ -78,7 +79,7 @@ public abstract class FeedAlg {
       if (obj.used < config().recycle())
         filtered.add(obj);
       else {
-        out("discarding " + obj.id);
+        out2("discarding " + obj.id);
         discardConsumerObj(obj.id);
       }
     }
@@ -96,7 +97,7 @@ public abstract class FeedAlg {
       i++;
       sb.append(String.format("%c%s ", i == cursor() ? '*' : ' ', (summary(obj))));
     }
-    out(sb.toString());
+    out2(sb.toString());
   }
 
   /**
@@ -139,6 +140,11 @@ public abstract class FeedAlg {
       }
     }
     return sb.toString();
+  }
+
+  public final void out2(Object... msgs) {
+    if (verbose())
+      out(msgs);
   }
 
   public final void out(Object... msgs) {
@@ -240,7 +246,7 @@ public abstract class FeedAlg {
   public final Obj claimObj(Obj obj) {
     checkArgument(obj.defined());
     mConsumerObjList.set(cursor(), obj);
-    out("claiming " + obj.id);
+    out2("claiming " + obj.id);
     return obj;
   }
 
@@ -276,7 +282,7 @@ public abstract class FeedAlg {
     checkState(obj.used <= config().recycle());
     mLastConsumerIdProcessed = obj.id;
     setConsumerStatus(STATUS_CONSUMED, msgs);
-    out("updating " + obj.id);
+    out2("updating " + obj.id);
     outConsumerObj();
 
     // record distance from last use of this object
@@ -301,7 +307,7 @@ public abstract class FeedAlg {
   private void setConsumerStatus(int status, Object... msgs) {
     checkState(mStatus == STATUS_NONE);
     if (msgs.length != 0)
-      out(msgs);
+      out2(msgs);
     mStatus = status;
     mConsumerLogicCount++;
     mConsumerEventLog

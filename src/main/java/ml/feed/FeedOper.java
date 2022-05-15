@@ -29,6 +29,7 @@ public class FeedOper extends AppOper {
     } catch (Throwable e) {
       throw badArg("Can't construct algorithm! Error:", e.getMessage());
     }
+    alg.setVerbose(verbose());
     alg.setConfig(config());
     alg.perform();
   }
