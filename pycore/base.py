@@ -609,10 +609,15 @@ def delete_directory(directory, prefix):
   if not os.path.exists(directory):
     return
   error_unless(os.path.isdir(directory), f"not a directory: {directory}")
-  basename = os.path.basename(directory)
+  basename = base_name(directory)
   error_unless(basename.startswith(prefix), f"unexpected prefix: {basename}")
   import shutil
   shutil.rmtree(directory)
+
+
+def base_name(path):
+  return os.path.basename(path)
+
 
 
 def bin_write_floats(path, float_array, append=False):

@@ -1,0 +1,5 @@
+fields {
+  int id;
+  int used;
+ // bool active;
+}
