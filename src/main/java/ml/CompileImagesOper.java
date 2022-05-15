@@ -112,16 +112,12 @@ public final class CompileImagesOper extends AppOper {
 
   private void performTrainService() {
     String signature = readSignature();
-    if (nullOrEmpty(signature))
-      setError("No signature file found:", sigFile());
+    checkState(nonEmpty(signature), "No signature file found; need to prepare?");
 
     // Choose a temporary filename that can be atomically renamed when it is complete
     //
     File tempDir = new File(config().targetDirTrain(), "_temp_");
-
-    // Clean up any old directory
-    //
-    files().deleteDirectory(tempDir);
+    Files.assertDoesNotExist(tempDir, "Found old directory; need to prepare?");
 
     while (true) {
       if (!signature.equals(readSignature())) {
@@ -136,6 +132,8 @@ public final class CompileImagesOper extends AppOper {
         continue;
       }
 
+      long startTime = System.currentTimeMillis();
+
       mImageCompiler.compileTrainSet(tempDir);
 
       // Choose a name for the new set
@@ -144,13 +142,24 @@ public final class CompileImagesOper extends AppOper {
       while (true) {
         newDir = new File(config().targetDirTrain(), STREAM_PREFIX + mNextStreamSetNumber);
         mNextStreamSetNumber++;
-        if (!newDir.exists())
-          break;
-        alert("Stream directory already exists:", newDir);
+        checkState(!newDir.exists(), "Stream directory already exists; need to prepare?", newDir);
+        break;
       }
       log("Generated set:", newDir.getName());
       files().moveDirectory(tempDir, newDir);
       mLastGeneratedFilesTime = currentTime();
+
+      {
+        long elapsed = mLastGeneratedFilesTime - startTime;
+        float sec = elapsed / 1000f;
+        if (mAvgGeneratedTimeSec < 0)
+          mAvgGeneratedTimeSec = sec;
+        mAvgGeneratedTimeSec = (0.1f * sec) + (1 - 0.1f) * mAvgGeneratedTimeSec;
+        if (mAvgReportedCounter < 20) {
+          mAvgReportedCounter++;
+          pr("Time to generate training set:", sec, "sm:", mAvgGeneratedTimeSec);
+        }
+      }
     }
   }
 
@@ -197,5 +206,7 @@ public final class CompileImagesOper extends AppOper {
   private ImageCompiler mImageCompiler;
   private int mNextStreamSetNumber;
   private long mLastGeneratedFilesTime;
+  private float mAvgGeneratedTimeSec = -1;
+  private int mAvgReportedCounter;
   private NeuralNetwork mCompiledNetwork;
 }

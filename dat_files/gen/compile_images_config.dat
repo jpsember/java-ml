@@ -30,7 +30,13 @@ fields {
   bool prepare;
 
   // If train_service is active, it attempts to maintain this many
-  // sets in the directory
+  // sets in the directory; this should be one more than the number that
+  // the training code needs
   //
-  int max_train_sets = 2;
+  int max_train_sets = 3;
+
+  // Maximum number of times a train set is reused before being discarded
+  //
+  int recycle = 3;
+
 }

@@ -1,5 +1,13 @@
 fields {
+  // Number of times this set has been used
   int used;
-  long timestamp;
+
+  // Directory containing the set
+  //
   File directory;
+
+  // Id assigned to the set when it was last used, i.e. its position in a sequence of
+  // sets generated, starting at 1
+  //
+  int id;
 }
