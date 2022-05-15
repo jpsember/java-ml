@@ -20,8 +20,15 @@ public class FeedOper extends AppOper {
 
   @Override
   public void perform() {
-    FeedAlg alg;
-    alg = new Alg1();
+    FeedAlg alg = null;
+    String algName = "ml.feed.Alg" + config().alg();
+    Class klass = null;
+    try {
+      klass = Class.forName(algName);
+      alg = (FeedAlg) klass.newInstance();
+    } catch (Throwable e) {
+      throw badArg("Can't construct algorithm! Error:", e.getMessage());
+    }
     alg.setConfig(config());
     alg.perform();
   }

@@ -1,9 +1,35 @@
 fields {
+
+  // Algorithm to apply (class must have name ml.feed.Alg<x>.java)
+  //
+  int alg = 1;
+
+  // Time producer must spend to generate an object
+  //
   int produce_time_ms = 1200;
+
+  // Time consumer must spend to consume an object
+  //
   int consume_time_ms = 500;
+
+  // Number of items that producer will aim to have in existence
+  //
   int produce_set_size = 3;
+
+  // Number of items that consumer will be working with at once
+  //
   int consume_set_size = 2;
-  int seed = 1965;
-  int obj_max_use = 3;
+
+  // Maximum number of times an object can be consumed before it must be deleted
+  //
+  int recycle = 3;
+
+  // Number of objects to consume before ending simulation
+  //
   int obj_consumed_total = 50;
+
+  // Random number seed
+  //
+  int seed = 1965;
+
 }

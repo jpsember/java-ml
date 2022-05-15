@@ -75,7 +75,7 @@ public abstract class FeedAlg {
   private void discardStaleConsumerObjects() {
     List<Obj> filtered = arrayList();
     for (Obj obj : mActiveObjList) {
-      if (obj.used < config().objMaxUse())
+      if (obj.used < config().recycle())
         filtered.add(obj);
       else {
         out("discarding " + obj.id);
@@ -129,12 +129,12 @@ public abstract class FeedAlg {
     StringBuilder sb = new StringBuilder();
     if (ent.id == 0) {
       sb.append("----");
-      sb.append(spaces(1 + config().objMaxUse()));
+      sb.append(spaces(1 + config().recycle()));
     } else {
       sb.append(String.format("%3d", ent.id));
 
       sb.append(':');
-      for (int i = 1; i <= config().objMaxUse(); i++) {
+      for (int i = 1; i <= config().recycle(); i++) {
         sb.append(ent.used >= i ? '▆' : '▁');
       }
     }
@@ -256,10 +256,24 @@ public abstract class FeedAlg {
     mCursor = MyMath.myMod(value, config().consumeSetSize());
   }
 
+  public final int distanceFromPreviousUse(Obj obj) {
+    int dist = config().consumeSetSize();
+    List<Integer> list = mConsumedIdsList;
+    int i = list.size() - 1;
+    while (i >= 0) {
+      if (list.get(i) == obj.id) {
+        dist = Math.min(dist, list.size() - i);
+        break;
+      }
+      i--;
+    }
+    return dist;
+  }
+
   public final void consume(Obj obj, Object... msgs) {
     checkArgument(obj.defined());
     obj.used++;
-    checkState(obj.used <= config().objMaxUse());
+    checkState(obj.used <= config().recycle());
     setConsumerStatus(STATUS_CONSUMED, msgs);
     mLastConsumerIdProcessed = obj.id;
     out("updating " + obj.id);
@@ -268,16 +282,8 @@ public abstract class FeedAlg {
     // record distance from last use of this object
     {
       List<Integer> list = mConsumedIdsList;
-      if (!list.isEmpty()) {
-        int i = list.size() - 1;
-        while (i >= 0) {
-          if (list.get(i) == obj.id)
-            break;
-          i--;
-        }
-        int dist = Math.min(list.size() - i, config().consumeSetSize());
-        mDistSum += dist;
-      }
+      if (!list.isEmpty())
+        mDistSum += distanceFromPreviousUse(obj);
       list.add(obj.id);
     }
   }
