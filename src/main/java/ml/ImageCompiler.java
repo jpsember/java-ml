@@ -75,7 +75,7 @@ public class ImageCompiler extends BaseObject {
     if (imageSetInfo.imageLengthBytes() <= 0 || imageSetInfo.labelLengthBytes() <= 0)
       throw badState("ImageSetInfo hasn't been completely filled out:", INDENT, imageSetInfo);
 
-    todo("transform image randomly if training image");
+    todo("!transform image randomly if training image");
 
     for (ImageEntry entry : entries) {
       BufferedImage img = ImgUtil.read(entry.imageFile);
