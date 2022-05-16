@@ -2,4 +2,5 @@
             "network_path" : "network.json",
              "source_dir" : "generated_images",
        "train_service" : false,
+       "inspection_dir" : "inspection",
 }

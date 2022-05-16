@@ -24,6 +24,7 @@ import js.geometry.IPoint;
 import js.geometry.Matrix;
 import js.geometry.MyMath;
 import js.graphics.ImgUtil;
+import js.graphics.Inspector;
 import js.graphics.ScriptUtil;
 import ml.ModelHandler;
 import ml.ModelServiceProvider;
@@ -46,6 +47,10 @@ public final class ImageCompiler extends BaseObject {
     //mImageTransformer = mModelHandler.buildImageTransformer(config.augmentationConfig(), random());
   }
 
+  public void setInspector(Inspector inspector) {
+    mInspector = Inspector.orNull(inspector);
+  }
+
   public void compileTrainSet(File targetDir) {
     files().remakeDirs(targetDir);
     File imagePath = new File(targetDir, "images.bin");
@@ -65,20 +70,6 @@ public final class ImageCompiler extends BaseObject {
     provider.storeImageSetInfo(imageSetInfo);
     checkArgument(imageSetInfo.imageLengthBytes() > 0 && imageSetInfo.labelLengthBytes() > 0);
 
-    //    for (ImageEntry rec : entries) {
-    //      AugmentTransform aug = mProc.buildAugmentTransform();
-    //      ImageTransformer<BufferedImage> transformer = mHandler.buildImageTransformer(augmentationConfig(),
-    //          random(), mTrainConfig.stats(), rec);
-    //      transformer.setInspector(mInspectionManager);
-    //      mProc.applyCompileImagePipeline(rec.bufferedImage(), rec.annotations(), aug, transformer,
-    //          modelInputReceiver, rec);
-    //      if (!cacheImagesInMemory)
-    //        rec.discardImage();
-    //    }
-    //
-
-    //   ImageHandler handler;
-
     float[] imageFloats = null;
 
     for (ImageEntry entry : entries()) {
@@ -88,37 +79,28 @@ public final class ImageCompiler extends BaseObject {
         checkImageSizeAndType(entry.imageFile(), img, model.inputImagePlanarSize(),
             model.inputImageChannels());
       }
+      mInspector.create("orig").image(img);
 
       TransformWrapper tfm = buildAugmentTransform();
       // TODO: do we need to store the transform within the entry?  Maybe have a 'clean' operation at the end of dealing with the entry to throw out things like the loaded image
 
       entry.setTransform(tfm);
 
+      BufferedImage targetImage = ImgUtil.build(model.inputImagePlanarSize(), img.getType());  
       AugmentationConfig config = config().augmentationConfig();
       AffineTransformOp op = new AffineTransformOp(tfm.matrix().toAffineTransform(),
           AffineTransformOp.TYPE_BILINEAR);
 
-      BufferedImage targetImage = ImgUtil.build(model.inputImagePlanarSize(), img.getType()); //INSPECTION_IMAGE_TYPE);
-      //          ImgUtil.imageOfSameSize(sourceImage, INSPECTION_IMAGE_TYPE);
       op.filter(img, targetImage);
+      mInspector.create("tfm").image(targetImage);
 
-      //      inspector().create("tfm");
-      //      applyPendingAnnotations();
-      //      inspector().image(targetImage);
+      imageFloats = ImgUtil.floatPixels(targetImage, model.inputImageChannels(), imageFloats);
 
-      imageFloats = ImgUtil.floatPixels(img, model.inputImageChannels(), imageFloats);
-
-      //   ImgUtil.bufferedImageToFloat(targetImage, model.inputImageVolume().depth(), destination);
-      if (config.adjustBrightness()) {
+      if (config.adjustBrightness())
         Util.applyRandomBrightness(random(), imageFloats, config.brightShiftMin(), config.brightShiftMax());
-      }
 
-      //      
-      //      mImageTransformer.transform(transform.matrix(),transform.inverse(), img, );
-      //      img = 
-      //      ImgEffects.applyTransform(img, transform.matrix().toAffineTransform());
-      //   
-      //      
+      mInspector.create("float").imageSize(model.inputImagePlanarSize()).channels(model.inputImageChannels())
+          .image(imageFloats);
 
       provider.accept(imageFloats, entry.scriptElementList());
     }
@@ -279,4 +261,5 @@ public final class ImageCompiler extends BaseObject {
   private boolean mEntriesValidated;
   private int mExpectedImageType;
   private IPoint mExpectedImageSize;
+  private Inspector mInspector = Inspector.NULL_INSPECTOR;
 }

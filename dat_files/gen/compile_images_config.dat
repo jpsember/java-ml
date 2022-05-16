@@ -14,6 +14,7 @@ fields {
   File target_dir_train = "train_data";
   File target_dir_model = "model_data";
   File target_dir_checkpoint = "checkpoints";
+  File inspection_dir;
 
   // If true, loops forever, generating subdirectories within the
   // target_train_dir containing additional images and labels

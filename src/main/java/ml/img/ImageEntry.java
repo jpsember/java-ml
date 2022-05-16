@@ -41,6 +41,6 @@ class ImageEntry {
   }
   
   private final File mImageFile;
-  private ScriptElementList mScriptElements = ScriptElementList.DEFAULT_INSTANCE;
+  private ScriptElementList mScriptElements;
   private TransformWrapper mTransform = TransformWrapper.DEFAULT_INSTANCE;
 }

@@ -12,6 +12,7 @@ import js.app.AppOper;
 import js.base.DateTimeTools;
 import js.file.DirWalk;
 import js.file.Files;
+import js.graphics.Inspector;
 import ml.img.ImageCompiler;
 
 /**
@@ -47,13 +48,18 @@ public final class CompileImagesOper extends AppOper {
       prepareTrainService();
       return;
     }
-
+    
     writeModelData();
     ImageCompiler imageCompiler = new ImageCompiler(config(), network(), files());
+    Inspector insp = Inspector.build(config().inspectionDir());
+    imageCompiler.setInspector(insp);
+    
     if (config().trainService())
       performTrainService(imageCompiler);
     else
       imageCompiler.compileTrainSet(config().targetDirTrain());
+    
+    insp.flush();
   }
 
   private File modelDataDir() {
