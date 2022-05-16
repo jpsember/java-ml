@@ -5,6 +5,10 @@ fields {
 
   File source_dir;
 
+  // Augmentation parameters to apply to the images
+  //
+  AugmentationConfig augmentation_config;
+
   int seed;
 
   File target_dir_train = "train_data";
