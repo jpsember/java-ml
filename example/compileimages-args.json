@@ -1,7 +1,5 @@
 {
             "network_path" : "network.json",
              "source_dir" : "generated_images",
-        "target_dir_test" : "test_data",
-       "target_dir_train" : "train_data",
-       "train_service" : true,
+       "train_service" : false,
 }
