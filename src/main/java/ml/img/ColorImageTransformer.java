@@ -1,4 +1,4 @@
-package ml;
+package ml.img;
 
 import static js.base.Tools.*;
 
@@ -7,6 +7,7 @@ import java.awt.image.BufferedImage;
 
 import js.geometry.Matrix;
 import js.graphics.ImgUtil;
+import ml.Util;
 import gen.AugmentationConfig;
 
 /**

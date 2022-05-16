@@ -1,4 +1,4 @@
-package ml;
+package ml.img;
 
 import static js.base.Tools.*;
 
@@ -16,6 +16,11 @@ import gen.AugmentationConfig;
 import gen.NeuralNetwork;
 import gen.TransformWrapper;
 import js.graphics.gen.ScriptElementList;
+import ml.ModelHandler;
+import ml.ModelServiceProvider;
+import ml.ModelWrapper;
+import ml.Util;
+
 import static ml.Util.*;
 
 @Deprecated

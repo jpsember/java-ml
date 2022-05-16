@@ -1,4 +1,4 @@
-package ml;
+package ml.img;
 
 import static js.base.Tools.*;
 import static ml.Util.*;
@@ -27,6 +27,9 @@ import js.graphics.ImgUtil;
 import js.graphics.ScriptUtil;
 import js.graphics.gen.Script;
 import js.graphics.gen.ScriptElementList;
+import ml.ModelHandler;
+import ml.ModelServiceProvider;
+import ml.ModelWrapper;
 
 /**
  * Used by CompileImagesOper to process images

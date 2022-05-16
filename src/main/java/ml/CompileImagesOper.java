@@ -12,6 +12,7 @@ import js.app.AppOper;
 import js.base.DateTimeTools;
 import js.file.DirWalk;
 import js.file.Files;
+import ml.img.ImageCompiler;
 
 /**
  * Compiles images into a form to be consumed by pytorch. Partitions images into

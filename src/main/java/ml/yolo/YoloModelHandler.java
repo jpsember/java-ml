@@ -17,8 +17,6 @@ import js.graphics.ScriptUtil;
 import js.graphics.gen.ElementProperties;
 import js.graphics.gen.Script;
 import ml.Util;
-import ml.ImageHandler;
-import ml.ImageRecord;
 import ml.ModelHandler;
 import ml.ModelServiceProvider;
 import ml.NetworkAnalyzer;
@@ -29,6 +27,8 @@ import gen.Vol;
 import gen.Yolo;
 import ml.NetworkUtil;
 import ml.VolumeUtil;
+import ml.img.ImageHandler;
+import ml.img.ImageRecord;
 
 @Deprecated
 public final class YoloModelHandler extends ModelHandler {

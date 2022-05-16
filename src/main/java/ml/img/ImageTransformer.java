@@ -1,4 +1,4 @@
-package ml;
+package ml.img;
 
 import static js.base.Tools.*;
 
@@ -9,6 +9,8 @@ import js.base.BaseObject;
 import js.geometry.Matrix;
 import js.graphics.Inspector;
 import js.graphics.gen.ScriptElementList;
+import ml.ModelHandler;
+import ml.ModelWrapper;
 
 /**
  * Converts images of type T to arrays of floats, while applying a linear

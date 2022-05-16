@@ -1,4 +1,4 @@
-package ml;
+package ml.img;
 
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -14,6 +14,7 @@ import js.graphics.ScriptElement;
 import js.graphics.ScriptUtil;
 import js.graphics.gen.Script;
 import js.graphics.gen.ScriptElementList;
+import ml.Util;
 
 import static js.base.Tools.*;
 

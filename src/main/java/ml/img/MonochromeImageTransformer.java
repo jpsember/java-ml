@@ -1,4 +1,4 @@
-package ml;
+package ml.img;
 
 import java.awt.Font;
 import java.awt.image.AffineTransformOp;
@@ -19,6 +19,7 @@ import js.graphics.gen.ImageStats;
 import js.graphics.gen.MonoImage;
 import js.json.JSList;
 import js.json.JSMap;
+import ml.Util;
 import gen.AugmentationConfig;
 
 /**
