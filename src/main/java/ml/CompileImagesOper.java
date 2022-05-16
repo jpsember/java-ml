@@ -31,6 +31,16 @@ public final class CompileImagesOper extends AppOper {
   }
 
   @Override
+  public CompileImagesConfig defaultArgs() {
+    return CompileImagesConfig.DEFAULT_INSTANCE;
+  }
+
+  @Override
+  public CompileImagesConfig config() {
+    return super.config();
+  }
+
+  @Override
   public void perform() {
     if (config().prepare()) {
       prepareTrainService();
@@ -62,16 +72,6 @@ public final class CompileImagesOper extends AppOper {
       mCompiledNetwork = analyzer.result();
     }
     return mCompiledNetwork;
-  }
-
-  @Override
-  public CompileImagesConfig defaultArgs() {
-    return CompileImagesConfig.DEFAULT_INSTANCE;
-  }
-
-  @Override
-  public CompileImagesConfig config() {
-    return super.config();
   }
 
   private long currentTime() {

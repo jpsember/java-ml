@@ -12,7 +12,7 @@ import js.graphics.ScriptUtil;
 import js.graphics.gen.Script;
 import js.base.BaseObject;
 import ml.classifier.ClassifierModelHandler;
-import ml.yolo.YoloModelHandler;
+//import ml.yolo.YoloModelHandler;
 import gen.AugmentationConfig;
 import gen.Layer;
 import gen.NeuralNetwork;
@@ -25,6 +25,7 @@ import gen.PlotInferenceResultsConfig;
  */
 public abstract class ModelHandler extends BaseObject {
 
+  @Deprecated
   public void addImageRecordFilters(ImageHandler imageProcessor) {
   }
 
@@ -107,9 +108,9 @@ public abstract class ModelHandler extends BaseObject {
     ModelHandler handler = null;
     switch (model.projectType()) {
 
-    case YOLO:
-      handler = new YoloModelHandler();
-      break;
+//    case YOLO:
+//      handler = new YoloModelHandler();
+//      break;
 
     case CLASSIFIER:
       handler = new ClassifierModelHandler();

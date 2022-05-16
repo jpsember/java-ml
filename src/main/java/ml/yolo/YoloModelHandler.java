@@ -30,6 +30,7 @@ import gen.Yolo;
 import ml.NetworkUtil;
 import ml.VolumeUtil;
 
+@Deprecated
 public final class YoloModelHandler extends ModelHandler {
 
   @Override

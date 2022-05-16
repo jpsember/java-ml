@@ -18,6 +18,7 @@ import gen.TransformWrapper;
 import js.graphics.gen.ScriptElementList;
 import static ml.Util.*;
 
+@Deprecated
 public final class ImageHandler extends BaseObject {
 
   public ImageHandler(NeuralNetwork network, AugmentationConfig augmentationConfig) {

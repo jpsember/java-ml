@@ -23,6 +23,7 @@ import js.graphics.ImgUtil;
 /**
  * Represents a single image, e.g., for compilation into a training set
  */
+@Deprecated
 public final class ImageRecord {
 
   public ImageRecord(ImageHandler processor, File sourceFile) {
