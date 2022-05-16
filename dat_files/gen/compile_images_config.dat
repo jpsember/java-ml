@@ -9,6 +9,7 @@ fields {
 
   File target_dir_train = "train_data";
   File target_dir_model = "model_data";
+  File target_dir_checkpoint = "checkpoints";
 
   // If a test directory is specified, it generates a test set as well
   //

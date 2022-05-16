@@ -108,8 +108,13 @@ public final class CompileImagesOper extends AppOper {
 
     // Write a new signature file with the current time
     files().writeString(sigFile, "" + System.currentTimeMillis());
+    
+    // Construct checkpoint subdirectory if necessary
+    //
+    File cp = Files.assertNonEmpty(config().targetDirCheckpoint());
+    files().mkdirs(cp);
   }
-
+ 
   private void performTrainService() {
     String signature = readSignature();
     checkState(nonEmpty(signature), "No signature file found; need to prepare?");
@@ -119,6 +124,9 @@ public final class CompileImagesOper extends AppOper {
     File tempDir = new File(config().targetDirTrain(), "_temp_");
     Files.assertDoesNotExist(tempDir, "Found old directory; need to prepare?");
 
+    File cp = Files.assertNonEmpty(config().targetDirCheckpoint());
+    Files.assertDirectoryExists(cp,"No checkpoints directory found; need to prepare?");
+    
     while (true) {
       if (!signature.equals(readSignature())) {
         pr("signature file has changed or disappeared, stopping");
