@@ -42,11 +42,6 @@ public class ImageCompiler extends BaseObject {
     auxCompile(targetDir, trainEntries(), true);
   }
 
-  public void compileTestSet(File targetDir) {
-    checkArgument(includeTestSets(), "no test set is to be included");
-    auxCompile(targetDir, testEntries(), false);
-  }
-
   /**
    * Construct a ModelServiceProvider for the compiler's model type
    */
@@ -107,39 +102,18 @@ public class ImageCompiler extends BaseObject {
         ents.add(ent);
       }
 
-      int testCount = 0;
-      if (includeTestSets())
-        testCount = Math.min(config().maxTestImagesCount(),
-            (config().maxTestImagesPct() * ents.size()) / 100);
-      int trainCount = ents.size() - testCount;
-
-      int minVal = includeTestSets() ? testCount : trainCount;
-      checkArgument(minVal > 0, "insufficient images:", ents.size());
+      int trainCount = ents.size();
+      checkArgument(trainCount > 3, "insufficient images:", ents.size());
       MyMath.permute(ents, random());
 
       mEntries = ents;
-      if (includeTestSets()) {
-        mTrainEntries = ents.subList(0, trainCount);
-        mTestEntries = ents.subList(trainCount, ents.size());
-      } else {
-        mTrainEntries = ents;
-      }
     }
     return mEntries;
   }
 
-  private boolean includeTestSets() {
-    return Files.nonEmpty(config().targetDirTest());
-  }
-
   private List<ImageEntry> trainEntries() {
     entries();
-    return mTrainEntries;
-  }
-
-  private List<ImageEntry> testEntries() {
-    entries();
-    return mTestEntries;
+    return mEntries;
   }
 
   private CompileImagesConfig config() {
@@ -203,8 +177,6 @@ public class ImageCompiler extends BaseObject {
   private final ModelHandler mModelHandler;
   private final Files mFiles;
   private List<ImageEntry> mEntries;
-  private List<ImageEntry> mTestEntries;
-  private List<ImageEntry> mTrainEntries;
   private int mExpectedImageType;
   private IPoint mExpectedImageSize = null;
   private float[] mWorkArray;

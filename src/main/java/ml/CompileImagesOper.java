@@ -39,18 +39,10 @@ public final class CompileImagesOper extends AppOper {
 
     writeModelData();
     ImageCompiler imageCompiler = new ImageCompiler(config(), network(), files());
-
-    if (config().trainService()) {
+    if (config().trainService())
       performTrainService(imageCompiler);
-    } else {
-      if (includeTestSets())
-        imageCompiler.compileTestSet(config().targetDirTest());
+    else
       imageCompiler.compileTrainSet(config().targetDirTrain());
-    }
-  }
-
-  private boolean includeTestSets() {
-    return Files.nonEmpty(config().targetDirTest());
   }
 
   private File modelDataDir() {

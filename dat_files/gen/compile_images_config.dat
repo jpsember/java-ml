@@ -15,12 +15,6 @@ fields {
   File target_dir_model = "model_data";
   File target_dir_checkpoint = "checkpoints";
 
-  // If a test directory is specified, it generates a test set as well
-  //
-  File target_dir_test;
-  int max_test_images_count = 100;
-  int max_test_images_pct = 10;
-
   // If true, loops forever, generating subdirectories within the
   // target_train_dir containing additional images and labels
   //
