@@ -3,6 +3,7 @@ package ml.img;
 import static js.base.Tools.*;
 import static ml.Util.*;
 
+import java.awt.image.AffineTransformOp;
 import java.awt.image.BufferedImage;
 import java.io.DataOutputStream;
 import java.io.File;
@@ -27,11 +28,12 @@ import js.graphics.ScriptUtil;
 import ml.ModelHandler;
 import ml.ModelServiceProvider;
 import ml.ModelWrapper;
+import ml.Util;
 
 /**
  * Used by CompileImagesOper to process images
  */
-public class ImageCompiler extends BaseObject {
+public final class ImageCompiler extends BaseObject {
 
   public ImageCompiler(CompileImagesConfig config, NeuralNetwork network, Files files) {
     mConfig = nullTo(config, CompileImagesConfig.DEFAULT_INSTANCE).build();
@@ -41,7 +43,7 @@ public class ImageCompiler extends BaseObject {
       seed = 1965;
     mRandom = new Random(seed);
     mModelHandler = ModelHandler.construct(network);
-    mImageTransformer = mModelHandler.buildImageTransformer(config.augmentationConfig(), random());
+    //mImageTransformer = mModelHandler.buildImageTransformer(config.augmentationConfig(), random());
   }
 
   public void compileTrainSet(File targetDir) {
@@ -61,10 +63,7 @@ public class ImageCompiler extends BaseObject {
     provider.setImageStream(imagesStream);
     provider.setLabelStream(labelsStream);
     provider.storeImageSetInfo(imageSetInfo);
-    if (imageSetInfo.imageLengthBytes() <= 0 || imageSetInfo.labelLengthBytes() <= 0)
-      throw badState("ImageSetInfo hasn't been completely filled out:", INDENT, imageSetInfo);
-
-    todo("!transform image randomly if training image");
+    checkArgument(imageSetInfo.imageLengthBytes() > 0 && imageSetInfo.labelLengthBytes() > 0);
 
     //    for (ImageEntry rec : entries) {
     //      AugmentTransform aug = mProc.buildAugmentTransform();
@@ -80,12 +79,39 @@ public class ImageCompiler extends BaseObject {
 
     //   ImageHandler handler;
 
+    float[] imageFloats = null;
+
     for (ImageEntry entry : entries()) {
-
-      halt("Use ImageTransformer instead?");
-      //TransformWrapper transform = buildAugmentTransform();
-
       BufferedImage img = ImgUtil.read(entry.imageFile());
+      // We don't need to validate the images except on the first pass through them
+      if (!mEntriesValidated) {
+        checkImageSizeAndType(entry.imageFile(), img, model.inputImagePlanarSize(),
+            model.inputImageChannels());
+      }
+
+      TransformWrapper tfm = buildAugmentTransform();
+      // TODO: do we need to store the transform within the entry?  Maybe have a 'clean' operation at the end of dealing with the entry to throw out things like the loaded image
+
+      entry.setTransform(tfm);
+
+      AugmentationConfig config = config().augmentationConfig();
+      AffineTransformOp op = new AffineTransformOp(tfm.matrix().toAffineTransform(),
+          AffineTransformOp.TYPE_BILINEAR);
+
+      BufferedImage targetImage = ImgUtil.build(model.inputImagePlanarSize(), img.getType()); //INSPECTION_IMAGE_TYPE);
+      //          ImgUtil.imageOfSameSize(sourceImage, INSPECTION_IMAGE_TYPE);
+      op.filter(img, targetImage);
+
+      //      inspector().create("tfm");
+      //      applyPendingAnnotations();
+      //      inspector().image(targetImage);
+
+      imageFloats = ImgUtil.floatPixels(img, model.inputImageChannels(), imageFloats);
+
+      //   ImgUtil.bufferedImageToFloat(targetImage, model.inputImageVolume().depth(), destination);
+      if (config.adjustBrightness()) {
+        Util.applyRandomBrightness(random(), imageFloats, config.brightShiftMin(), config.brightShiftMax());
+      }
 
       //      
       //      mImageTransformer.transform(transform.matrix(),transform.inverse(), img, );
@@ -94,11 +120,9 @@ public class ImageCompiler extends BaseObject {
       //   
       //      
 
-      checkImageSizeAndType(entry.imageFile(), img, model.inputImagePlanarSize(), model.inputImageChannels());
-      mWorkArray = ImgUtil.floatPixels(img, model.inputImageChannels(), mWorkArray);
-
-      provider.accept(mWorkArray, entry.scriptElementList());
+      provider.accept(imageFloats, entry.scriptElementList());
     }
+    mEntriesValidated = true;
     Files.close(imagesStream, labelsStream);
 
     files().writePretty(infoPath, imageSetInfo.build());
@@ -180,7 +204,7 @@ public class ImageCompiler extends BaseObject {
     return mModelHandler;
   }
 
-  public TransformWrapper buildAugmentTransform() {
+  private TransformWrapper buildAugmentTransform() {
     AugmentationConfig ac = config().augmentationConfig();
     boolean horizFlip = ac.horizontalFlip() && random().nextBoolean();
 
@@ -250,9 +274,9 @@ public class ImageCompiler extends BaseObject {
   private final Random mRandom;
   private final ModelHandler mModelHandler;
   private final Files mFiles;
-  /*private*/ ImageTransformer mImageTransformer;
+  ///* private */ ImageTransformer mImageTransformer;
   private List<ImageEntry> mEntries;
+  private boolean mEntriesValidated;
   private int mExpectedImageType;
-  private IPoint mExpectedImageSize = null;
-  private float[] mWorkArray;
+  private IPoint mExpectedImageSize;
 }
