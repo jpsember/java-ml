@@ -31,6 +31,9 @@ public class ImageCompiler extends BaseObject {
       seed = 1965;
     mRandom = new Random(seed);
     mModelHandler = ModelHandler.construct(network);
+    
+    alert("Issue #17: what is necessary here?");
+    mModelHandler.buildImageTransformer(config.augmentationConfig(), random() );
   }
 
   public void setFiles(Files files) {

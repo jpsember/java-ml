@@ -33,7 +33,7 @@ public abstract class ModelHandler extends BaseObject {
   }
 
   public ImageTransformer<BufferedImage> buildImageTransformer(AugmentationConfig augmentationConfig,
-      Random random, Stats stats, ImageRecord imageRecord) {
+      Random random) {
     ImageTransformer<BufferedImage> transformer;
     if (mModelConfig.network().monochromeSourceImages()) {
       transformer = new MonochromeImageTransformer(this, augmentationConfig, random);
