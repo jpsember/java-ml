@@ -40,7 +40,15 @@ class ImageEntry {
     return mTransform;
   }
   
+  /**
+   * Discard any resources that were created while generating an image set
+   */
+  public void releaseResources() {
+    mTransform = TransformWrapper.DEFAULT_INSTANCE;
+  }
+  
   private final File mImageFile;
   private ScriptElementList mScriptElements;
   private TransformWrapper mTransform = TransformWrapper.DEFAULT_INSTANCE;
+ 
 }

@@ -44,7 +44,6 @@ public final class ImageCompiler extends BaseObject {
       seed = 1965;
     mRandom = new Random(seed);
     mModelHandler = ModelHandler.construct(network);
-    //mImageTransformer = mModelHandler.buildImageTransformer(config.augmentationConfig(), random());
   }
 
   public void setInspector(Inspector inspector) {
@@ -80,15 +79,11 @@ public final class ImageCompiler extends BaseObject {
             model.inputImageChannels());
       }
       mInspector.create("orig").image(img);
+      entry.setTransform(buildAugmentTransform());
 
-      TransformWrapper tfm = buildAugmentTransform();
-      // TODO: do we need to store the transform within the entry?  Maybe have a 'clean' operation at the end of dealing with the entry to throw out things like the loaded image
-
-      entry.setTransform(tfm);
-
-      BufferedImage targetImage = ImgUtil.build(model.inputImagePlanarSize(), img.getType());  
+      BufferedImage targetImage = ImgUtil.build(model.inputImagePlanarSize(), img.getType());
       AugmentationConfig config = config().augmentationConfig();
-      AffineTransformOp op = new AffineTransformOp(tfm.matrix().toAffineTransform(),
+      AffineTransformOp op = new AffineTransformOp(entry.transform().matrix().toAffineTransform(),
           AffineTransformOp.TYPE_BILINEAR);
 
       op.filter(img, targetImage);
@@ -103,6 +98,7 @@ public final class ImageCompiler extends BaseObject {
           .image(imageFloats);
 
       provider.accept(imageFloats, entry.scriptElementList());
+      entry.releaseResources();
     }
     mEntriesValidated = true;
     Files.close(imagesStream, labelsStream);
@@ -147,36 +143,31 @@ public final class ImageCompiler extends BaseObject {
     return mRandom;
   }
 
+  /**
+   * This is only called when constructing the first set (i.e. not on the
+   * subsequent sets during streaming)
+   */
   private void checkImageSizeAndType(File imageFile, BufferedImage img, IPoint expectedImageSize,
       int expectedImageChannels) {
-    IPoint imgSize = ImgUtil.size(img);
-    if (mExpectedImageSize == null) {
-      mExpectedImageSize = expectedImageSize;
-      Integer channels = sImgChannelsMap.get(img.getType());
-      if (channels == null)
-        throw badArg("Unsupported image type:", INDENT, ImgUtil.toJson(img));
-      if (channels != expectedImageChannels) {
-        // Special case for using color images to produce monochrome
-        if (expectedImageChannels == 1 && img.getType() == BufferedImage.TYPE_3BYTE_BGR)
-          ;
-        else
-          throw badArg("Unsupported image type; wanted channels:", expectedImageChannels, "got:", INDENT,
-              ImgUtil.toJson(img));
-      }
-      mExpectedImageType = img.getType();
-    }
-    if (img.getType() != mExpectedImageType)
 
-      badArg("Unexpected image type, wanted:", mExpectedImageType, "but got:", INDENT, ImgUtil.toJson(img));
-    if (!imgSize.equals(mExpectedImageSize))
-      badArg("Unexpected image size, wanted:", mExpectedImageSize, "but got:", INDENT, ImgUtil.toJson(img));
+    IPoint imgSize = ImgUtil.size(img);
+    if (!imgSize.equals(expectedImageSize))
+      badArg("Unexpected image size, wanted:", expectedImageSize, "but got:", INDENT, ImgUtil.toJson(img));
+
+    Integer channels = sImgChannelsMap.get(img.getType());
+    if (channels == null)
+      throw badArg("Unsupported image type:", INDENT, ImgUtil.toJson(img));
+    if (channels != expectedImageChannels) {
+      // Special case for using color images to produce monochrome
+      if (expectedImageChannels == 1 && img.getType() == BufferedImage.TYPE_3BYTE_BGR)
+        ;
+      else
+        throw badArg("Unsupported image type; wanted channels:", expectedImageChannels, "got:", INDENT,
+            ImgUtil.toJson(img));
+    }
   }
 
   private static final Map<Integer, Integer> sImgChannelsMap = mapWith(//
-      // Let's disable some image types, to make things simpler
-
-      //BufferedImage.TYPE_INT_RGB, 3, //
-      //BufferedImage.TYPE_INT_BGR, 3, //
       BufferedImage.TYPE_3BYTE_BGR, 3, //
       BufferedImage.TYPE_BYTE_GRAY, 1, //
       BufferedImage.TYPE_USHORT_GRAY, 1 //
@@ -208,8 +199,12 @@ public final class ImageCompiler extends BaseObject {
     Matrix tfmScale = Matrix.IDENTITY;
     if (!ac.scaleDisable()) {
       // Scale the horizontal and vertical axes independently
-      float xScale = random(ac.scaleMin(), ac.scaleMax());
-      float yScale = random(ac.scaleMin(), ac.scaleMax());
+      float scaleMax = ac.scaleMax();
+      float scaleMin = ac.scaleMin();
+      if (scaleMin <= 0)
+        scaleMin = scaleMax * 0.65f;
+      float xScale = random(scaleMin,scaleMax);
+      float yScale = random(scaleMin,scaleMax);
       if (horizFlip)
         xScale = -xScale;
       tfmScale = Matrix.getScale(xScale, yScale);
@@ -256,10 +251,7 @@ public final class ImageCompiler extends BaseObject {
   private final Random mRandom;
   private final ModelHandler mModelHandler;
   private final Files mFiles;
-  ///* private */ ImageTransformer mImageTransformer;
+  private Inspector mInspector = Inspector.NULL_INSPECTOR;
   private List<ImageEntry> mEntries;
   private boolean mEntriesValidated;
-  private int mExpectedImageType;
-  private IPoint mExpectedImageSize;
-  private Inspector mInspector = Inspector.NULL_INSPECTOR;
 }

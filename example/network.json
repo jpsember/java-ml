@@ -31,5 +31,7 @@
     "category_count" : 2,
     "image_channels" : 3,
     "image_size" : [ 320, 256 ]
-  }
+  },
+
+
 }

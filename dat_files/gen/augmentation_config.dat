@@ -13,7 +13,7 @@ fields {
   float shear_max = .25;
 
   bool scale_disable;
-  float scale_min = 0.95;
+  float scale_min;  // If zero, sets to scale_max * 0.65
   float scale_max = 1.2;
 
   bool rotate_disable;

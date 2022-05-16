@@ -135,8 +135,11 @@ public class GenerateImageSetOper extends AppOper {
               randGuassian(my - rangey, my + rangey));
           Matrix tfmRotate = Matrix.getRotate(
               randGuassian(-config().rotFactor() * MyMath.M_DEG, config().rotFactor() * MyMath.M_DEG));
+          float scaleMin = config().scaleFactorMin();
+          float scaleMax = config().scaleFactorMax();
+          if (scaleMin <= 0) scaleMin = scaleMax * 0.65f;
           Matrix tfmScale = Matrix
-              .getScale(randGuassian(config().scaleFactorMin(), config().scaleFactorMax()));
+              .getScale(randGuassian(scaleMin,scaleMax));
 
           objectTfm = Matrix.postMultiply(tfmImageCenter, tfmScale, tfmRotate);
 
