@@ -219,7 +219,6 @@ public final class CompileImagesOper extends AppOper {
     SortedMap<Integer, File> epochMap = getCheckpointEpochs();
     List<Integer> epochs = arrayList();
     epochs.addAll(epochMap.keySet());
-    pr("checkpoints:", epochs);
 
     while (epochs.size() > config().maxCheckpoints()) {
 
@@ -242,21 +241,32 @@ public final class CompileImagesOper extends AppOper {
       }
 
       int discardEpoch = epochs.get(minIndex);
-      pr("discarding checkpoint for epoch:", discardEpoch);
+      log("trimming checkpoints:", INDENT, epochs);
+      log("discarding checkpoint for epoch:", discardEpoch);
       epochs.remove(minIndex);
       File checkpointFile = Files.assertExists(epochMap.remove(discardEpoch), "checkpoint file");
       files().deleteFile(checkpointFile);
-      pr("checkpoints:", epochs);
+      log("after trim checkpoints:", INDENT, epochs);
     }
   }
 
   /**
    * Calculate coefficient for a particular epoch, where max has 1.0
+   * 
+   * We maintain a finite set of checkpoints, so that the epoch numbers try to
+   * approximate a nonlinear curve such that the epochs are clustered more
+   * towards the highest epoch number reached.
+   * 
+   * The nonlinearity is determined by the power parameter
    */
   private static double checkpointCoefficient(int epoch, int maxEpoch, double power) {
     return Math.pow(epoch / (double) maxEpoch, 1 / power);
   }
 
+  /**
+   * Look at the checkpoint files and construct a sorted map of epoch numbers =>
+   * filenames
+   */
   private SortedMap<Integer, File> getCheckpointEpochs() {
     SortedMap<Integer, File> map = treeMap();
     File cpdir = config().targetDirCheckpoint();
