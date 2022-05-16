@@ -11,7 +11,7 @@ import ml.yolo.YoloUtil;
 import gen.*;
 
 /**
- * An intelligent wrapper around pojo model class (Yolo, etc.) Parses
+ * An intelligent wrapper around datagen model class (Yolo, etc.) Parses
  * information about a neural network, its input image dimensions, and whatnot
  * to provide a handier way of manipulating these things.
  */

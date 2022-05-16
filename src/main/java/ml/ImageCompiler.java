@@ -22,22 +22,20 @@ import js.graphics.ScriptUtil;
 import js.graphics.gen.Script;
 import js.graphics.gen.ScriptElementList;
 
+/**
+ * Used by CompileImagesOper to process images
+ */
 public class ImageCompiler extends BaseObject {
 
-  public ImageCompiler(CompileImagesConfig config, NeuralNetwork network) {
+  public ImageCompiler(CompileImagesConfig config, NeuralNetwork network, Files files) {
     mConfig = nullTo(config, CompileImagesConfig.DEFAULT_INSTANCE).build();
+    mFiles = nullTo(files, Files.S);
     int seed = config().seed();
     if (seed <= 0)
       seed = 1965;
     mRandom = new Random(seed);
     mModelHandler = ModelHandler.construct(network);
-    
-    alert("Issue #17: what is necessary here?");
-    mModelHandler.buildImageTransformer(config.augmentationConfig(), random() );
-  }
-
-  public void setFiles(Files files) {
-    mFiles = nullTo(Files.S, files);
+    mModelHandler.buildImageTransformer(config.augmentationConfig(), random());
   }
 
   public void compileTrainSet(File targetDir) {
@@ -203,7 +201,7 @@ public class ImageCompiler extends BaseObject {
   private final CompileImagesConfig mConfig;
   private final Random mRandom;
   private final ModelHandler mModelHandler;
-  private Files mFiles = Files.S;
+  private final Files mFiles;
   private List<ImageEntry> mEntries;
   private List<ImageEntry> mTestEntries;
   private List<ImageEntry> mTrainEntries;

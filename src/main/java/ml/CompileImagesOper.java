@@ -38,19 +38,14 @@ public final class CompileImagesOper extends AppOper {
     }
 
     writeModelData();
-
-    if (config().modelDataOnly())
-      return;
-
-    mImageCompiler = new ImageCompiler(config(), network());
-    mImageCompiler.setFiles(files());
+    ImageCompiler imageCompiler = new ImageCompiler(config(), network(), files());
 
     if (config().trainService()) {
-      performTrainService();
+      performTrainService(imageCompiler);
     } else {
       if (includeTestSets())
-        mImageCompiler.compileTestSet(config().targetDirTest());
-      mImageCompiler.compileTrainSet(config().targetDirTrain());
+        imageCompiler.compileTestSet(config().targetDirTest());
+      imageCompiler.compileTrainSet(config().targetDirTrain());
     }
   }
 
@@ -117,7 +112,7 @@ public final class CompileImagesOper extends AppOper {
     files().mkdirs(cp);
   }
 
-  private void performTrainService() {
+  private void performTrainService(ImageCompiler imageCompiler) {
     String signature = readSignature();
     checkState(nonEmpty(signature), "No signature file found; need to prepare?");
 
@@ -144,7 +139,7 @@ public final class CompileImagesOper extends AppOper {
 
       long startTime = System.currentTimeMillis();
 
-      mImageCompiler.compileTrainSet(tempDir);
+      imageCompiler.compileTrainSet(tempDir);
 
       // Choose a name for the new set
       //
@@ -281,7 +276,6 @@ public final class CompileImagesOper extends AppOper {
 
   private static final String STREAM_PREFIX = "set_";
 
-  private ImageCompiler mImageCompiler;
   private int mNextStreamSetNumber;
   private long mLastGeneratedFilesTime;
   private float mAvgGeneratedTimeSec = -1;

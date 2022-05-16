@@ -18,9 +18,15 @@ import gen.Layer;
 import gen.NeuralNetwork;
 import gen.PlotInferenceResultsConfig;
 
+/**
+ * Abstract class representing a model for a particular type of ml project.
+ * 
+ * To be merged with ModelWrapper at some point
+ */
 public abstract class ModelHandler extends BaseObject {
 
-  public abstract void addImageRecordFilters(ImageHandler imageProcessor);
+  public void addImageRecordFilters(ImageHandler imageProcessor) {
+  }
 
   public final ModelWrapper model() {
     return mModelConfig;
@@ -31,10 +37,10 @@ public abstract class ModelHandler extends BaseObject {
     mModelConfig = model;
   }
 
-  public ImageTransformer<BufferedImage> buildImageTransformer(AugmentationConfig augmentationConfig,
+  public final ImageTransformer<BufferedImage> buildImageTransformer(AugmentationConfig augmentationConfig,
       Random random) {
     ImageTransformer<BufferedImage> transformer;
-    if ( model().network().monochromeSourceImages())
+    if (model().network().monochromeSourceImages())
       transformer = new MonochromeImageTransformer();
     else
       transformer = new ColorImageTransformer();
@@ -62,15 +68,13 @@ public abstract class ModelHandler extends BaseObject {
         model().inputImageVolume().depth());
   }
 
-  private ModelWrapper mModelConfig;
-
   protected RuntimeException notSupported() {
     return die("Unsupported; project type:", model().projectType());
   }
 
   /**
-   * Examine an AnnotationSet (script) and extract appropriate AnnotationShapes
-   * from it by appending to target
+   * Examine script and extract appropriate elements from it by appending to
+   * target
    */
   public void extractShapes(Script script, List<ScriptElement> target) {
     throw notSupported();
@@ -79,20 +83,6 @@ public abstract class ModelHandler extends BaseObject {
   protected final void assertNoMixing(Script script) {
     if (!ScriptUtil.rectElements(script).isEmpty() && !ScriptUtil.polygonElements(script).isEmpty())
       throw die("Cannot mix boxes and polygons");
-  }
-
-  /**
-   * Calculate the scale and offset to apply to 16-bit monochrome pixel values
-   * to convert to floats
-   * 
-   * Default just scales linearly from (0...0xffff) to (0...1)
-   * 
-   * TODO: this seems to add a lot of baggage, i.e. MonochromeImageTransformer
-   * needs to expose lots of things (random, image stats) to make this pluggable
-   */
-  public void getIntegerToFloatPixelTransform(float[] mbOutput, ImageTransformer<BufferedImage> transformer) {
-    mbOutput[0] = 1.0f / 0xffff;
-    mbOutput[1] = 0;
   }
 
   /**
@@ -131,5 +121,7 @@ public abstract class ModelHandler extends BaseObject {
     handler.setModel(model);
     return handler;
   }
+
+  private ModelWrapper mModelConfig;
 
 }

@@ -21,10 +21,6 @@ fields {
   int max_test_images_count = 100;
   int max_test_images_pct = 10;
 
-  // If true, only generates the model directory
-  //
-  bool model_data_only;
-
   // If true, loops forever, generating subdirectories within the
   // target_train_dir containing additional images and labels
   //

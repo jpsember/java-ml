@@ -21,6 +21,7 @@ import static ml.Util.*;
 public final class ImageHandler extends BaseObject {
 
   public ImageHandler(NeuralNetwork network, AugmentationConfig augmentationConfig) {
+    todo("document this class's purpose");
     todo("applyCompileImagePipeline is never called");
     mNetwork = network;
     mHandler = ModelHandler.construct(mNetwork);

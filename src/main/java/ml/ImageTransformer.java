@@ -26,20 +26,17 @@ public abstract class ImageTransformer<T> extends BaseObject {
     return mModelHandler;
   }
 
-  public final  AugmentationConfig augmentationConfig() {
+  public final AugmentationConfig augmentationConfig() {
     return mConfig;
   }
 
-  public final ModelWrapper model() {return modelHandler().model();
-  }
-  
-  public final  Random random() {
-    return mRandom;
+  public final ModelWrapper model() {
+    return modelHandler().model();
   }
 
-  private ModelHandler mModelHandler;
-  private AugmentationConfig mConfig;
-  private Random mRandom;
+  public final Random random() {
+    return mRandom;
+  }
 
   public abstract void transform(Matrix sourceToDestTransform, Matrix destToSourceTransform, T sourceImage,
       float[] destination);
@@ -61,13 +58,16 @@ public abstract class ImageTransformer<T> extends BaseObject {
    * If there are pending annotations, apply them to the inspector's current
    * image
    */
-  protected final void applyPendingAnnotations() {
+  public final void applyPendingAnnotations() {
     if (mPendingAnnotation == null)
       return;
     mInspector.elements(mPendingAnnotation.elements());
     mPendingAnnotation = null;
   }
 
+  private ModelHandler mModelHandler;
+  private AugmentationConfig mConfig;
+  private Random mRandom;
   private Inspector mInspector = Inspector.NULL_INSPECTOR;
   private ScriptElementList mPendingAnnotation;
 

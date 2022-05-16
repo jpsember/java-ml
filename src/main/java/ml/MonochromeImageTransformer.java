@@ -1,6 +1,5 @@
 package ml;
 
-
 import java.awt.Font;
 import java.awt.image.AffineTransformOp;
 import java.awt.image.BufferedImage;
@@ -36,13 +35,11 @@ public class MonochromeImageTransformer extends ImageTransformer<BufferedImage> 
     if (mPrepared)
       return;
 
-    float[] mb = new float[2];
+    // Calculate the scale and offset to apply to 16-bit monochrome pixel values
+    // to convert to floats
 
-    modelHandler().getIntegerToFloatPixelTransform(mb, this);
-
-    mM = mb[0];
-    mB = mb[1];
-
+    mM = 1.0f / 0xffff;
+    mB = 0;
     checkArgument(mM != 0f, "scale is zero");
 
     mPrepared = true;
@@ -155,9 +152,8 @@ public class MonochromeImageTransformer extends ImageTransformer<BufferedImage> 
 
   private void adjustBrightness() {
     AugmentationConfig config = augmentationConfig();
-     if (config.adjustBrightness()) {
-      Util.applyRandomBrightness(random(), mDestination, config.brightShiftMin(),
-          config.brightShiftMax());
+    if (config.adjustBrightness()) {
+      Util.applyRandomBrightness(random(), mDestination, config.brightShiftMin(), config.brightShiftMax());
     }
   }
 
