@@ -21,6 +21,7 @@ import static ml.Util.*;
 public final class ImageHandler extends BaseObject {
 
   public ImageHandler(NeuralNetwork network, AugmentationConfig augmentationConfig) {
+    todo("applyCompileImagePipeline is never called");
     mNetwork = network;
     mHandler = ModelHandler.construct(mNetwork);
     mDestFloatPixels = new float[model().inputImageVolumeProduct()];
@@ -39,7 +40,7 @@ public final class ImageHandler extends BaseObject {
   /**
    * Generate annotated images for training or inference
    */
-  public final void applyCompileImagePipeline(BufferedImage srcImage, ScriptElementList annotations,
+  public void applyCompileImagePipeline(BufferedImage srcImage, ScriptElementList annotations,
       TransformWrapper aug, ImageTransformer<BufferedImage> imageTransformer, ModelServiceProvider receiver,
       ImageRecord sourceImage) {
     annotations = Util.transform(annotations, aug.inverse(), -aug.rotationDegrees()).build();
@@ -111,7 +112,7 @@ public final class ImageHandler extends BaseObject {
    * Examine source directory, and generate ImageRecords from suitable image
    * files found
    */
-  public final List<ImageRecord> processInputDir(File inputDir) {
+  public List<ImageRecord> processInputDir(File inputDir) {
     log("processInputDir");
     List<ImageRecord> imageRecords = arrayList();
 
@@ -138,7 +139,7 @@ public final class ImageHandler extends BaseObject {
     return imageRecords;
   }
 
-  public final Random random() {
+  public Random random() {
     return mRandom;
   }
 
