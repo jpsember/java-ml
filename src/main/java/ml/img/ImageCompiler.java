@@ -22,11 +22,8 @@ import js.file.Files;
 import js.geometry.IPoint;
 import js.geometry.Matrix;
 import js.geometry.MyMath;
-import js.graphics.ImgEffects;
 import js.graphics.ImgUtil;
 import js.graphics.ScriptUtil;
-import js.graphics.gen.Script;
-import js.graphics.gen.ScriptElementList;
 import ml.ModelHandler;
 import ml.ModelServiceProvider;
 import ml.ModelWrapper;
@@ -53,7 +50,7 @@ public class ImageCompiler extends BaseObject {
     File labelsPath = new File(targetDir, "labels.bin");
     File infoPath = new File(targetDir, "image_set_info.json");
     ImageSetInfo.Builder imageSetInfo = ImageSetInfo.newBuilder();
-    imageSetInfo.imageCount(imageEntries().size());
+    imageSetInfo.imageCount(entries().size());
 
     DataOutputStream imagesStream = new DataOutputStream(files().outputStream(imagePath));
     DataOutputStream labelsStream = new DataOutputStream(files().outputStream(labelsPath));
@@ -69,7 +66,6 @@ public class ImageCompiler extends BaseObject {
 
     todo("!transform image randomly if training image");
 
-    
     //    for (ImageEntry rec : entries) {
     //      AugmentTransform aug = mProc.buildAugmentTransform();
     //      ImageTransformer<BufferedImage> transformer = mHandler.buildImageTransformer(augmentationConfig(),
@@ -82,42 +78,26 @@ public class ImageCompiler extends BaseObject {
     //    }
     //
 
- //   ImageHandler handler;
-    
-    for (ImageEntry entry : imageEntries()) {
-      
-      halt("Use ImageTransformer instead?");
-          TransformWrapper transform =buildAugmentTransform();
+    //   ImageHandler handler;
 
-      BufferedImage img = ImgUtil.read(entry.imageFile);
-      
-      
-//      
-//      mImageTransformer.transform(transform.matrix(),transform.inverse(), img, );
-//      img = 
-//      ImgEffects.applyTransform(img, transform.matrix().toAffineTransform());
-//   
-//      
-      
-      
-      
-      
-      
-      checkImageSizeAndType(entry.imageFile, img, model.inputImagePlanarSize(), model.inputImageChannels());
+    for (ImageEntry entry : entries()) {
+
+      halt("Use ImageTransformer instead?");
+      //TransformWrapper transform = buildAugmentTransform();
+
+      BufferedImage img = ImgUtil.read(entry.imageFile());
+
+      //      
+      //      mImageTransformer.transform(transform.matrix(),transform.inverse(), img, );
+      //      img = 
+      //      ImgEffects.applyTransform(img, transform.matrix().toAffineTransform());
+      //   
+      //      
+
+      checkImageSizeAndType(entry.imageFile(), img, model.inputImagePlanarSize(), model.inputImageChannels());
       mWorkArray = ImgUtil.floatPixels(img, model.inputImageChannels(), mWorkArray);
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      provider.accept(mWorkArray, entry.scriptElements);
+
+      provider.accept(mWorkArray, entry.scriptElementList());
     }
     Files.close(imagesStream, labelsStream);
 
@@ -140,28 +120,12 @@ public class ImageCompiler extends BaseObject {
       File scriptDir = ScriptUtil.scriptDirForProject(imageDir);
       Files.assertDirectoryExists(scriptDir, "script directory");
       DirWalk w = new DirWalk(imageDir).withRecurse(false).withExtensions(ImgUtil.EXT_JPEG);
-      for (File f : w.files()) {
-        ImageEntry ent = new ImageEntry();
-        ent.imageFile = f;
-        File scriptFile = ScriptUtil.scriptPathForImage(f);
-        if (scriptFile.exists()) {
-          Script script = ScriptUtil.from(scriptFile);
-          ent.scriptElements = ScriptUtil.extractScriptElementList(script);
-        }
-        ents.add(ent);
-      }
-
-      int trainCount = ents.size();
-      checkArgument(trainCount > 3, "insufficient images:", ents.size());
+      for (File f : w.files())
+        ents.add(new ImageEntry(f));
+      checkArgument(ents.size() > 3, "insufficient images:", ents.size());
       MyMath.permute(ents, random());
-
       mEntries = ents;
     }
-    return mEntries;
-  }
-
-  private List<ImageEntry> imageEntries() {
-    entries();
     return mEntries;
   }
 
@@ -212,32 +176,15 @@ public class ImageCompiler extends BaseObject {
       BufferedImage.TYPE_USHORT_GRAY, 1 //
   );
 
-  private static class ImageEntry {
-    File imageFile;
-    ScriptElementList scriptElements = ScriptElementList.DEFAULT_INSTANCE;
-  }
-
   private ModelHandler modelHandler() {
     return mModelHandler;
   }
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
   public TransformWrapper buildAugmentTransform() {
-    AugmentationConfig ac =config().augmentationConfig();  
+    AugmentationConfig ac = config().augmentationConfig();
     boolean horizFlip = ac.horizontalFlip() && random().nextBoolean();
 
-    IPoint sourceImageSize =  modelHandler().model().inputImagePlanarSize();
+    IPoint sourceImageSize = modelHandler().model().inputImagePlanarSize();
     Matrix tfmTranslateToCenter = Matrix.getTranslate(sourceImageSize.x * -.5f, sourceImageSize.y * -.5f);
     Matrix tfmTranslateFromCenter = Matrix.getTranslate(sourceImageSize.x * .5f, sourceImageSize.y * .5f);
 
@@ -292,14 +239,6 @@ public class ImageCompiler extends BaseObject {
     return transformWrapper(tfm, rotateDegrees);
   }
 
-
-  
-  
-  
-  
-  
-  
-
   private float random(float min, float max) {
     checkArgument(max >= min);
     if (max == min)
@@ -307,15 +246,11 @@ public class ImageCompiler extends BaseObject {
     return random().nextFloat() * (max - min) + min;
   }
 
-  
-  
-  
-  
   private final CompileImagesConfig mConfig;
   private final Random mRandom;
   private final ModelHandler mModelHandler;
   private final Files mFiles;
-  private ImageTransformer mImageTransformer;
+  /*private*/ ImageTransformer mImageTransformer;
   private List<ImageEntry> mEntries;
   private int mExpectedImageType;
   private IPoint mExpectedImageSize = null;

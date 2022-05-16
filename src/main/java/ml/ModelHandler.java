@@ -27,6 +27,7 @@ import gen.PlotInferenceResultsConfig;
  * 
  * To be merged with ModelWrapper at some point
  */
+@SuppressWarnings("deprecation")
 public abstract class ModelHandler extends BaseObject {
 
   @Deprecated
