@@ -2,6 +2,9 @@ package ml;
 
 import static js.base.Tools.*;
 
+import java.util.Random;
+
+import gen.AugmentationConfig;
 import js.base.BaseObject;
 import js.geometry.Matrix;
 import js.graphics.Inspector;
@@ -12,6 +15,31 @@ import js.graphics.gen.ScriptElementList;
  * transformation
  */
 public abstract class ImageTransformer<T> extends BaseObject {
+
+  public final void init(ModelHandler modelHandler, AugmentationConfig augmentationConfig, Random random) {
+    mModelHandler = modelHandler;
+    mConfig = augmentationConfig;
+    mRandom = random;
+  }
+
+  public final ModelHandler modelHandler() {
+    return mModelHandler;
+  }
+
+  public final  AugmentationConfig augmentationConfig() {
+    return mConfig;
+  }
+
+  public final ModelWrapper model() {return modelHandler().model();
+  }
+  
+  public final  Random random() {
+    return mRandom;
+  }
+
+  private ModelHandler mModelHandler;
+  private AugmentationConfig mConfig;
+  private Random mRandom;
 
   public abstract void transform(Matrix sourceToDestTransform, Matrix destToSourceTransform, T sourceImage,
       float[] destination);
@@ -42,4 +70,5 @@ public abstract class ImageTransformer<T> extends BaseObject {
 
   private Inspector mInspector = Inspector.NULL_INSPECTOR;
   private ScriptElementList mPendingAnnotation;
+
 }

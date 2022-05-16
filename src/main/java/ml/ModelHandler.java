@@ -17,7 +17,6 @@ import gen.AugmentationConfig;
 import gen.Layer;
 import gen.NeuralNetwork;
 import gen.PlotInferenceResultsConfig;
-import gen.Stats;
 
 public abstract class ModelHandler extends BaseObject {
 
@@ -35,11 +34,11 @@ public abstract class ModelHandler extends BaseObject {
   public ImageTransformer<BufferedImage> buildImageTransformer(AugmentationConfig augmentationConfig,
       Random random) {
     ImageTransformer<BufferedImage> transformer;
-    if (mModelConfig.network().monochromeSourceImages()) {
-      transformer = new MonochromeImageTransformer(this, augmentationConfig, random);
-    } else {
-      transformer = new ColorImageTransformer(model(), augmentationConfig, random);
-    }
+    if ( model().network().monochromeSourceImages())
+      transformer = new MonochromeImageTransformer();
+    else
+      transformer = new ColorImageTransformer();
+    transformer.init(this, augmentationConfig, random);
     return transformer;
   }
 

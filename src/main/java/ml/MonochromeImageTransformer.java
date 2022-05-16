@@ -8,7 +8,6 @@ import java.awt.image.BufferedImageOp;
 import java.awt.image.ConvolveOp;
 import java.awt.image.Kernel;
 import java.util.List;
-import java.util.Random;
 
 import static js.base.Tools.*;
 
@@ -33,28 +32,13 @@ public class MonochromeImageTransformer extends ImageTransformer<BufferedImage> 
   // Construction and initialization
   // ------------------------------------------------------------------
 
-  public MonochromeImageTransformer(ModelHandler modelHandler, AugmentationConfig augConfig, Random random) {
-    mAugConfig = augConfig;
-    mRandom = random;
-    mModelHandler = modelHandler;
-    mModel = modelHandler.model();
-  }
-
-  public AugmentationConfig augmentationConfig() {
-    return mAugConfig;
-  }
-
-  public Random random() {
-    return mRandom;
-  }
-
   private void prepare() {
     if (mPrepared)
       return;
 
     float[] mb = new float[2];
 
-    mModelHandler.getIntegerToFloatPixelTransform(mb, this);
+    modelHandler().getIntegerToFloatPixelTransform(mb, this);
 
     mM = mb[0];
     mB = mb[1];
@@ -105,7 +89,7 @@ public class MonochromeImageTransformer extends ImageTransformer<BufferedImage> 
   }
 
   private void createTargetImage() {
-    mTargetImage = ImgUtil.build16BitGrayscaleImage(mModel.inputImagePlanarSize());
+    mTargetImage = ImgUtil.build16BitGrayscaleImage(model().inputImagePlanarSize());
   }
 
   private static List<Font> sLabelFonts;
@@ -170,16 +154,17 @@ public class MonochromeImageTransformer extends ImageTransformer<BufferedImage> 
   }
 
   private void adjustBrightness() {
-    if (mAugConfig.adjustBrightness()) {
-      Util.applyRandomBrightness(mRandom, mDestination, mAugConfig.brightShiftMin(),
-          mAugConfig.brightShiftMax());
+    AugmentationConfig config = augmentationConfig();
+     if (config.adjustBrightness()) {
+      Util.applyRandomBrightness(random(), mDestination, config.brightShiftMin(),
+          config.brightShiftMax());
     }
   }
 
   /* private */ void dumpPixelSample() {
     // TODO: make 'dumpPixelSample' a utility function somewhere
     StringBuilder sb = new StringBuilder();
-    IPoint sz = mModel.inputImagePlanarSize();
+    IPoint sz = model().inputImagePlanarSize();
     float scalex = 0.3f;
     float scaley = 0.1f;
     int y0 = (int) (sz.y * (.5f - scaley));
@@ -204,19 +189,19 @@ public class MonochromeImageTransformer extends ImageTransformer<BufferedImage> 
   }
 
   private void applyBlurFactor() {
-
-    int factor = 1 + mAugConfig.blurFactor();
+    AugmentationConfig config = augmentationConfig();
+    int factor = 1 + config.blurFactor();
     if (factor == 0)
       return;
 
     checkArgument(factor <= sKernels.size());
 
     // We only apply blurring some of the time
-    if (mRandom.nextInt(2) != 0)
+    if (random().nextInt(2) != 0)
       return;
 
     // Choose random kernel from desired intensity
-    int intensity = mRandom.nextInt(factor);
+    int intensity = random().nextInt(factor);
 
     mTargetImage = applyBlurKernel(mTargetImage, intensity);
   }
@@ -289,10 +274,6 @@ public class MonochromeImageTransformer extends ImageTransformer<BufferedImage> 
 
   // ------------------------------------------------------------------
 
-  private final AugmentationConfig mAugConfig;
-  private final Random mRandom;
-  private final ModelHandler mModelHandler;
-  private final ModelWrapper mModel;
   private float mB;
   private float mM;
   private boolean mPrepared;
