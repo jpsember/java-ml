@@ -79,42 +79,24 @@ public class FeedOper extends AppOper {
             minDiff = diff;
           }
         }
-      //  pr("...removing:", minIndex, vals.get(minIndex));
         vals.remove(minIndex);
       }
-      pr("values:",vals);
+      pr("values:", vals);
     }
-    //
-    //    while (targetMax < 500) {
-    //      targetMax += 10;
-    //    }
-    //
-    //    int tMax = 1200;
-    //    double power = 0.5f;
-    //
-    //    int s = 8;
-    //    for (int i = 1; i <= s; i++) {
-    //      double ni = i / (double) s;
-    //      double ei = tMax * Math.pow(ni, power);
-    //      pr(i, ei);
-    //      int ti = target(ni, power, tMax);
-    //      double nic = fraction(ti, tMax, power);
-    //      pr(ei, ti, nic);
-    //    }
   }
 
   /**
-   * Calculate target for a particular fraction
+   * Calculate epoch for a particular fraction
    */
-  private static int target(double fraction, double power, int targetMax) {
-    return (int) Math.round(targetMax * Math.pow(fraction, power));
+  /* private */ static int epoch(double fraction, double power, int epochMax) {
+    return (int) Math.round(epochMax * Math.pow(fraction, power));
   }
 
   /**
-   * Calculate fraction for a particular target
+   * Calculate fraction for a particular epoch
    */
-  private static double fraction(int target, int targetMax, double power) {
-    return Math.pow(target / (double) targetMax, 1 / power);
+  private static double fraction(int epoch, int maxEpoch, double power) {
+    return Math.pow(epoch / (double) maxEpoch, 1 / power);
   }
 
 }

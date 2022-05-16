@@ -3,6 +3,8 @@ package ml;
 import static js.base.Tools.*;
 
 import java.io.File;
+import java.util.List;
+import java.util.SortedMap;
 
 import gen.CompileImagesConfig;
 import gen.NeuralNetwork;
@@ -108,13 +110,13 @@ public final class CompileImagesOper extends AppOper {
 
     // Write a new signature file with the current time
     files().writeString(sigFile, "" + System.currentTimeMillis());
-    
+
     // Construct checkpoint subdirectory if necessary
     //
     File cp = Files.assertNonEmpty(config().targetDirCheckpoint());
     files().mkdirs(cp);
   }
- 
+
   private void performTrainService() {
     String signature = readSignature();
     checkState(nonEmpty(signature), "No signature file found; need to prepare?");
@@ -125,8 +127,8 @@ public final class CompileImagesOper extends AppOper {
     Files.assertDoesNotExist(tempDir, "Found old directory; need to prepare?");
 
     File cp = Files.assertNonEmpty(config().targetDirCheckpoint());
-    Files.assertDirectoryExists(cp,"No checkpoints directory found; need to prepare?");
-    
+    Files.assertDirectoryExists(cp, "No checkpoints directory found; need to prepare?");
+
     while (true) {
       if (!signature.equals(readSignature())) {
         pr("signature file has changed or disappeared, stopping");
@@ -168,6 +170,8 @@ public final class CompileImagesOper extends AppOper {
           pr("Time to generate training set:", sec, "sm:", mAvgGeneratedTimeSec);
         }
       }
+
+      updateCheckpoints();
     }
   }
 
@@ -205,6 +209,62 @@ public final class CompileImagesOper extends AppOper {
 
   private File sigFile() {
     return new File(config().targetDirTrain(), "sig.txt");
+  }
+
+  //------------------------------------------------------------------
+  // Checkpoint management
+  // ------------------------------------------------------------------
+
+  private void updateCheckpoints() {
+    SortedMap<Integer, File> epochMap = getCheckpointEpochs();
+    List<Integer> epochs = arrayList();
+    epochs.addAll(epochMap.keySet());
+    pr("checkpoints:", epochs);
+
+    while (epochs.size() > config().maxCheckpoints()) {
+
+      final double power = 0.5f;
+      int maxEpoch = last(epochs);
+
+      // Throw out value whose neighbors have fractions closest together
+      double[] coeff = new double[epochs.size()];
+      for (int i = 0; i < epochs.size(); i++)
+        coeff[i] = checkpointCoefficient(epochs.get(i), maxEpoch, power);
+
+      double minDiff = 0;
+      int minIndex = -1;
+      for (int i = 1; i < epochs.size() - 1; i++) {
+        double diff = coeff[i + 1] - coeff[i - 1];
+        if (minIndex < 0 || minDiff > diff) {
+          minIndex = i;
+          minDiff = diff;
+        }
+      }
+
+      int discardEpoch = epochs.get(minIndex);
+      pr("discarding checkpoint for epoch:", discardEpoch);
+      epochs.remove(minIndex);
+      File checkpointFile = Files.assertExists(epochMap.remove(discardEpoch), "checkpoint file");
+      files().deleteFile(checkpointFile);
+      pr("checkpoints:", epochs);
+    }
+  }
+
+  /**
+   * Calculate coefficient for a particular epoch, where max has 1.0
+   */
+  private static double checkpointCoefficient(int epoch, int maxEpoch, double power) {
+    return Math.pow(epoch / (double) maxEpoch, 1 / power);
+  }
+
+  private SortedMap<Integer, File> getCheckpointEpochs() {
+    SortedMap<Integer, File> map = treeMap();
+    File cpdir = config().targetDirCheckpoint();
+    for (File file : new DirWalk(cpdir).withRecurse(false).withExtensions("pt").files()) {
+      int key = Integer.parseInt(Files.basename(file));
+      map.put(key, file);
+    }
+    return map;
   }
 
   // ------------------------------------------------------------------

@@ -40,4 +40,5 @@ fields {
   //
   int recycle = 3;
 
+  int max_checkpoints = 5;
 }
