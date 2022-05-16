@@ -52,26 +52,55 @@ public class FeedOper extends AppOper {
   }
 
   private void exp() {
+
     List<Integer> vals = arrayList();
     int targetMax = 10;
-    vals.add(targetMax);
 
-    while (targetMax < 500) {
-      targetMax += 10;
+    int capacity = 8;
+    float power = 0.5f;
+
+    for (int j = 100; j < 1000; j += 10) {
+      vals.add(j);
+
+      if (vals.size() > capacity) {
+        // Throw out value whose neighbors have fractions closest together
+        double[] frac = new double[vals.size()];
+        int i = INIT_INDEX;
+        for (int target : vals) {
+          i++;
+          frac[i] = fraction(target, targetMax, power);
+        }
+        double minDiff = 0;
+        int minIndex = -1;
+        for (int q = 1; q < vals.size() - 1; q++) {
+          double diff = frac[q + 1] - frac[q - 1];
+          if (minIndex < 0 || minDiff > diff) {
+            minIndex = q;
+            minDiff = diff;
+          }
+        }
+      //  pr("...removing:", minIndex, vals.get(minIndex));
+        vals.remove(minIndex);
+      }
+      pr("values:",vals);
     }
-
-    int tMax = 1200;
-    double power = 0.5f;
-
-    int s = 8;
-    for (int i = 1; i <= s; i++) {
-      double ni = i / (double) s;
-      double ei = tMax * Math.pow(ni, power);
-      pr(i, ei);
-      int ti = target(ni, power, tMax);
-      double nic = fraction(ti, tMax, power);
-      pr(ei, ti, nic);
-    }
+    //
+    //    while (targetMax < 500) {
+    //      targetMax += 10;
+    //    }
+    //
+    //    int tMax = 1200;
+    //    double power = 0.5f;
+    //
+    //    int s = 8;
+    //    for (int i = 1; i <= s; i++) {
+    //      double ni = i / (double) s;
+    //      double ei = tMax * Math.pow(ni, power);
+    //      pr(i, ei);
+    //      int ti = target(ni, power, tMax);
+    //      double nic = fraction(ti, tMax, power);
+    //      pr(ei, ti, nic);
+    //    }
   }
 
   /**
@@ -85,8 +114,7 @@ public class FeedOper extends AppOper {
    * Calculate fraction for a particular target
    */
   private static double fraction(int target, int targetMax, double power) {
-    return Math.pow(target / (double) targetMax, 1/power);
+    return Math.pow(target / (double) targetMax, 1 / power);
   }
 
- 
 }
