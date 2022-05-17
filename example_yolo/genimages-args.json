@@ -2,5 +2,5 @@
       "network_path" : "network.json",
         "categories" : "AB",
        "image_total" : 100,
-  "scale_factor_max" : 17,
+  "scale_factor_max" : 4,
 }

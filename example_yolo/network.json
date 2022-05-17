@@ -6,18 +6,6 @@
 
     "layers" :[
 
-          // We need to downsample the input image by a factor of the block size,
-          // so log(32) = 5 maxpool layers; but since we want blocks to be 16 pixels wide,
-          // one of these maxpool layers should have a stride of 1
-
-          {"type" :"conv", "filters": 16 },
-          {"type" :"leaky_relu"},
-          {"type" :"maxpool"},
-
-          {"type" :"conv", "filters": 32 },
-          {"type" :"leaky_relu"},
-          {"type" :"maxpool"},
-
           {"type" :"conv", "filters": 64 },
           {"type" :"leaky_relu"},
           {"type" :"maxpool"},
@@ -26,34 +14,37 @@
           {"type" :"leaky_relu"},
           {"type" :"maxpool"},
 
+          {"type" :"conv", "filters": 128 },
+          {"type" :"leaky_relu"},
+          {"type" :"maxpool"},
+
+
           {"type" :"conv", "filters": 256 },
           {"type" :"leaky_relu"},
-          // Use shorter stride in x to leave 32 blocks horizontally
-          {"type" :"maxpool", "stride_x": 1, "stride_y" : 2},
+          {"type" :"maxpool"},
 
+          {"type" :"conv", "filters": 512 },
+          {"type" :"leaky_relu"},
+          {"type" :"maxpool"},
 
-          // These layers don't do any pooling, so the planar dimension doesn't change;
-          // it just doubles the depth each time
-          //
-          {"type" :"conv", "filters": 480 },
+          // These layers don't do any pooling
+
+          {"type" :"conv", "filters": 256 },
+          {"type" :"leaky_relu"},
+          {"type" :"conv", "filters": 512 },
           {"type" :"leaky_relu"},
 
-          {"type" :"conv", "filters": 560 },
-          {"type" :"leaky_relu"},
-
-          {"type" :"conv", "filters": 640 },
-          {"type" :"leaky_relu"},
 
           {"type":"yolo"},
         ],
 
         "model_config" : {
-              "image_size" : [320,256],
+              "image_size" : [96,64],
               "image_channels" : 3,
 
               "category_count" : 2,
-              "block_size" : [16,32],
-              "anchor_boxes_pixels" : [[27,36]],
+              "block_size" : [32,32],
+              "anchor_boxes_pixels" : [[24,32]],
               "lambda_coord" : 5.0,
               "lambda_noobj" : 0.5,
               "neighbor_factor" : 0.90,
