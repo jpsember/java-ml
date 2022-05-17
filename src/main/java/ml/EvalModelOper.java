@@ -37,14 +37,13 @@ public class EvalModelOper extends AppOper {
 
   @Override
   public void perform() {
-    ModelWrapper model =  mModel = ModelWrapper.constructFor(null, config().network(), config().networkPath());
+    mModel = ModelWrapper.constructFor(null, config().network(), config().networkPath());
+    ModelWrapper model = mModel;
 
     // Read and parse label information
 
     ImageSetInfo.Builder infoBuilder = ImageSetInfo.newBuilder();
-    ModelServiceProvider modelService = model().buildModelServiceProvider();
-    modelService.setModel(model);
-    modelService.storeImageSetInfo(infoBuilder);
+    model.storeImageSetInfo(infoBuilder);
     ImageSetInfo imageSetInfo = infoBuilder.build();
     File imagesPath = Files.join(config().trainTestDir(), "images.bin");
     File labelsPath = Files.join(config().trainTestDir(), "results.bin");
@@ -64,7 +63,7 @@ public class EvalModelOper extends AppOper {
           imageSetInfo.imageLengthBytes() / Float.BYTES);
       byte[] labelBytes = Files.readBytes(labelsStream, imageSetInfo.labelLengthBytes());
       Script.Builder script = Script.newBuilder();
-      modelService.parseInferenceResult(labelBytes, script);
+      model.parseInferenceResult(labelBytes, script);
       Script s = script.build();
 
       BufferedImage bufferedImage = ImgUtil.floatsToBufferedImage(imageFloats, model.inputImagePlanarSize(),
@@ -87,10 +86,6 @@ public class EvalModelOper extends AppOper {
     return super.config();
   }
 
-  private ModelWrapper model() {
-    return mModel;
-  }
-
-  private ModelWrapper mModel;   
+  private ModelWrapper mModel;
 
 }

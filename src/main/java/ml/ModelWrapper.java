@@ -2,6 +2,8 @@ package ml;
 
 import static js.base.Tools.*;
 
+import java.awt.image.BufferedImage;
+import java.io.DataOutputStream;
 import java.io.File;
 import java.util.List;
 
@@ -11,9 +13,11 @@ import js.geometry.IPoint;
 import js.graphics.ScriptElement;
 import js.graphics.ScriptUtil;
 import js.graphics.gen.Script;
+import js.graphics.gen.ScriptElementList;
 import js.json.JSMap;
 
 import gen.Classifier;
+import gen.ImageSetInfo;
 import gen.Layer;
 import gen.NetworkProjectType;
 import gen.NeuralNetwork;
@@ -47,7 +51,7 @@ public abstract class ModelWrapper extends BaseObject {
     default:
       throw die("not supported:", network.projectType());
     }
-    handler.init(network);
+    handler.auxInit(network);
     return handler;
   }
 
@@ -56,13 +60,20 @@ public abstract class ModelWrapper extends BaseObject {
     return constructFor(NetworkUtil.resolveNetwork(baseDirectoryOrNull, networkOrNull, networkPath));
   }
 
-  private void init(NeuralNetwork network) {
+  private void auxInit(NeuralNetwork network) {
     mNetwork = NetworkUtil.validateNetwork(network);
     mInputImageVolume = determineInputImageVolume(network);
     mInputImageChannels = network.modelConfig().getInt("image_channels");
     mInputImagePlanarSize = VolumeUtil.spatialDimension(mInputImageVolume);
     mInputImageVolumeProduct = VolumeUtil.product(mInputImageVolume);
     mModelConfig = parseModelConfig(network.projectType(), network.modelConfig());
+    init();
+  }
+
+  /**
+   * Optional initialization of subclasses; default does nothing
+   */
+  public void init() {
   }
 
   public void transformAnnotations(List<ScriptElement> in, List<ScriptElement> out,
@@ -70,11 +81,6 @@ public abstract class ModelWrapper extends BaseObject {
     for (ScriptElement orig : in)
       out.add(orig.applyTransform(transform.matrix()));
   }
-
-  /**
-   * Construct object to provide various model-specific services
-   */
-  public abstract ModelServiceProvider buildModelServiceProvider();
 
   public RuntimeException notSupported() {
     return die("Unsupported; project type:", projectType());
@@ -165,6 +171,51 @@ public abstract class ModelWrapper extends BaseObject {
     return shape;
   }
 
+  public final void setImageStream(DataOutputStream imageStream) {
+    checkState(mImageOutputStream == null, "stream already defined");
+    mImageOutputStream = imageStream;
+  }
+
+  public final void setLabelStream(DataOutputStream labelStream) {
+    checkState(mLabelOutputStream == null, "stream already defined");
+    mLabelOutputStream = labelStream;
+  }
+
+  public final DataOutputStream imageOutputStream() {
+    return mImageOutputStream;
+  }
+
+  public final DataOutputStream labelOutputStream() {
+    return mLabelOutputStream;
+  }
+
+  /**
+   * Process an image and its annotations, converting to form suitable for
+   * training
+   */
+  public abstract void accept(float[] image, ScriptElementList scriptElementList);
+
+  /**
+   * Fill in information fields. Some fields may have already been filled in
+   */
+  public abstract void storeImageSetInfo(ImageSetInfo.Builder imageSetInfo);
+
+  /**
+   * Parse model output to a Script
+   */
+  public void parseInferenceResult(byte[] modelOutput, Script.Builder script) {
+    notSupported();
+  }
+
+  /**
+   * Generate a BufferedImage from an array of bytes taken from a compiled image
+   * file
+   */
+  public BufferedImage decodeImage(byte[] imageBytes) {
+    notSupported();
+    return null;
+  }
+
   private static Vol determineInputImageVolume(NeuralNetwork network) {
     JSMap modelConfig = network.modelConfig();
     IPoint imageSize = IPoint.get(modelConfig, "image_size");
@@ -178,5 +229,7 @@ public abstract class ModelWrapper extends BaseObject {
   private IPoint mInputImagePlanarSize;
   private int mInputImageChannels;
   private int mInputImageVolumeProduct;
+  private DataOutputStream mImageOutputStream;
+  private DataOutputStream mLabelOutputStream;
 
 }

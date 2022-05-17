@@ -29,7 +29,6 @@ import js.graphics.MonoImageUtil;
 import js.graphics.ScriptElement;
 import js.graphics.ScriptUtil;
 import js.graphics.gen.MonoImage;
-import ml.ModelServiceProvider;
 import ml.ModelWrapper;
 
 /**
@@ -64,10 +63,10 @@ public final class ImageCompiler extends BaseObject {
 
     ModelWrapper model = model();
 
-    ModelServiceProvider provider = buildModelServiceProvider();
-    provider.setImageStream(imagesStream);
-    provider.setLabelStream(labelsStream);
-    provider.storeImageSetInfo(imageSetInfo);
+    todo("must allow these fields to be mutable");
+    model.setImageStream(imagesStream);
+    model.setLabelStream(labelsStream);
+    model.storeImageSetInfo(imageSetInfo);
     checkArgument(imageSetInfo.imageLengthBytes() > 0 && imageSetInfo.labelLengthBytes() > 0);
 
     float[] imageFloats = null;
@@ -115,7 +114,7 @@ public final class ImageCompiler extends BaseObject {
       mInspector.create("float").imageSize(model.inputImagePlanarSize()).channels(model.inputImageChannels())
           .image(imageFloats);
 
-      provider.accept(imageFloats, entry.scriptElementList());
+      model.accept(imageFloats, entry.scriptElementList());
       entry.releaseResources();
     }
     mEntriesValidated = true;
@@ -124,14 +123,6 @@ public final class ImageCompiler extends BaseObject {
     files().writePretty(infoPath, imageSetInfo.build());
   }
 
-  /**
-   * Construct a ModelServiceProvider for the compiler's model type
-   */
-  public ModelServiceProvider buildModelServiceProvider() {
-    ModelServiceProvider provider = model().buildModelServiceProvider();
-    provider.setModel(model());
-    return provider;
-  }
 
   private List<ImageEntry> entries() {
     if (mEntries == null) {

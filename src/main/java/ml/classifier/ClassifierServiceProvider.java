@@ -15,6 +15,7 @@ import js.graphics.gen.Script;
 import js.graphics.gen.ScriptElementList;
 import ml.ModelServiceProvider;
 
+@Deprecated
 public class ClassifierServiceProvider extends ModelServiceProvider {
 
   @Override

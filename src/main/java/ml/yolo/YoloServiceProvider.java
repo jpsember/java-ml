@@ -26,6 +26,7 @@ import gen.ImageSetInfo;
 import gen.PlotInferenceResultsConfig;
 import gen.Yolo;
 
+@Deprecated
 public final class YoloServiceProvider extends ModelServiceProvider {
 
   public void prepareModel() {
