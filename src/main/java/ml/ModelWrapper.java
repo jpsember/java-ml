@@ -2,22 +2,27 @@ package ml;
 
 import static js.base.Tools.*;
 
-import java.awt.image.BufferedImage;
 import java.io.File;
 import java.util.List;
 
 import js.base.BaseObject;
 import js.data.AbstractData;
 import js.geometry.IPoint;
-import js.graphics.ImgUtil;
 import js.graphics.ScriptElement;
 import js.graphics.ScriptUtil;
 import js.graphics.gen.Script;
 import js.json.JSMap;
+
+import gen.Classifier;
+import gen.Layer;
+import gen.NetworkProjectType;
+import gen.NeuralNetwork;
+import gen.TransformWrapper;
+import gen.Vol;
+import gen.Yolo;
+
 import ml.classifier.ClassifierModelWrapper;
 import ml.yolo.YoloModelWrapper;
-import ml.yolo.YoloUtil;
-import gen.*;
 
 /**
  * An intelligent wrapper around datagen model class (Yolo, etc.) Parses
@@ -52,7 +57,6 @@ public abstract class ModelWrapper extends BaseObject {
   }
 
   private void init(NeuralNetwork network) {
-    todo("make various things final");
     mNetwork = NetworkUtil.validateNetwork(network);
     mInputImageVolume = determineInputImageVolume(network);
     mInputImageChannels = network.modelConfig().getInt("image_channels");
@@ -72,15 +76,7 @@ public abstract class ModelWrapper extends BaseObject {
    */
   public abstract ModelServiceProvider buildModelServiceProvider();
 
-  // ------------------------------------------------------------------
-  // Training progress
-  // ------------------------------------------------------------------
-
-  protected BufferedImage constructBufferedImage(float[] pixels) {
-    return ImgUtil.floatsToBufferedImage(pixels, inputImagePlanarSize(), inputImageVolume().depth());
-  }
-
-  protected RuntimeException notSupported() {
+  public RuntimeException notSupported() {
     return die("Unsupported; project type:", projectType());
   }
 
@@ -92,9 +88,13 @@ public abstract class ModelWrapper extends BaseObject {
     throw notSupported();
   }
 
-  protected final void assertNoMixing(Script script) {
+  /**
+   * Raise exception if there is a mixture of rectangles and polygons in a
+   * script
+   */
+  public final void assertNoMixing(Script script) {
     if (!ScriptUtil.rectElements(script).isEmpty() && !ScriptUtil.polygonElements(script).isEmpty())
-      throw die("Cannot mix boxes and polygons");
+      badArg("Cannot mix rectangles and polygons");
   }
 
   /**
@@ -163,16 +163,6 @@ public abstract class ModelWrapper extends BaseObject {
     shape[1] = v.height(); // Note order of y,x
     shape[2] = v.width();
     return shape;
-  }
-
-  @Deprecated // Refactor to use inheritance
-  public int imageLabelFloatCount() {
-    switch (network().projectType()) {
-    case YOLO:
-      return YoloUtil.imageLabelFloatCount(modelConfig());
-    default:
-      throw die("unsupported for project type:", projectType());
-    }
   }
 
   private static Vol determineInputImageVolume(NeuralNetwork network) {

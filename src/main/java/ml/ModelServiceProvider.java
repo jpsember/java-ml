@@ -15,6 +15,7 @@ import static js.base.Tools.*;
 public abstract class ModelServiceProvider extends BaseObject {
 
   public final void setModel(ModelWrapper model) {
+    todo("merge ModelServiceProvider into ModelWrapper?");
     checkState(mModel == null, "model already defined");
     mModel = model;
     prepareModel();

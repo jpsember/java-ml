@@ -71,7 +71,8 @@ public final class YoloModelWrapper extends ModelWrapper {
       yr.setVerbose(config.inspectionFrameNumber() == imageNumber);
       yr.log("Plot Inference Results, image", imageNumber);
       float[] pixels = Files.readFloatsLittleEndian(imagesInput, inputImageVolumeProduct());
-      BufferedImage bi = constructBufferedImage(pixels);
+      BufferedImage bi = ImgUtil.floatsToBufferedImage(pixels, inputImagePlanarSize(),
+          inputImageVolume().depth());
 
       String imageFilenameRoot = String.format("%03d", imageNumber);
       File imgDest = new File(config.outputDir(), imageFilenameRoot + ".jpg");
