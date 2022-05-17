@@ -14,7 +14,6 @@ import ml.classifier.ClassifierModelHandler;
 import ml.yolo.YoloModelHandler;
 import gen.Layer;
 import gen.NeuralNetwork;
-import gen.PlotInferenceResultsConfig;
 import gen.TransformWrapper;
 
 /**
@@ -47,12 +46,6 @@ public abstract class ModelHandler extends BaseObject {
   // ------------------------------------------------------------------
   // Training progress
   // ------------------------------------------------------------------
-
-  /**
-   * Plot inference results in some user-friendly form (e.g. a scredit project)
-   */
-  @Deprecated // This is subsumed by the ModelServiceProvider.parseInferenceResult()
-  public abstract void plotInferenceResults(PlotInferenceResultsConfig config);
 
   protected BufferedImage constructBufferedImage(float[] pixels) {
     return ImgUtil.floatsToBufferedImage(pixels, model().inputImagePlanarSize(),

@@ -44,18 +44,6 @@ public final class ImageHandler extends BaseObject {
     return mHandler;
   }
 
-  /**
-   * Generate annotated images for training or inference
-   */
-  public void applyCompileImagePipeline(BufferedImage srcImage, ScriptElementList annotations,
-      TransformWrapper aug, ImageTransformer<BufferedImage> imageTransformer, ModelServiceProvider receiver,
-      ImageRecord sourceImage) {
-    annotations = Util.transform(annotations, aug.inverse(), -aug.rotationDegrees()).build();
-    imageTransformer.withPendingAnnotation(annotations);
-    imageTransformer.transform(aug.inverse(), aug.matrix(), srcImage, mDestFloatPixels);
-    receiver.accept(mDestFloatPixels, annotations);
-  }
-
   public TransformWrapper buildAugmentTransform() {
     AugmentationConfig ac = mAugmentationConfig;
     boolean horizFlip = ac.horizontalFlip() && random().nextBoolean();

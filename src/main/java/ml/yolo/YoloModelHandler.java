@@ -37,7 +37,9 @@ public final class YoloModelHandler extends ModelHandler {
     return r;
   }
 
-  @Override
+  /**
+   * TODO: refactor to be part of some standard interface
+   */
   public void plotInferenceResults(PlotInferenceResultsConfig config) {
 
     Yolo yolo = model().modelConfig();
