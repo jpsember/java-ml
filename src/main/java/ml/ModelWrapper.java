@@ -2,7 +2,6 @@ package ml;
 
 import static js.base.Tools.*;
 
-import java.awt.image.BufferedImage;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.util.List;
@@ -172,12 +171,10 @@ public abstract class ModelWrapper extends BaseObject {
   }
 
   public final void setImageStream(DataOutputStream imageStream) {
-    checkState(mImageOutputStream == null, "stream already defined");
     mImageOutputStream = imageStream;
   }
 
   public final void setLabelStream(DataOutputStream labelStream) {
-    checkState(mLabelOutputStream == null, "stream already defined");
     mLabelOutputStream = labelStream;
   }
 
@@ -205,15 +202,6 @@ public abstract class ModelWrapper extends BaseObject {
    */
   public void parseInferenceResult(byte[] modelOutput, Script.Builder script) {
     notSupported();
-  }
-
-  /**
-   * Generate a BufferedImage from an array of bytes taken from a compiled image
-   * file
-   */
-  public BufferedImage decodeImage(byte[] imageBytes) {
-    notSupported();
-    return null;
   }
 
   private static Vol determineInputImageVolume(NeuralNetwork network) {

@@ -214,12 +214,6 @@ public final class YoloModelWrapper extends ModelWrapper {
     script.items(boxList);
   }
 
-  @Override
-  public BufferedImage decodeImage(byte[] imageBytes) {
-    float[] floats = DataUtil.bytesToFloatsLittleEndian(imageBytes);
-    return ImgUtil.floatsToBufferedImage(floats, inputImagePlanarSize(), inputImageChannels());
-  }
-
   private YoloResultParser resultParser() {
     if (mYoloResultParser == null) {
       YoloResultParser yr = new YoloResultParser(mYolo);

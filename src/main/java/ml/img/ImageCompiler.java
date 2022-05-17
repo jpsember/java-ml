@@ -15,7 +15,6 @@ import gen.CompileImagesConfig;
 import gen.ImageSetInfo;
 import gen.NeuralNetwork;
 import gen.TransformWrapper;
-//import gen.TransformWrapper;
 import js.base.BaseObject;
 import js.file.DirWalk;
 import js.file.Files;
