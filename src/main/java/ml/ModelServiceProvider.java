@@ -12,6 +12,7 @@ import static js.base.Tools.*;
 /**
  * Model-specific operations
  */
+@Deprecated
 public abstract class ModelServiceProvider extends BaseObject {
 
   public final void setModel(ModelWrapper model) {
