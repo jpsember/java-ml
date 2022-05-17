@@ -94,16 +94,19 @@ public final class ImageCompiler extends BaseObject {
       op.filter(img, targetImage);
       mInspector.create("tfm").image(targetImage).elements(tfm);
 
-      if (alert("investigating monochrome tfm")) {
-        BufferedImage img2 = 
-            ImgEffects.makeMonochrome1Channel(img);
-        
-       MonoImage monoImage = MonoImageUtil.convert8BitBufferedImageMonoImage(img2);
-         img2 = MonoImageUtil.to16BitBufferedImage(monoImage);
+      if (false) {
+        // Investigating transformations involving TYPE_USHORT_GRAY monochrome BufferedImages.
+
+        // *** NOTE: Transforming a TYPE_USHORT_GRAY BufferedImage has strange effects that
+        // look like overflow if the full 16 bit range is used.
+        // Converting an 8-bit image to a  15-bit one seems to be ok.
+        //
+        BufferedImage img2 = ImgEffects.makeMonochrome1Channel(img);
+        MonoImage monoImage = MonoImageUtil.convert8BitBufferedImageMonoImage(img2);
+        img2 = MonoImageUtil.to15BitBufferedImage(monoImage);
         mInspector.create("mono").image(img2);
         BufferedImage targetImage2 = ImgUtil.build(model.inputImagePlanarSize(), img2.getType());
         op.filter(img2, targetImage2);
-        alert("strange effects transforming 16-bit monochrome");
         mInspector.create("monotfm").image(targetImage2);
       }
 
