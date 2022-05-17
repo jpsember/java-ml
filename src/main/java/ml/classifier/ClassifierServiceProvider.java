@@ -26,11 +26,11 @@ public class ClassifierServiceProvider extends ModelServiceProvider {
   }
 
   @Override
-  public void accept(float[] image, ScriptElementList annotation) {
+  public void accept(float[] image, ScriptElementList scriptElementList) {
     Files.S.writeFloatsLittleEndian(image, imageOutputStream());
-    if (annotation.elements().size() != 1)
-      throw badArg("expected single element:", INDENT, annotation);
-    ScriptElement elem = annotation.elements().get(0);
+    if (scriptElementList.elements().size() != 1)
+      throw badArg("expected single element:", INDENT, scriptElementList);
+    ScriptElement elem = scriptElementList.elements().get(0);
     int category = elem.properties().category();
     int[] intArray = new int[1];
     intArray[0] = category;

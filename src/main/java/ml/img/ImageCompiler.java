@@ -25,6 +25,7 @@ import js.geometry.Matrix;
 import js.geometry.MyMath;
 import js.graphics.ImgUtil;
 import js.graphics.Inspector;
+import js.graphics.ScriptElement;
 import js.graphics.ScriptUtil;
 import ml.ModelHandler;
 import ml.ModelServiceProvider;
@@ -78,16 +79,17 @@ public final class ImageCompiler extends BaseObject {
         checkImageSizeAndType(entry.imageFile(), img, model.inputImagePlanarSize(),
             model.inputImageChannels());
       }
-      mInspector.create("orig").image(img);
+      mInspector.create("orig").image(img).elements(entry.scriptElementList());
       entry.setTransform(buildAugmentTransform());
 
       BufferedImage targetImage = ImgUtil.build(model.inputImagePlanarSize(), img.getType());
       AugmentationConfig config = config().augmentationConfig();
       AffineTransformOp op = new AffineTransformOp(entry.transform().matrix().toAffineTransform(),
           AffineTransformOp.TYPE_BILINEAR);
-
+      List<ScriptElement> tfm = arrayList();
+      modelHandler().transformAnnotations(entry.scriptElementList().elements(), tfm, entry.transform());
       op.filter(img, targetImage);
-      mInspector.create("tfm").image(targetImage);
+      mInspector.create("tfm").image(targetImage).elements(tfm);
 
       imageFloats = ImgUtil.floatPixels(targetImage, model.inputImageChannels(), imageFloats);
 
@@ -203,8 +205,8 @@ public final class ImageCompiler extends BaseObject {
       float scaleMin = ac.scaleMin();
       if (scaleMin <= 0)
         scaleMin = scaleMax * 0.65f;
-      float xScale = random(scaleMin,scaleMax);
-      float yScale = random(scaleMin,scaleMax);
+      float xScale = random(scaleMin, scaleMax);
+      float yScale = random(scaleMin, scaleMax);
       if (horizFlip)
         xScale = -xScale;
       tfmScale = Matrix.getScale(xScale, yScale);

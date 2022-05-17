@@ -52,7 +52,7 @@ public abstract class ModelServiceProvider extends BaseObject {
    * Process an image and its annotations, converting to form suitable for
    * training
    */
-  public abstract void accept(float[] image, ScriptElementList annotation);
+  public abstract void accept(float[] image, ScriptElementList scriptElementList);
 
   /**
    * Fill in information fields. Some fields may have already been filled in

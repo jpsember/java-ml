@@ -20,6 +20,7 @@ import gen.AugmentationConfig;
 import gen.Layer;
 import gen.NeuralNetwork;
 import gen.PlotInferenceResultsConfig;
+import gen.TransformWrapper;
 
 /**
  * Abstract class representing a model for a particular type of ml project.
@@ -46,6 +47,12 @@ public abstract class ModelHandler extends BaseObject {
       transformer = new ColorImageTransformer();
     transformer.init(this, augmentationConfig, random);
     return transformer;
+  }
+
+  public void transformAnnotations(List<ScriptElement> in, List<ScriptElement> out,
+      TransformWrapper transform) {
+    for (ScriptElement orig : in)
+      out.add(orig.applyTransform(transform.matrix()));
   }
 
   /**

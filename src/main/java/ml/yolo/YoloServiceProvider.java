@@ -41,9 +41,9 @@ public final class YoloServiceProvider extends ModelServiceProvider {
   }
 
   @Override
-  public void accept(float[] image, ScriptElementList annotation) {
+  public void accept(float[] image, ScriptElementList scriptElementList) {
     writeImage(image);
-    writeScriptElements(annotation);
+    writeScriptElements(scriptElementList);
   }
 
   @Override
