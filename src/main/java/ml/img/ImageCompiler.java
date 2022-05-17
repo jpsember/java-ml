@@ -62,7 +62,6 @@ public final class ImageCompiler extends BaseObject {
 
     ModelWrapper model = model();
 
-    todo("must allow these fields to be mutable");
     model.setImageStream(imagesStream);
     model.setLabelStream(labelsStream);
     model.storeImageSetInfo(imageSetInfo);

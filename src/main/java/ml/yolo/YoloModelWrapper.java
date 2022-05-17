@@ -180,11 +180,15 @@ public final class YoloModelWrapper extends ModelWrapper {
     sb.append(" categories:" + yol.categoryCount());
   }
 
+  public Yolo yolo() {
+    return modelConfig();
+  }
+
   @Override
   public void init() {
-    Yolo yolo = mYolo = modelConfig();
+    Yolo yolo = modelConfig();
     mAnchorBoxes = YoloUtil.anchorBoxesRelativeToImageSize(yolo);
-    mBlockSize = mYolo.blockSize();
+    mBlockSize = yolo.blockSize();
     mPixelToGridCellScale = new FPoint(1f / mBlockSize.x, 1f / mBlockSize.y);
     mGridSize = YoloUtil.gridSize(yolo);
     constructOutputLayer();
@@ -216,9 +220,9 @@ public final class YoloModelWrapper extends ModelWrapper {
 
   private YoloResultParser resultParser() {
     if (mYoloResultParser == null) {
-      YoloResultParser yr = new YoloResultParser(mYolo);
-      yr.withConfidenceFilter(mParserConfig.confidencePct() / 100f);
-      mYoloResultParser = yr;
+      YoloResultParser parser = new YoloResultParser(yolo());
+      parser.withConfidenceFilter(mParserConfig.confidencePct() / 100f);
+      mYoloResultParser = parser;
     }
     return mYoloResultParser;
   }
@@ -274,10 +278,12 @@ public final class YoloModelWrapper extends ModelWrapper {
 
   private List<RectElement> generateNeighborVersions(List<RectElement> boxes) {
     List<RectElement> neighborList = arrayList();
-    if (mYolo.neighborFactor() == 0)
+    Yolo yolo = modelConfig();
+
+    if (yolo.neighborFactor() == 0)
       return neighborList;
 
-    log("generate neighbors, factor", mYolo.neighborFactor(), "for box count", boxes.size());
+    log("generate neighbors, factor", yolo.neighborFactor(), "for box count", boxes.size());
 
     for (RectElement original : boxes) {
 
@@ -322,7 +328,7 @@ public final class YoloModelWrapper extends ModelWrapper {
           log("iOverU  :", iOverU);
         }
 
-        if (iOverU < mYolo.neighborFactor())
+        if (iOverU < yolo.neighborFactor())
           continue;
 
         // Scale the stored confidence down further, to penalize it for having incorrect coordinates
@@ -392,7 +398,7 @@ public final class YoloModelWrapper extends ModelWrapper {
   }
 
   private void constructOutputLayer() {
-    mFieldsPerAnchorBox = YoloUtil.valuesPerAnchorBox(mYolo);
+    mFieldsPerAnchorBox = YoloUtil.valuesPerAnchorBox(yolo());
     mFieldsPerGridCell = mFieldsPerAnchorBox * numAnchorBoxes();
     mFieldsPerImage = mFieldsPerGridCell * mGridSize.product();
     mOutputLayer = new float[mFieldsPerImage];
@@ -414,7 +420,7 @@ public final class YoloModelWrapper extends ModelWrapper {
   }
 
   private IPoint determineBoxGridCell(IPoint midpoint) {
-    IPoint blockSize = mYolo.blockSize();
+    IPoint blockSize = yolo().blockSize();
     return new IPoint(Math.floorDiv(midpoint.x, blockSize.x), Math.floorDiv(midpoint.y, blockSize.y));
   }
 
@@ -434,6 +440,7 @@ public final class YoloModelWrapper extends ModelWrapper {
    * Returns true if result was successful
    */
   private boolean convertBoxToCell(IRect box) {
+    Yolo yolo = modelConfig();
     mBoxLocationRelativeToCell = null;
     mBoxSizeRelativeToAnchorBox = null;
     mBoxGridCell = null;
@@ -452,8 +459,8 @@ public final class YoloModelWrapper extends ModelWrapper {
     }
 
     mBoxSizeRelativeToAnchorBox = new FPoint(//
-        (box.width / (float) mYolo.imageSize().x) / mAnchorBoxes[mAnchorBox * 2 + 0], //
-        (box.height / (float) mYolo.imageSize().y) / mAnchorBoxes[mAnchorBox * 2 + 1]);
+        (box.width / (float) yolo.imageSize().x) / mAnchorBoxes[mAnchorBox * 2 + 0], //
+        (box.height / (float) yolo.imageSize().y) / mAnchorBoxes[mAnchorBox * 2 + 1]);
 
     mBoxGridCell = gridCell;
     mBoxLocationRelativeToCell = new FPoint(//
@@ -472,13 +479,14 @@ public final class YoloModelWrapper extends ModelWrapper {
   }
 
   private int numCategories() {
-    return mYolo.categoryCount();
+    return yolo().categoryCount();
   }
 
   /**
    * Choose best anchor box for current box
    */
   private void chooseAnchorBox(IPoint boxSizeI) {
+    Yolo yolo = modelConfig();
     FPoint boxSize = boxSizeI.toFPoint();
 
     float[] anchorBoxes = mAnchorBoxes;
@@ -490,7 +498,7 @@ public final class YoloModelWrapper extends ModelWrapper {
 
       // The anchor box dimensions are multiples of the block size.
       FPoint anchorSize = new FPoint(anchorBoxes[i * 2 + 0], anchorBoxes[i * 2 + 1])
-          .scaledBy(mYolo.blockSize());
+          .scaledBy(yolo.blockSize());
 
       // We want the intersection / union.
       // I think this is the same whether we align the two boxes at their centerpoints 
@@ -518,7 +526,6 @@ public final class YoloModelWrapper extends ModelWrapper {
         .confidence(MyMath.parameterToPercentage(confidence)).rotation(rotationDegrees), box);
   }
 
-  private Yolo mYolo;
   private float[] mAnchorBoxes;
   private IPoint mGridSize;
   private IPoint mBlockSize;
