@@ -27,19 +27,8 @@ import gen.Vol;
 import gen.Yolo;
 import ml.NetworkUtil;
 import ml.VolumeUtil;
-import ml.img.ImageHandler;
-import ml.img.ImageRecord;
 
-@Deprecated
 public final class YoloModelHandler extends ModelHandler {
-
-  @Override
-  public void addImageRecordFilters(ImageHandler p) {
-    p.withFilter(ImageRecord.FILTER_SCRIPT_REQUIRED);
-    p.withFilter(ImageRecord.FILTER_SHAPE_OR_RETAIN_REQUIRED);
-    // Read the image last, in case already filtered
-    p.withFilter(ImageRecord.filterEnsureImageSize(model().inputImagePlanarSize()));
-  }
 
   @Override
   public ModelServiceProvider buildModelServiceProvider() {

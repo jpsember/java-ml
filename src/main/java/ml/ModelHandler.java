@@ -13,10 +13,9 @@ import js.graphics.gen.Script;
 import js.base.BaseObject;
 import ml.classifier.ClassifierModelHandler;
 import ml.img.ColorImageTransformer;
-import ml.img.ImageHandler;
 import ml.img.ImageTransformer;
 import ml.img.MonochromeImageTransformer;
-//import ml.yolo.YoloModelHandler;
+import ml.yolo.YoloModelHandler;
 import gen.AugmentationConfig;
 import gen.Layer;
 import gen.NeuralNetwork;
@@ -27,12 +26,7 @@ import gen.PlotInferenceResultsConfig;
  * 
  * To be merged with ModelWrapper at some point
  */
-@SuppressWarnings("deprecation")
 public abstract class ModelHandler extends BaseObject {
-
-  @Deprecated
-  public void addImageRecordFilters(ImageHandler imageProcessor) {
-  }
 
   public final ModelWrapper model() {
     return mModelConfig;
@@ -113,9 +107,9 @@ public abstract class ModelHandler extends BaseObject {
     ModelHandler handler = null;
     switch (model.projectType()) {
 
-//    case YOLO:
-//      handler = new YoloModelHandler();
-//      break;
+    case YOLO:
+      handler = new YoloModelHandler();
+      break;
 
     case CLASSIFIER:
       handler = new ClassifierModelHandler();

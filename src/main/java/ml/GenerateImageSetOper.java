@@ -85,7 +85,6 @@ public class GenerateImageSetOper extends AppOper {
       int totalObjects = objectCount;
       if (totalObjects < 0)
         totalObjects = 1 + random().nextInt(config().maxObjects());
-
       Plotter p = Plotter.build();
       p.withCanvas(mImageSize);
 
