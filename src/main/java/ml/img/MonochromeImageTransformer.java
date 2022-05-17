@@ -26,6 +26,7 @@ import gen.AugmentationConfig;
  * An implementation of ImageTransformer to work with 16-bit grayscale
  * BufferedImage inputs
  */
+@Deprecated
 public class MonochromeImageTransformer extends ImageTransformer<BufferedImage> {
 
   // ------------------------------------------------------------------

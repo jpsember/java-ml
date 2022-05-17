@@ -2,7 +2,6 @@ package ml;
 
 import java.awt.image.BufferedImage;
 import java.util.List;
-import java.util.Random;
 
 import static js.base.Tools.*;
 
@@ -12,11 +11,7 @@ import js.graphics.ScriptUtil;
 import js.graphics.gen.Script;
 import js.base.BaseObject;
 import ml.classifier.ClassifierModelHandler;
-import ml.img.ColorImageTransformer;
-import ml.img.ImageTransformer;
-import ml.img.MonochromeImageTransformer;
 import ml.yolo.YoloModelHandler;
-import gen.AugmentationConfig;
 import gen.Layer;
 import gen.NeuralNetwork;
 import gen.PlotInferenceResultsConfig;
@@ -36,17 +31,6 @@ public abstract class ModelHandler extends BaseObject {
   public final void setModel(ModelWrapper model) {
     todo("!Should this class and ModelWrapper be merged?");
     mModelConfig = model;
-  }
-
-  public final ImageTransformer<BufferedImage> buildImageTransformer(AugmentationConfig augmentationConfig,
-      Random random) {
-    ImageTransformer<BufferedImage> transformer;
-    if (model().network().monochromeSourceImages())
-      transformer = new MonochromeImageTransformer();
-    else
-      transformer = new ColorImageTransformer();
-    transformer.init(this, augmentationConfig, random);
-    return transformer;
   }
 
   public void transformAnnotations(List<ScriptElement> in, List<ScriptElement> out,

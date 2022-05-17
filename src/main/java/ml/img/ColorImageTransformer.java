@@ -13,6 +13,7 @@ import gen.AugmentationConfig;
 /**
  * An implementation of ImageTransformer to work with color inputs
  */
+@Deprecated
 public final class ColorImageTransformer extends ImageTransformer<BufferedImage> {
 
   private static final int INSPECTION_IMAGE_TYPE = BufferedImage.TYPE_INT_RGB;

@@ -16,6 +16,7 @@ import ml.ModelWrapper;
  * Converts images of type T to arrays of floats, while applying a linear
  * transformation
  */
+@Deprecated
 public abstract class ImageTransformer<T> extends BaseObject {
 
   public final void init(ModelHandler modelHandler, AugmentationConfig augmentationConfig, Random random) {
