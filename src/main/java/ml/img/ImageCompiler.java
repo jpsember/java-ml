@@ -23,6 +23,7 @@ import js.file.Files;
 import js.geometry.IPoint;
 import js.geometry.Matrix;
 import js.geometry.MyMath;
+import js.graphics.ImgEffects;
 import js.graphics.ImgUtil;
 import js.graphics.Inspector;
 import js.graphics.ScriptElement;
@@ -90,6 +91,16 @@ public final class ImageCompiler extends BaseObject {
       modelHandler().transformAnnotations(entry.scriptElementList().elements(), tfm, entry.transform());
       op.filter(img, targetImage);
       mInspector.create("tfm").image(targetImage).elements(tfm);
+
+      if (alert("investigating monochrome tfm")) {
+        todo("ok, but we really need to expand the 8-bit grayscale to 15-bit for test purposes");
+        BufferedImage img2 = 
+            ImgEffects.makeMonochrome(img);
+        mInspector.create("mono").image(img2);
+        BufferedImage targetImage2 = ImgUtil.build(model.inputImagePlanarSize(), img2.getType());
+        op.filter(img2, targetImage2);
+        mInspector.create("monotfm").image(targetImage2);
+      }
 
       imageFloats = ImgUtil.floatPixels(targetImage, model.inputImageChannels(), imageFloats);
 
