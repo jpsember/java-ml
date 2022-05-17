@@ -16,8 +16,8 @@ import js.graphics.ScriptElement;
 import js.graphics.ScriptUtil;
 import js.graphics.gen.ElementProperties;
 import js.graphics.gen.Script;
-import ml.ModelHandler;
 import ml.ModelServiceProvider;
+import ml.ModelWrapper;
 import ml.NetworkAnalyzer;
 import gen.Layer;
 import gen.LayerType;
@@ -27,7 +27,7 @@ import gen.Yolo;
 import ml.NetworkUtil;
 import ml.VolumeUtil;
 
-public final class YoloModelHandler extends ModelHandler {
+public final class YoloModelWrapper extends ModelWrapper {
 
   @Override
   public ModelServiceProvider buildModelServiceProvider() {
@@ -45,12 +45,12 @@ public final class YoloModelHandler extends ModelHandler {
     final String EVAL_IMAGES_FILENAME = "images.bin";
     final String EVAL_RESULTS_FILENAME = "inference_results.bin";
 
-    Yolo yolo = model().modelConfig();
+    Yolo yolo = modelConfig();
 
     File imagesFile = Files.assertExists(new File(config.inferenceInputDir(), EVAL_IMAGES_FILENAME));
     File resultsFile = Files.assertExists(new File(config.inferenceResultsDir(), EVAL_RESULTS_FILENAME));
 
-    int imageLengthInBytes = model().inputImageVolumeProduct() * Float.BYTES;
+    int imageLengthInBytes = inputImageVolumeProduct() * Float.BYTES;
     int imageCount = (int) (imagesFile.length() / imageLengthInBytes);
 
     Files.assertFileLength(imagesFile, imageCount * (long) imageLengthInBytes, "images");
@@ -70,7 +70,7 @@ public final class YoloModelHandler extends ModelHandler {
     for (int imageNumber = 0; imageNumber < imageCount; imageNumber++) {
       yr.setVerbose(config.inspectionFrameNumber() == imageNumber);
       yr.log("Plot Inference Results, image", imageNumber);
-      float[] pixels = Files.readFloatsLittleEndian(imagesInput, model().inputImageVolumeProduct());
+      float[] pixels = Files.readFloatsLittleEndian(imagesInput, inputImageVolumeProduct());
       BufferedImage bi = constructBufferedImage(pixels);
 
       String imageFilenameRoot = String.format("%03d", imageNumber);
@@ -99,7 +99,7 @@ public final class YoloModelHandler extends ModelHandler {
   }
 
   private void generateAnchorBoxSummary(List<ScriptElement> elements) {
-    Yolo yolo = model().modelConfig();
+    Yolo yolo = modelConfig();
     FPoint blockSize = yolo.blockSize().toFPoint();
     FPoint halfBlock = blockSize.scaledBy(0.5f);
     int numBox = YoloUtil.anchorBoxCount(yolo);
@@ -142,7 +142,7 @@ public final class YoloModelHandler extends ModelHandler {
   }
 
   private void auxProcessLayer(NetworkAnalyzer analyzer, Layer.Builder layer) {
-    Yolo yol = model().modelConfig();
+    Yolo yol = modelConfig();
     yol = YoloUtil.validate(yol);
 
     IPoint inputImageSize = VolumeUtil.spatialDimension(layer.inputVolume());
@@ -177,7 +177,7 @@ public final class YoloModelHandler extends ModelHandler {
 
   @Override
   public void describeLayer(NetworkAnalyzer an, Layer layer, StringBuilder sb) {
-    Yolo yol = model().modelConfig();
+    Yolo yol = modelConfig();
     sb.append("anchors:" + yol.anchorBoxesPixels().size());
     sb.append(" categories:" + yol.categoryCount());
   }

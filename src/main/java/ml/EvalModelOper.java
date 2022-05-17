@@ -37,14 +37,12 @@ public class EvalModelOper extends AppOper {
 
   @Override
   public void perform() {
-    mModelHandler = NetworkUtil.constructModelHandler(null, config().network(), config().networkPath());
-
-    ModelWrapper model = modelHandler().model();
+    ModelWrapper model =  mModel = ModelWrapper.constructFor(null, config().network(), config().networkPath());
 
     // Read and parse label information
 
     ImageSetInfo.Builder infoBuilder = ImageSetInfo.newBuilder();
-    ModelServiceProvider modelService = modelHandler().buildModelServiceProvider();
+    ModelServiceProvider modelService = model().buildModelServiceProvider();
     modelService.setModel(model);
     modelService.storeImageSetInfo(infoBuilder);
     ImageSetInfo imageSetInfo = infoBuilder.build();
@@ -89,10 +87,10 @@ public class EvalModelOper extends AppOper {
     return super.config();
   }
 
-  private ModelHandler modelHandler() {
-    return mModelHandler;
+  private ModelWrapper model() {
+    return mModel;
   }
 
-  private ModelHandler mModelHandler;
+  private ModelWrapper mModel;   
 
 }

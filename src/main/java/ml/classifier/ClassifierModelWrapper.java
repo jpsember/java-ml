@@ -4,10 +4,10 @@ import java.util.List;
 
 import gen.TransformWrapper;
 import js.graphics.ScriptElement;
-import ml.ModelHandler;
 import ml.ModelServiceProvider;
+import ml.ModelWrapper;
 
-public final class ClassifierModelHandler extends ModelHandler {
+public final class ClassifierModelWrapper extends ModelWrapper {
 
   @Override
   public ModelServiceProvider buildModelServiceProvider() {

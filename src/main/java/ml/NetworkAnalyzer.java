@@ -24,12 +24,12 @@ public final class NetworkAnalyzer extends BaseObject {
 
   private NetworkAnalyzer(NeuralNetwork network) {
     mNetwork = NetworkUtil.validateNetwork(network);
-    mHandler = ModelHandler.construct(network());
+    mModel = ModelWrapper.constructFor(network());
     setVolume(model().inputImageVolume());
   }
 
   private ModelWrapper model() {
-    return mHandler.model();
+    return mModel;
   }
 
   public NeuralNetwork result() {
@@ -83,8 +83,8 @@ public final class NetworkAnalyzer extends BaseObject {
       throw die("Problems were found with network:", INDENT, problemList());
   }
 
-  public ModelHandler handler() {
-    return mHandler;
+  public ModelWrapper handler() {
+    return mModel;
   }
 
   /**
@@ -318,7 +318,7 @@ public final class NetworkAnalyzer extends BaseObject {
   }
 
   private final NeuralNetwork mNetwork;
-  private final ModelHandler mHandler;
+  private final ModelWrapper mModel;   
   private final List<String> mProblems = arrayList();
   private NeuralNetwork mResult;
   private int mLayerIndex;

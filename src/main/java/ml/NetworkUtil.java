@@ -21,11 +21,6 @@ public final class NetworkUtil {
     return checkNotNull(network, "Cannot find network in path:", networkPath);
   }
 
-  public static ModelHandler constructModelHandler(File baseDirectoryOrNull, NeuralNetwork networkOrNull,
-      File networkPath) {
-    return ModelHandler.construct(resolveNetwork(baseDirectoryOrNull, networkOrNull, networkPath));
-  }
-
   public static NeuralNetwork validateNetwork(NeuralNetwork network) {
     if (network.version() != VERSION)
       throw die("Unexpected version:", network.version(), "Expected:", VERSION);

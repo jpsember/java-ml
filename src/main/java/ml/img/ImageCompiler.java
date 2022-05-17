@@ -29,7 +29,6 @@ import js.graphics.MonoImageUtil;
 import js.graphics.ScriptElement;
 import js.graphics.ScriptUtil;
 import js.graphics.gen.MonoImage;
-import ml.ModelHandler;
 import ml.ModelServiceProvider;
 import ml.ModelWrapper;
 
@@ -45,7 +44,7 @@ public final class ImageCompiler extends BaseObject {
     if (seed <= 0)
       seed = 1965;
     mRandom = new Random(seed);
-    mModelHandler = ModelHandler.construct(network);
+    mModel = ModelWrapper.constructFor(network);
   }
 
   public void setInspector(Inspector inspector) {
@@ -63,7 +62,7 @@ public final class ImageCompiler extends BaseObject {
     DataOutputStream imagesStream = new DataOutputStream(files().outputStream(imagePath));
     DataOutputStream labelsStream = new DataOutputStream(files().outputStream(labelsPath));
 
-    ModelWrapper model = modelHandler().model();
+    ModelWrapper model = model();
 
     ModelServiceProvider provider = buildModelServiceProvider();
     provider.setImageStream(imagesStream);
@@ -88,7 +87,7 @@ public final class ImageCompiler extends BaseObject {
       AffineTransformOp op = new AffineTransformOp(entry.transform().matrix().toAffineTransform(),
           AffineTransformOp.TYPE_BILINEAR);
       List<ScriptElement> tfm = arrayList();
-      modelHandler().transformAnnotations(entry.scriptElementList().elements(), tfm, entry.transform());
+      model().transformAnnotations(entry.scriptElementList().elements(), tfm, entry.transform());
       op.filter(img, targetImage);
       mInspector.create("tfm").image(targetImage).elements(tfm);
 
@@ -129,8 +128,8 @@ public final class ImageCompiler extends BaseObject {
    * Construct a ModelServiceProvider for the compiler's model type
    */
   public ModelServiceProvider buildModelServiceProvider() {
-    ModelServiceProvider provider = modelHandler().buildModelServiceProvider();
-    provider.setModel(modelHandler().model());
+    ModelServiceProvider provider = model().buildModelServiceProvider();
+    provider.setModel(model());
     return provider;
   }
 
@@ -192,15 +191,15 @@ public final class ImageCompiler extends BaseObject {
       BufferedImage.TYPE_USHORT_GRAY, 1 //
   );
 
-  private ModelHandler modelHandler() {
-    return mModelHandler;
+  private ModelWrapper model() {
+    return mModel;
   }
 
   private TransformWrapper buildAugmentTransform() {
     AugmentationConfig ac = config().augmentationConfig();
     boolean horizFlip = ac.horizontalFlip() && random().nextBoolean();
 
-    IPoint sourceImageSize = modelHandler().model().inputImagePlanarSize();
+    IPoint sourceImageSize = model().inputImagePlanarSize();
     Matrix tfmTranslateToCenter = Matrix.getTranslate(sourceImageSize.x * -.5f, sourceImageSize.y * -.5f);
     Matrix tfmTranslateFromCenter = Matrix.getTranslate(sourceImageSize.x * .5f, sourceImageSize.y * .5f);
 
@@ -282,7 +281,7 @@ public final class ImageCompiler extends BaseObject {
 
   private final CompileImagesConfig mConfig;
   private final Random mRandom;
-  private final ModelHandler mModelHandler;
+  private final ModelWrapper mModel;
   private final Files mFiles;
   private Inspector mInspector = Inspector.NULL_INSPECTOR;
   private List<ImageEntry> mEntries;

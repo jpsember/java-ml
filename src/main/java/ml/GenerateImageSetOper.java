@@ -43,7 +43,7 @@ public class GenerateImageSetOper extends AppOper {
 
   @Override
   public void perform() {
-    mModelHandler = NetworkUtil.constructModelHandler(null, config().network(), config().networkPath());
+    mModel = ModelWrapper.constructFor(null, config().network(), config().networkPath());
 
     int objectCount = -1;
 
@@ -68,9 +68,8 @@ public class GenerateImageSetOper extends AppOper {
 
     }
 
-    mImageSize = modelHandler().model().inputImagePlanarSize();
-
-    ModelWrapper model = modelHandler().model();
+    ModelWrapper model = model();
+    mImageSize = model.inputImagePlanarSize();
 
     File targetDir = files().remakeDirs(config().targetDir());
     File annotationDir = files().mkdirs(ScriptUtil.scriptDirForProject(targetDir));
@@ -136,9 +135,9 @@ public class GenerateImageSetOper extends AppOper {
               randGuassian(-config().rotFactor() * MyMath.M_DEG, config().rotFactor() * MyMath.M_DEG));
           float scaleMin = config().scaleFactorMin();
           float scaleMax = config().scaleFactorMax();
-          if (scaleMin <= 0) scaleMin = scaleMax * 0.65f;
-          Matrix tfmScale = Matrix
-              .getScale(randGuassian(scaleMin,scaleMax));
+          if (scaleMin <= 0)
+            scaleMin = scaleMax * 0.65f;
+          Matrix tfmScale = Matrix.getScale(randGuassian(scaleMin, scaleMax));
 
           objectTfm = Matrix.postMultiply(tfmImageCenter, tfmScale, tfmRotate);
 
@@ -242,7 +241,7 @@ public class GenerateImageSetOper extends AppOper {
   private List<Paint> paints() {
     if (mColors == null) {
       int[] sc = sColors;
-      if (modelHandler().model().inputImageChannels() == 1)
+      if (model().inputImageChannels() == 1)
         sc = sColorsMono;
       mColors = arrayList();
       for (int i = 0; i < sc.length; i += 3) {
@@ -335,19 +334,15 @@ public class GenerateImageSetOper extends AppOper {
     return elements.get(random().nextInt(elements.size()));
   }
 
-  private ModelHandler modelHandler() {
-    return mModelHandler;
-  }
-
   private NetworkProjectType projectType() {
     return model().projectType();
   }
 
   private ModelWrapper model() {
-    return modelHandler().model();
+    return mModel;
   }
 
-  private ModelHandler mModelHandler;
+  private ModelWrapper mModel;   
   private IPoint mImageSize;
   private Random mRandom;
   private List<FontInfo> mFonts;
