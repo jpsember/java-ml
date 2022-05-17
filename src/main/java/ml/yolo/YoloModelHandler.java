@@ -16,7 +16,6 @@ import js.graphics.ScriptElement;
 import js.graphics.ScriptUtil;
 import js.graphics.gen.ElementProperties;
 import js.graphics.gen.Script;
-import ml.Util;
 import ml.ModelHandler;
 import ml.ModelServiceProvider;
 import ml.NetworkAnalyzer;
@@ -40,12 +39,16 @@ public final class YoloModelHandler extends ModelHandler {
   /**
    * TODO: refactor to be part of some standard interface
    */
+  @Deprecated
   public void plotInferenceResults(PlotInferenceResultsConfig config) {
+
+    final String EVAL_IMAGES_FILENAME = "images.bin";
+    final String EVAL_RESULTS_FILENAME = "inference_results.bin";
 
     Yolo yolo = model().modelConfig();
 
-    File imagesFile = Files.assertExists(new File(config.inferenceInputDir(), Util.EVAL_IMAGES_FILENAME));
-    File resultsFile = Files.assertExists(new File(config.inferenceResultsDir(), Util.EVAL_RESULTS_FILENAME));
+    File imagesFile = Files.assertExists(new File(config.inferenceInputDir(), EVAL_IMAGES_FILENAME));
+    File resultsFile = Files.assertExists(new File(config.inferenceResultsDir(), EVAL_RESULTS_FILENAME));
 
     int imageLengthInBytes = model().inputImageVolumeProduct() * Float.BYTES;
     int imageCount = (int) (imagesFile.length() / imageLengthInBytes);

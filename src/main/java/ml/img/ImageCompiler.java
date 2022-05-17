@@ -1,7 +1,6 @@
 package ml.img;
 
 import static js.base.Tools.*;
-import static ml.Util.*;
 
 import java.awt.image.AffineTransformOp;
 import java.awt.image.BufferedImage;
@@ -33,7 +32,6 @@ import js.graphics.gen.MonoImage;
 import ml.ModelHandler;
 import ml.ModelServiceProvider;
 import ml.ModelWrapper;
-import ml.Util;
 
 /**
  * Used by CompileImagesOper to process images
@@ -113,7 +111,7 @@ public final class ImageCompiler extends BaseObject {
       imageFloats = ImgUtil.floatPixels(targetImage, model.inputImageChannels(), imageFloats);
 
       if (config.adjustBrightness())
-        Util.applyRandomBrightness(random(), imageFloats, config.brightShiftMin(), config.brightShiftMax());
+        applyRandomBrightness(imageFloats, config.brightShiftMin(), config.brightShiftMax());
 
       mInspector.create("float").imageSize(model.inputImagePlanarSize()).channels(model.inputImageChannels())
           .image(imageFloats);
@@ -266,6 +264,20 @@ public final class ImageCompiler extends BaseObject {
     if (max == min)
       return min;
     return random().nextFloat() * (max - min) + min;
+  }
+
+  private void applyRandomBrightness(float[] pixels, float minShift, float maxShift) {
+    float scale = 1 + random(minShift, maxShift);
+    for (int i = 0; i < pixels.length; i++)
+      pixels[i] = pixels[i] * scale;
+  }
+
+  private static TransformWrapper transformWrapper(Matrix matrix, int rotationDegrees) {
+    TransformWrapper.Builder b = TransformWrapper.newBuilder();
+    b.matrix(matrix);
+    b.inverse(matrix.invert());
+    b.rotationDegrees(rotationDegrees);
+    return b.build();
   }
 
   private final CompileImagesConfig mConfig;
