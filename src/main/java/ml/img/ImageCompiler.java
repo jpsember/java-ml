@@ -77,7 +77,6 @@ public final class ImageCompiler extends BaseObject {
       AugmentationConfig config = config().augmentationConfig();
       AffineTransformOp op = new AffineTransformOp(entry.transform().matrix().toAffineTransform(),
           AffineTransformOp.TYPE_BILINEAR);
-     
       {
         List<ScriptElement> transformed = arrayList();
         model().transformAnnotations(annotations, transformed, entry.transform());
@@ -219,8 +218,9 @@ public final class ImageCompiler extends BaseObject {
 
     Matrix tfmTranslate = Matrix.IDENTITY;
     if (!ac.translateDisable()) {
-      float W = ac.translateMax();
-      tfmTranslate = Matrix.getTranslate(random(-W, W), random(-W, W));
+      float wx = ac.translateRatioMax() * sourceImageSize.x;
+      float wy = ac.translateRatioMax() * sourceImageSize.y;
+      tfmTranslate = Matrix.getTranslate(random(-wx, wx), random(-wy, wy));
     }
 
     // Apply matrix multiplications in right-to-left order to get the effect we want

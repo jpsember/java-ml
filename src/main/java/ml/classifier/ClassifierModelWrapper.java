@@ -8,7 +8,6 @@ import gen.Classifier;
 import gen.ImageSetInfo;
 import gen.TransformWrapper;
 import js.data.DataUtil;
-import js.geometry.IPoint;
 import js.geometry.IRect;
 import js.graphics.RectElement;
 import js.graphics.ScriptElement;

@@ -20,7 +20,10 @@ fields {
   float rotate_degrees_max = 8;
 
   bool translate_disable;
-  float translate_max = 20;
+
+  // The maximum translation, as a proportion of the image's smallest dimension
+  //
+  float translate_ratio_max = .2;
 
   int blur_factor = 0; // -1 means no blurring, vs 0(mild)...2(severe)
 
