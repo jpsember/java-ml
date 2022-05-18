@@ -20,15 +20,13 @@ import js.file.Files;
 import js.geometry.IPoint;
 import js.geometry.Matrix;
 import js.geometry.MyMath;
-import js.graphics.ImgEffects;
 import js.graphics.ImgUtil;
 import js.graphics.Inspector;
-import js.graphics.MonoImageUtil;
 import js.graphics.ScriptElement;
 import js.graphics.ScriptUtil;
-import js.graphics.gen.MonoImage;
 import js.graphics.gen.Script;
 import ml.ModelWrapper;
+import ml.yolo.YoloUtil;
 
 /**
  * Used by CompileImagesOper to process images
@@ -74,32 +72,20 @@ public final class ImageCompiler extends BaseObject {
       }
       mInspector.create("orig").image(img).elements(entry.scriptElementList());
       entry.setTransform(buildAugmentTransform());
-
+      List<ScriptElement> annotations = entry.scriptElementList().elements();
+      
       BufferedImage targetImage = ImgUtil.build(model.inputImagePlanarSize(), img.getType());
       AugmentationConfig config = config().augmentationConfig();
       AffineTransformOp op = new AffineTransformOp(entry.transform().matrix().toAffineTransform(),
           AffineTransformOp.TYPE_BILINEAR);
-      List<ScriptElement> tfm = arrayList();
-      model().transformAnnotations(entry.scriptElementList().elements(), tfm, entry.transform());
+      List<ScriptElement> transformedScriptElements2 = arrayList();
+      model().transformAnnotations(annotations, transformedScriptElements2, entry.transform());
+      
+      // We don't want to mistakenly use the untransformed elements from this point on...
+      annotations = transformedScriptElements2;
       op.filter(img, targetImage);
-      mInspector.create("tfm").image(targetImage).elements(tfm);
-
-      if (false) {
-        // Investigating transformations involving TYPE_USHORT_GRAY monochrome BufferedImages.
-
-        // *** NOTE: Transforming a TYPE_USHORT_GRAY BufferedImage has strange effects that
-        // look like overflow if the full 16 bit range is used.
-        // Converting an 8-bit image to a  15-bit one seems to be ok.
-        //
-        BufferedImage img2 = ImgEffects.makeMonochrome1Channel(img);
-        MonoImage monoImage = MonoImageUtil.convert8BitBufferedImageMonoImage(img2);
-        img2 = MonoImageUtil.to15BitBufferedImage(monoImage);
-        mInspector.create("mono").image(img2);
-        BufferedImage targetImage2 = ImgUtil.build(model.inputImagePlanarSize(), img2.getType());
-        op.filter(img2, targetImage2);
-        mInspector.create("monotfm").image(targetImage2);
-      }
-
+      mInspector.create("tfm").image(targetImage).elements(annotations);
+ 
       imageFloats = ImgUtil.floatPixels(targetImage, model.inputImageChannels(), imageFloats);
 
       if (config.adjustBrightness())
@@ -108,16 +94,20 @@ public final class ImageCompiler extends BaseObject {
       mInspector.create("float").imageSize(model.inputImagePlanarSize()).channels(model.inputImageChannels())
           .image(imageFloats);
 
-      model.accept(imageFloats, entry.scriptElementList());
-      
+      model.accept(imageFloats, annotations);
+
       if (mInspector.used()) {
         // Parse the labels we generated, and write as the annotations to an inspection image
         mInspector.create("parsed").image(targetImage);
         Script.Builder script = Script.newBuilder();
         model.parseInferenceResult(model.lastLabelBytesWritten(), script);
         mInspector.elements(script.items());
+        if (YoloUtil.I20) {
+          mInspector.flush();
+          halt();
+        }
       }
-      
+
       entry.releaseResources();
     }
     mEntriesValidated = true;

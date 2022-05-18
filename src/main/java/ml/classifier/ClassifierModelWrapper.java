@@ -14,7 +14,6 @@ import js.graphics.RectElement;
 import js.graphics.ScriptElement;
 import js.graphics.TextElement;
 import js.graphics.gen.Script;
-import js.graphics.gen.ScriptElementList;
 import ml.ModelWrapper;
 
 public final class ClassifierModelWrapper extends ModelWrapper<Classifier> {
@@ -30,16 +29,16 @@ public final class ClassifierModelWrapper extends ModelWrapper<Classifier> {
   public void storeImageSetInfo(ImageSetInfo.Builder imageSetInfo) {
     imageSetInfo //
         .labelLengthBytes(Float.BYTES * 1) //
-        .imageLengthBytes( inputImageVolumeProduct() * Float.BYTES) //
+        .imageLengthBytes(inputImageVolumeProduct() * Float.BYTES) //
     ;
   }
 
   @Override
-  public void accept(float[] image, ScriptElementList scriptElementList) {
-    if (scriptElementList.elements().size() != 1)
+  public void accept(float[] image, List<ScriptElement> scriptElementList) {
+    if (scriptElementList.size() != 1)
       throw badArg("expected single element:", INDENT, scriptElementList);
     writeImage(image);
-    ScriptElement elem = scriptElementList.elements().get(0);
+    ScriptElement elem = scriptElementList.get(0);
     int category = elem.properties().category();
     int[] intArray = new int[1];
     intArray[0] = category;
@@ -50,7 +49,7 @@ public final class ClassifierModelWrapper extends ModelWrapper<Classifier> {
   public void parseInferenceResult(byte[] modelOutput, Script.Builder script) {
     int[] categories = DataUtil.bytesToIntsLittleEndian(modelOutput);
     int category = categories[0];
-    Classifier cl =  modelConfig();
+    Classifier cl = modelConfig();
     checkArgument(category >= 0 && category < cl.categoryCount());
 
     ScriptElement elem;

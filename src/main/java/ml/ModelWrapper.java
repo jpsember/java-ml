@@ -14,7 +14,6 @@ import js.geometry.IPoint;
 import js.graphics.ScriptElement;
 import js.graphics.ScriptUtil;
 import js.graphics.gen.Script;
-import js.graphics.gen.ScriptElementList;
 import js.json.JSMap;
 
 import gen.Classifier;
@@ -195,7 +194,7 @@ public abstract class ModelWrapper<T extends AbstractData> extends BaseObject {
    * Process an image and its annotations, converting to form suitable for
    * training
    */
-  public abstract void accept(float[] image, ScriptElementList scriptElementList);
+  public abstract void accept(float[] image, List<ScriptElement> scriptElementList);
 
   /**
    * Fill in information fields. Some fields may have already been filled in

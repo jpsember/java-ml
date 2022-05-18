@@ -20,7 +20,6 @@ import js.graphics.ScriptUtil;
 import js.graphics.gen.CategoryConfidence;
 import js.graphics.gen.ElementProperties;
 import js.graphics.gen.Script;
-import js.graphics.gen.ScriptElementList;
 import js.json.JSMap;
 import ml.ModelWrapper;
 import ml.NetworkAnalyzer;
@@ -107,7 +106,7 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
   }
 
   @Override
-  public void accept(float[] image, ScriptElementList scriptElementList) {
+  public void accept(float[] image, List<ScriptElement> scriptElementList) {
     writeImage(image);
     writeScriptElements(scriptElementList);
   }
@@ -132,36 +131,26 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
       boxList = YoloUtil.performNonMaximumSuppression(boxList, mParserConfig.maxIOverU());
     }
     script.items(boxList);
-    if (I20)
-      halt();
+    if (I20) {
+     pr("parsed elements:",INDENT,script);
+    }
   }
 
-  //  private YoloResultParser resultParser() {
-  //    if (mYoloResultParser == null) {
-  //      YoloResultParser parser = new YoloResultParser(modelConfig());
-  //      parser.withConfidenceFilter(mParserConfig.confidencePct() / 100f);
-  //      mYoloResultParser = parser;
-  //    }
-  //    return mYoloResultParser;
-  //  }
-  //
-  //  private YoloResultParser mYoloResultParser;
   private PlotInferenceResultsConfig mParserConfig = PlotInferenceResultsConfig.DEFAULT_INSTANCE;
 
   // ------------------------------------------------------------------
 
-  private static final boolean oneOnly = false && alert("single element");
 
-  private void writeScriptElements(ScriptElementList scriptElements) {
+  private void writeScriptElements(List<ScriptElement> scriptElements) {
     log("writeScriptElements", INDENT, scriptElements);
 
     clearOutputLayer();
-    ScriptUtil.assertNoMixing(scriptElements.elements());
+    ScriptUtil.assertNoMixing(scriptElements );
 
     // Compile annotations into ones that have a single bounding box
     List<RectElement> boxes = arrayList();
 
-    for (ScriptElement elem : scriptElements.elements()) {
+    for (ScriptElement elem : scriptElements ) {
       switch (elem.tag()) {
       default:
         throw badArg("unsupported element type", elem);
@@ -172,28 +161,23 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
         // heuristic earlier (if the original object bounds was a box; if it was a polygon, that heuristic
         // doesn't apply){
         IRect bounds = elem.bounds();
-       
         boxes.add(
             labelledBox(bounds, ScriptUtil.categoryOrZero(elem), 1f, ScriptUtil.rotationDegreesOrZero(elem)));
       }
         break;
       }
-      if (oneOnly)
-        break;
     }
 
     
     List<RectElement> neighbors = generateNeighborVersions(boxes);
-    if (oneOnly || alert("clearing nb")) neighbors.clear();
     boxes.addAll(neighbors);
     boxes.sort((a, b) -> -Integer.compare(ScriptUtil.confidence(a), ScriptUtil.confidence(b)));
 
     log("sorted boxes, including neighbors:", INDENT, boxes);
-pr("boxes:",boxes.size());
 
     for (RectElement box : boxes) {
       if (I20)
-        pr("elem bounds:", box.bounds());
+        pr("Rect bounds:", box.bounds());
       if (verbose()) {
         log(" box:", box.toJson().toString());
         log("  cp:", box.bounds().midPoint());
@@ -333,7 +317,6 @@ pr("boxes:",boxes.size());
     if (I20)
       pr("box classprob:", ScriptUtil.categoryOrZero(box),
           b[f + YoloUtil.F_CLASS_PROBABILITIES + ScriptUtil.categoryOrZero(box)]);
-    //pr("LOGIT_1:",NetworkUtil.LOGIT_1);
   }
 
   private void constructOutputLayer() {
