@@ -102,6 +102,12 @@ public final class CompileImagesOper extends AppOper {
       }
     }
 
+    if (config().deleteCheckpoints()) {
+      SortedMap<Integer, File> epochMap = getCheckpointEpochs();
+      for (File f : epochMap.values())
+        files().deleteFile(f);
+    }
+
     // Write a new signature file with the current time
     files().writeString(sigFile, "" + System.currentTimeMillis());
 
