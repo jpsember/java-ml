@@ -165,8 +165,7 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
     Yolo yolo = modelConfig();
     float[] f = DataUtil.bytesToFloatsLittleEndian(modelOutput);
 
-    log("Constructing YOLO result for image");
-    log("...confidence threshold %", confidencePct);
+    log("Constructing YOLO result for image; confidence threshold %", confidencePct);
 
     List<ScriptElement> boxList = arrayList();
     final int anchorBoxCount = numAnchorBoxes();
@@ -175,26 +174,9 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
     final int categoryCount = yolo.categoryCount();
     final List<CategoryConfidence> categoryConfidences = arrayList();
 
-    // ------------------------------------------------------------------
-    // For verbosity only
-    StringBuilder sbLine = null;
-    StringBuilder sbGrid = null;
-    JSMap gridMap = null;
-    if (verbose()) {
-      sbLine = new StringBuilder();
-      sbGrid = new StringBuilder();
-      gridMap = map();
-    }
-    // ------------------------------------------------------------------
-
     float highestObjectnessLogitSeen = 0f;
     int fieldSetIndex = 0;
     for (int cellY = 0; cellY < mGridSize.y; cellY++) {
-
-      if (verbose()) {
-        sbGrid.setLength(0);
-        sbGrid.append("[");
-      }
 
       for (int cellX = 0; cellX < mGridSize.x; cellX++) {
 
@@ -211,14 +193,6 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
           highestObjectnessLogitSeen = Math.max(highestObjectnessLogitSeen, objectnessLogit);
           float objectnessConfidence = NetworkUtil.sigmoid(objectnessLogit);
 
-          if (verbose()) {
-            sbLine.setLength(0);
-            sbLine.append(String.format("y%2d  x%2d  ", cellY, cellX));
-            if (anchorBoxCount > 1)
-              sbLine.append(String.format("a%d  ", anchorBox));
-            sbLine.append(String.format("%5.1f  ", pct(objectnessConfidence)));
-          }
-
           IPoint anchorBoxPixels = yolo.anchorBoxesPixels().get(anchorBox);
           float anchorBoxWidth = anchorBoxPixels.x;
           float anchorBoxHeight = anchorBoxPixels.y;
@@ -234,21 +208,11 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
             Collections.sort(categoryConfidences,
                 (a, b) -> -Float.compare(a.confidenceLogit(), b.confidenceLogit()));
             bestCategory = categoryConfidences.get(0);
-            if (verbose()) {
-              CategoryConfidence second = categoryConfidences.get(1);
-              sbLine.append(toString(bestCategory));
-              sbLine.append(toString(second));
-              sbLine.append(" ");
-            }
             if (cellString == 0)
               cellString = (char) ('0' + bestCategory.category());
           }
 
           int k = fieldSetIndex + F_BOX_XYWH;
-          if (verbose()) {
-            sbLine
-                .append(String.format("logt[%5.1f %5.1f %5.1f %5.1f]  ", f[k], f[k + 1], f[k + 2], f[k + 3]));
-          }
 
           // Note that the x,y coordinates (which represent the center of the box)
           // are relative to the cell,
@@ -262,10 +226,6 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
           float by = NetworkUtil.sigmoid(f[k + 1]);
           float ws = NetworkUtil.exp(f[k + 2]);
           float hs = NetworkUtil.exp(f[k + 3]);
-
-          if (verbose()) {
-            sbLine.append(String.format("sg/ex[%4.2f %4.2f %4.2f %4.2f]  ", bx, by, ws, hs));
-          }
 
           float bw = anchorBoxWidth * ws;
           float bh = anchorBoxHeight * hs;
@@ -281,35 +241,20 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
           prop.confidence(MyMath.parameterToPercentage(objectnessConfidence));
           RectElement boxObj = new RectElement(prop, boxRect);
 
-          if (verbose()) {
-            sbLine.append(boxObj.bounds());
-            log(sbLine.toString());
-          }
           boxList.add(boxObj);
         }
 
-        if (verbose()) {
-          if (cellString == 0)
-            cellString = ':';
-          sbGrid.append(' ');
-          sbGrid.append(cellString);
-        }
       }
-      if (verbose()) {
-        sbGrid.append("]");
-        gridMap.put(String.format("y %2d", cellY), sbGrid.toString());
-      }
+
     }
 
     if (verbose()) {
-      pr();
-      pr(gridMap);
-      pr();
-      pr("Valid anchor boxes:", boxList.size());
-      todo("do we always want to perform sigmoid here, i.e., is it in input or an output?");
-      pr("Highest conf:", pct(NetworkUtil.sigmoid(highestObjectnessLogitSeen)));
       if (boxList.isEmpty())
         pr("*** No boxes detected");
+      else {
+        pr("Valid anchor boxes:", boxList.size());
+        pr("Highest conf:", pct(NetworkUtil.sigmoid(highestObjectnessLogitSeen)));
+      }
     }
 
     if (mParserConfig.maxIOverU() > 0)
@@ -409,29 +354,19 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
     }
 
     // The x and y coordinates can range from 0...1.
-    // These are ground truth values, and hence don't need to be represented as logits
-    //
-    // !!!! But we want to have them in the same form as the predictions the model will produce,
-    // so apply appropriate conversions
     //
     b[f + YoloUtil.F_BOX_XYWH + 0] = NetworkUtil.logit(mBoxLocationRelativeToCell.x);
     b[f + YoloUtil.F_BOX_XYWH + 1] = NetworkUtil.logit(mBoxLocationRelativeToCell.y);
 
     // The width and height can range from 0...+inf.
-    // These are ground truth values, and hence don't need to be represented as logarithms
-    //
-    // !!!! But we want to have them in the same form as the predictions the model will produce,
-    // so apply appropriate conversions
     //
     b[f + YoloUtil.F_BOX_XYWH + 2] = NetworkUtil.ln(mBoxSizeRelativeToAnchorBox.x);
     b[f + YoloUtil.F_BOX_XYWH + 3] = NetworkUtil.ln(mBoxSizeRelativeToAnchorBox.y);
 
     // The ground truth values for confidence are stored as *indicator variables*, hence 0f or 1f.
-    // Hence, we store 1f here, since a box exists here.
+    // Hence, we store logit(1), since a box exists here.  Actually, the confidence could
+    // be < 100% (really???); so read it from the box...
     //
-    // !!! But as above, we probably want something different
-    //
-
     b[f + YoloUtil.F_CONFIDENCE] = NetworkUtil.logit(MyMath.percentToParameter(ScriptUtil.confidence(box)));
 
     // The class probabilities are the same; we store a one-hot indicator variable for this box's class.
@@ -585,11 +520,5 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
   private static float pct(float confidence) {
     return confidence * 100;
   }
-
-  private static String toString(CategoryConfidence b) {
-    return String.format("'%d'(%4.1f) ", b.category(), b.confidenceLogit());
-  }
-
-  //private float mConfidenceThreshold = 0.8f;
 
 }
