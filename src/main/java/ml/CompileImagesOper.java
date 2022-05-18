@@ -102,11 +102,7 @@ public final class CompileImagesOper extends AppOper {
       }
     }
 
-    if (config().deleteCheckpoints()) {
-      SortedMap<Integer, File> epochMap = getCheckpointEpochs();
-      for (File f : epochMap.values())
-        files().deleteFile(f);
-    }
+    validateCheckpoints();
 
     // Write a new signature file with the current time
     files().writeString(sigFile, "" + System.currentTimeMillis());
@@ -214,6 +210,25 @@ public final class CompileImagesOper extends AppOper {
   //------------------------------------------------------------------
   // Checkpoint management
   // ------------------------------------------------------------------
+
+  /**
+   * Determine if the existing checkpoints are still valid. If not, delete them.
+   * We look at a checksum of the network parameters to determine this.
+   */
+  private void validateCheckpoints() {
+    File networkChecksumFile = new File(config().targetDirCheckpoint(), "network_checksum.txt");
+    String savedChecksum = Files.readString(networkChecksumFile, "");
+    String currentChecksum = "" + network().toJson().toString().hashCode();
+    if (!currentChecksum.equals(savedChecksum)) {
+      SortedMap<Integer, File> epochMap = getCheckpointEpochs();
+      if (!epochMap.isEmpty()) {
+        pr("...deleting existing checkpoints, since network has changed");
+      }
+      for (File f : epochMap.values())
+        files().deleteFile(f);
+      files().writeString(networkChecksumFile, currentChecksum);
+    }
+  }
 
   private void updateCheckpoints() {
     SortedMap<Integer, File> epochMap = getCheckpointEpochs();
