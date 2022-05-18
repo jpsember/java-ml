@@ -33,3 +33,7 @@ target
 # Generated data classes
 #
 src/main/java/gen
+
+checkpoints
+gen
+

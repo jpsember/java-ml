@@ -3,10 +3,13 @@
 
    "categories" : "AB",
 
-   "image_total" : 30,
+   "image_total" : 200,
 
    //"inspection_dir" : "inspection",
       // "max_objects" : 1,
       //  "rot_factor" : 0,
   "scale_factor_max" : 17,
+
+  "noise_factor" : 0, // Until we are confident the model is learning, omit noise
+
 }
