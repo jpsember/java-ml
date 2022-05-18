@@ -8,6 +8,8 @@ import java.util.List;
 
 import js.base.BaseObject;
 import js.data.AbstractData;
+import js.data.DataUtil;
+import js.file.Files;
 import js.geometry.IPoint;
 import js.graphics.ScriptElement;
 import js.graphics.ScriptUtil;
@@ -34,6 +36,9 @@ import ml.yolo.YoloModelWrapper;
  */
 public abstract class ModelWrapper extends BaseObject {
 
+  /**
+   * Construct an appropriate concrete ModelWrapper for a network
+   */
   public static ModelWrapper constructFor(NeuralNetwork network) {
 
     ModelWrapper handler = null;
@@ -48,7 +53,7 @@ public abstract class ModelWrapper extends BaseObject {
       break;
 
     default:
-      throw die("not supported:", network.projectType());
+      throw notSupported(network.projectType());
     }
     handler.auxInit(network);
     return handler;
@@ -81,7 +86,7 @@ public abstract class ModelWrapper extends BaseObject {
       out.add(orig.applyTransform(transform.matrix()));
   }
 
-  public RuntimeException notSupported() {
+  public RuntimeException modelNotSupported() {
     return die("Unsupported; project type:", projectType());
   }
 
@@ -90,7 +95,7 @@ public abstract class ModelWrapper extends BaseObject {
    * target
    */
   public void extractShapes(Script script, List<ScriptElement> target) {
-    throw notSupported();
+    throw modelNotSupported();
   }
 
   /**
@@ -201,8 +206,54 @@ public abstract class ModelWrapper extends BaseObject {
    * Parse model output to a Script
    */
   public void parseInferenceResult(byte[] modelOutput, Script.Builder script) {
-    notSupported();
+    modelNotSupported();
   }
+
+  /**
+   * Get ImageSetInfo builder, constructing if necessary
+   */
+  public ImageSetInfo.Builder imageSetInfo() {
+    if (mImageSetInfo == null) {
+      mImageSetInfo = ImageSetInfo.newBuilder();
+      storeImageSetInfo(mImageSetInfo);
+      checkArgument(mImageSetInfo.imageLengthBytes() > 0 && mImageSetInfo.labelLengthBytes() > 0);
+    }
+    return mImageSetInfo;
+  }
+
+  // ------------------------------------------------------------------
+  // Writing training images and labels
+  // ------------------------------------------------------------------
+
+  public final void writeImage(float[] imageFloats) {
+    Files.S.write(DataUtil.floatsToBytesLittleEndian(imageFloats), imageOutputStream());
+  }
+
+  /**
+   * Write labels associated with an image to the label's output stream
+   */
+  public final void writeLabels(byte[] labelBytes) {
+    checkArgument(labelBytes.length == imageSetInfo().labelLengthBytes());
+    Files.S.write(labelBytes, labelOutputStream());
+  }
+
+  /**
+   * Write labels associated with an image to the label's output stream,
+   * converting to bytes
+   */
+  public final void writeLabels(int[] labelInts) {
+    writeLabels(DataUtil.intsToBytesLittleEndian(labelInts));
+  }
+
+  /**
+   * Write labels associated with an image to the label's output stream,
+   * converting to bytes
+   */
+  public final void writeLabels(float[] labelFloats) {
+    writeLabels(DataUtil.floatsToBytesLittleEndian(labelFloats));
+  }
+
+  // ------------------------------------------------------------------
 
   private static Vol determineInputImageVolume(NeuralNetwork network) {
     JSMap modelConfig = network.modelConfig();
@@ -219,5 +270,6 @@ public abstract class ModelWrapper extends BaseObject {
   private int mInputImageVolumeProduct;
   private DataOutputStream mImageOutputStream;
   private DataOutputStream mLabelOutputStream;
+  private ImageSetInfo.Builder mImageSetInfo;
 
 }

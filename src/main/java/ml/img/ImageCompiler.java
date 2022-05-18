@@ -12,7 +12,6 @@ import java.util.Random;
 
 import gen.AugmentationConfig;
 import gen.CompileImagesConfig;
-import gen.ImageSetInfo;
 import gen.NeuralNetwork;
 import gen.TransformWrapper;
 import js.base.BaseObject;
@@ -50,22 +49,18 @@ public final class ImageCompiler extends BaseObject {
   }
 
   public void compileTrainSet(File targetDir) {
+    ModelWrapper model = model();
     files().remakeDirs(targetDir);
     File imagePath = new File(targetDir, "images.bin");
     File labelsPath = new File(targetDir, "labels.bin");
     File infoPath = new File(targetDir, "image_set_info.json");
-    ImageSetInfo.Builder imageSetInfo = ImageSetInfo.newBuilder();
-    imageSetInfo.imageCount(entries().size());
+    model.imageSetInfo().imageCount(entries().size());
 
     DataOutputStream imagesStream = new DataOutputStream(files().outputStream(imagePath));
     DataOutputStream labelsStream = new DataOutputStream(files().outputStream(labelsPath));
 
-    ModelWrapper model = model();
-
     model.setImageStream(imagesStream);
     model.setLabelStream(labelsStream);
-    model.storeImageSetInfo(imageSetInfo);
-    checkArgument(imageSetInfo.imageLengthBytes() > 0 && imageSetInfo.labelLengthBytes() > 0);
 
     float[] imageFloats = null;
 
@@ -118,9 +113,8 @@ public final class ImageCompiler extends BaseObject {
     mEntriesValidated = true;
     Files.close(imagesStream, labelsStream);
 
-    files().writePretty(infoPath, imageSetInfo.build());
+    files().writePretty(infoPath, model.imageSetInfo());
   }
-
 
   private List<ImageEntry> entries() {
     if (mEntries == null) {

@@ -8,7 +8,6 @@ import gen.Classifier;
 import gen.ImageSetInfo;
 import gen.TransformWrapper;
 import js.data.DataUtil;
-import js.file.Files;
 import js.geometry.IPoint;
 import js.geometry.IRect;
 import js.graphics.RectElement;
@@ -37,14 +36,14 @@ public final class ClassifierModelWrapper extends ModelWrapper {
 
   @Override
   public void accept(float[] image, ScriptElementList scriptElementList) {
-    Files.S.writeFloatsLittleEndian(image, imageOutputStream());
     if (scriptElementList.elements().size() != 1)
       throw badArg("expected single element:", INDENT, scriptElementList);
+    writeImage(image);
     ScriptElement elem = scriptElementList.elements().get(0);
     int category = elem.properties().category();
     int[] intArray = new int[1];
     intArray[0] = category;
-    Files.S.writeIntsLittleEndian(intArray, labelOutputStream());
+    writeLabels(intArray);
   }
 
   @Override

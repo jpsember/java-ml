@@ -273,7 +273,7 @@ public final class YoloModelWrapper extends ModelWrapper {
         writeBoxToFieldsBuffer(box);
     }
 
-    writeOutputGrid();
+    writeLabels(mOutputLayer);
   }
 
   private List<RectElement> generateNeighborVersions(List<RectElement> boxes) {
@@ -343,10 +343,6 @@ public final class YoloModelWrapper extends ModelWrapper {
 
   private static int sNeighborCellOffsets[] = { -1, 0, 0, -1, 1, 0, 0, 1 };
 
-  private void writeOutputGrid() {
-    Files.S.writeFloatsLittleEndian(mOutputLayer, labelOutputStream());
-  }
-
   private void writeBoxToFieldsBuffer(RectElement box) {
 
     // I wasn't aware there was a choice within TensorFlow for the label ordering: FORMAT_NHWC vs FORMAT_NCHW
@@ -391,10 +387,6 @@ public final class YoloModelWrapper extends ModelWrapper {
     // and a bit of Python code, but this keeps the structure of the input and output box information the same
 
     b[f + YoloUtil.F_CLASS_PROBABILITIES + ScriptUtil.categoryOrZero(box)] = 1f;
-  }
-
-  private void writeImage(float[] image) {
-    Files.S.writeFloatsLittleEndian(image, imageOutputStream());
   }
 
   private void constructOutputLayer() {
