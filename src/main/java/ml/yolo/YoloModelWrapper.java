@@ -289,16 +289,25 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
     // The x and y coordinates can range from 0...1.
     // These are ground truth values, and hence don't need to be represented as logits
     //
-    b[f + YoloUtil.F_BOX_XYWH + 0] = mBoxLocationRelativeToCell.x;
-    b[f + YoloUtil.F_BOX_XYWH + 1] = mBoxLocationRelativeToCell.y;
+    // !!!! But we want to have them in the same form as the predictions the model will produce,
+    // so apply appropriate conversions
+    //
+    b[f + YoloUtil.F_BOX_XYWH + 0] = 
+        NetworkUtil.logit(
+        mBoxLocationRelativeToCell.x);
+    b[f + YoloUtil.F_BOX_XYWH + 1] =  NetworkUtil.logit(mBoxLocationRelativeToCell.y);
 
     // The width and height can range from 0...+inf.
     // These are ground truth values, and hence don't need to be represented as logarithms
     //
-    b[f + YoloUtil.F_BOX_XYWH + 2] = mBoxSizeRelativeToAnchorBox.x;
-    b[f + YoloUtil.F_BOX_XYWH + 3] = mBoxSizeRelativeToAnchorBox.y;
-    if (I20)pr("boxSizeRelAnchor:",b[f + YoloUtil.F_BOX_XYWH + 2],b[f + YoloUtil.F_BOX_XYWH + 3]);
-    
+    // !!!! But we want to have them in the same form as the predictions the model will produce,
+    // so apply appropriate conversions
+    //
+    b[f + YoloUtil.F_BOX_XYWH + 2] = NetworkUtil.ln(mBoxSizeRelativeToAnchorBox.x);
+    b[f + YoloUtil.F_BOX_XYWH + 3] = NetworkUtil.ln(mBoxSizeRelativeToAnchorBox.y);
+    if (I20)
+      pr("boxSizeRelAnchor:", b[f + YoloUtil.F_BOX_XYWH + 2], b[f + YoloUtil.F_BOX_XYWH + 3]);
+
     // The ground truth values for confidence are stored as *indicator variables*, hence 0f or 1f.
     // Hence, we store 1f here, since a box exists here.
     //
@@ -346,12 +355,11 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
    * Convert box to grid and YOLO image space
    * 
    * If center of box lies outside the image, or the box's size is too small,
-   * mBoxGridCell will be null.
+   * return false
    * 
    * Otherwise, initializes mBoxLocationRelativeToCell and
    * mBoxSizeRelativeToAnchorBox
    * 
-   * Returns true if result was successful
    */
   private boolean convertBoxToCell(IRect box) {
     Yolo yolo = modelConfig();
