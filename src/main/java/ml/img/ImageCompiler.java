@@ -27,6 +27,7 @@ import js.graphics.MonoImageUtil;
 import js.graphics.ScriptElement;
 import js.graphics.ScriptUtil;
 import js.graphics.gen.MonoImage;
+import js.graphics.gen.Script;
 import ml.ModelWrapper;
 
 /**
@@ -108,6 +109,15 @@ public final class ImageCompiler extends BaseObject {
           .image(imageFloats);
 
       model.accept(imageFloats, entry.scriptElementList());
+      
+      if (mInspector.used()) {
+        // Parse the labels we generated, and write as the annotations to an inspection image
+        mInspector.create("parsed").image(targetImage);
+        Script.Builder script = Script.newBuilder();
+        model.parseInferenceResult(model.lastLabelBytesWritten(), script);
+        mInspector.elements(script.items());
+      }
+      
       entry.releaseResources();
     }
     mEntriesValidated = true;

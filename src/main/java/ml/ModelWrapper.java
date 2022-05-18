@@ -234,6 +234,7 @@ public abstract class ModelWrapper extends BaseObject {
    */
   public final void writeLabels(byte[] labelBytes) {
     checkArgument(labelBytes.length == imageSetInfo().labelLengthBytes());
+    mLastLabelBytesWritten = labelBytes;
     Files.S.write(labelBytes, labelOutputStream());
   }
 
@@ -253,6 +254,13 @@ public abstract class ModelWrapper extends BaseObject {
     writeLabels(DataUtil.floatsToBytesLittleEndian(labelFloats));
   }
 
+  /**
+   * For inspection purposes, get the last bytes written via writeLabels()
+   */
+  public byte[] lastLabelBytesWritten() {
+    return checkNotNull(mLastLabelBytesWritten, "no lastLabelBytesWritten available");
+  }
+  
   // ------------------------------------------------------------------
 
   private static Vol determineInputImageVolume(NeuralNetwork network) {
@@ -271,5 +279,6 @@ public abstract class ModelWrapper extends BaseObject {
   private DataOutputStream mImageOutputStream;
   private DataOutputStream mLabelOutputStream;
   private ImageSetInfo.Builder mImageSetInfo;
+  private byte[] mLastLabelBytesWritten;
 
 }
