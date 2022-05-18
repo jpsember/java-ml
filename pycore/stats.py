@@ -1,5 +1,4 @@
-from pycore.js_train import smooth
-
+from pycore.base import *
 
 class Stats:
 
@@ -21,3 +20,8 @@ class Stats:
     if self.loss is None:
       return "(none)"
     return f"acc:{self.accuracy:.1f}({self.accuracy_sm:.1f}) loss:{self.loss:.3f}({self.loss_sm:.3f})"
+
+
+def smooth(value, smoothed, t=0.05):
+  return (none_to(smoothed, value) * (1 - t)) + (value * t)
+

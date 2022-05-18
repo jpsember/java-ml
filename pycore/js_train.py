@@ -11,7 +11,7 @@ from pycore.stats import Stats
 
 class JsTrain:
 
-  def __init__(self):
+  def __init__(self, train_script_file):
     self.signature = None
     self.cp_disabled = False
     todo("Checkpoint disabling should be handled by streaming service / prep")
@@ -27,7 +27,7 @@ class JsTrain:
 
     self.epoch_number = 0
 
-    script_path = os.path.realpath(__file__)
+    script_path = os.path.realpath(train_script_file)
     self._proj_path = os.path.dirname(script_path)
 
     t = self.proj_path("model_data/network.json")
@@ -256,6 +256,8 @@ class JsTrain:
       images = images.reshape((self.batch_size, self.img_channels, self.img_height, self.img_width))
       tensor_images = torch.from_numpy(images)
 
+      todo("we need to handle the labels differently if they are ints vs floats")
+
       labels = read_ints(train_labels_path, img_index, 1, self.batch_size)
       labels = labels.reshape(self.batch_size)
       tensor_labels = torch.from_numpy(labels)
@@ -282,20 +284,19 @@ class JsTrain:
 
 
 
-
   def init_test(self):
     die("init_test needs an implementation")
     #self.loss = 0
     #self.correct = 0
 
 
-  def update_test(self, pred):
+  def update_test(self, pred, tensor_labels):
     die("update_test needs an implementation")
     # predicted_labels = pred.argmax(1)
     # self.loss += self.loss_fn(pred, tensor_labels).item()
     # self.correct += (predicted_labels == tensor_labels).type(torch.float).sum().item()
 
-  def finish_test(self, stats:Stats):
+  def finish_test(self, stats:Stats, test_image_count: int):
     die("finish_test needs an implementation")
     # stats = self.stat_test
     # stats.set_accuracy((100.0 * correct) / test_image_count)
@@ -331,13 +332,13 @@ class JsTrain:
       tensor_images, tensor_labels = tensor_images.to(self.device), tensor_labels.to(self.device)
       pred = self.model(tensor_images)
 
-      self.update_test(pred)
+      self.update_test(pred, tensor_labels)
       # predicted_labels = pred.argmax(1)
       # loss += self.loss_fn(pred, tensor_labels).item()
       # correct += (predicted_labels == tensor_labels).type(torch.float).sum().item()
 
     stats = self.stat_test
-    self.finish_test(stats)
+    self.finish_test(stats, test_image_count)
 
     pr(f"Epoch {self.epoch_number:4}   {stats.info()}")
 
@@ -426,10 +427,6 @@ class JsTrain:
   def log(self, *args):
     if self.verbose:
       pr("(verbose:)", *args)
-
-
-def smooth(value, smoothed, t=0.05):
-  return (none_to(smoothed, value) * (1 - t)) + (value * t)
 
 
 
