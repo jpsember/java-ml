@@ -1,4 +1,0 @@
-fields {
-  int category;
-  float confidence_logit;
-}

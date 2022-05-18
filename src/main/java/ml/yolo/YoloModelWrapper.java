@@ -1,7 +1,6 @@
 package ml.yolo;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 import static js.base.Tools.*;
@@ -22,7 +21,6 @@ import js.graphics.gen.Script;
 import js.json.JSMap;
 import ml.ModelWrapper;
 import ml.NetworkAnalyzer;
-import gen.CategoryConfidence;
 import gen.ImageSetInfo;
 import gen.Layer;
 import gen.LayerType;
@@ -172,15 +170,11 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
     final int fieldsPerBox = YoloUtil.valuesPerAnchorBox(yolo);
     final float logitMinForResult = NetworkUtil.logit(confidencePct / 100f);
     final int categoryCount = yolo.categoryCount();
-    final List<CategoryConfidence> categoryConfidences = arrayList();
 
     float highestObjectnessLogitSeen = 0f;
     int fieldSetIndex = 0;
     for (int cellY = 0; cellY < mGridSize.y; cellY++) {
-
       for (int cellX = 0; cellX < mGridSize.x; cellX++) {
-
-        char cellString = 0;
         for (int anchorBox = 0; anchorBox < anchorBoxCount; anchorBox++, fieldSetIndex += fieldsPerBox) {
 
           float objectnessLogit = f[fieldSetIndex + F_CONFIDENCE];
@@ -197,19 +191,17 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
           float anchorBoxWidth = anchorBoxPixels.x;
           float anchorBoxHeight = anchorBoxPixels.y;
 
-          // This can be optimized... avoid all this object construction
-          CategoryConfidence bestCategory = CategoryConfidence.DEFAULT_INSTANCE;
+          int bestCategory = 0;
           if (categoryCount > 1) {
+            float bestConf = -1;
             int k = fieldSetIndex + F_CLASS_PROBABILITIES;
-            categoryConfidences.clear();
-            for (int i = 0; i < categoryCount; i++)
-              categoryConfidences
-                  .add(CategoryConfidence.newBuilder().category(i).confidenceLogit(f[k + i]).build());
-            Collections.sort(categoryConfidences,
-                (a, b) -> -Float.compare(a.confidenceLogit(), b.confidenceLogit()));
-            bestCategory = categoryConfidences.get(0);
-            if (cellString == 0)
-              cellString = (char) ('0' + bestCategory.category());
+            for (int i = 0; i < categoryCount; i++) {
+              float conf = f[k + i];
+              if (i == 0 || bestConf < conf) {
+                bestCategory = k;
+                bestConf = conf;
+              }
+            }
           }
 
           int k = fieldSetIndex + F_BOX_XYWH;
@@ -237,15 +229,12 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
 
           // I think we want to use the 'objectness' confidence, without incorporating the best category's confidence in any way
           ElementProperties.Builder prop = ElementProperties.newBuilder();
-          prop.category(bestCategory.category());
+          prop.category(bestCategory);
           prop.confidence(MyMath.parameterToPercentage(objectnessConfidence));
           RectElement boxObj = new RectElement(prop, boxRect);
-
           boxList.add(boxObj);
         }
-
       }
-
     }
 
     if (verbose()) {
@@ -253,7 +242,7 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
         pr("*** No boxes detected");
       else {
         pr("Valid anchor boxes:", boxList.size());
-        pr("Highest conf:", pct(NetworkUtil.sigmoid(highestObjectnessLogitSeen)));
+        pr("Highest conf:", NetworkUtil.sigmoid(highestObjectnessLogitSeen) * 100);
       }
     }
 
@@ -516,9 +505,5 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
   private int mFieldsPerGridCell;
   private int mFieldsPerImage;
   private float[] mOutputLayer;
-
-  private static float pct(float confidence) {
-    return confidence * 100;
-  }
 
 }
