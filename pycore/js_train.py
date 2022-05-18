@@ -38,8 +38,6 @@ class JsTrain:
     self.img_width = inp_vol.width
     self.img_height = inp_vol.height
     self.img_channels = inp_vol.depth
-    todo("do we need support for img_categories?")
-    #self.img_categories = mc['category_count']
 
     t = self.proj_path("train_data")
     self.train_data_path = t
@@ -90,7 +88,6 @@ class JsTrain:
     self.log("PyTorch is using device:",self.device)
 
     self.model = self.define_model()
-    #self.model = ClassifierModel(self.network).to(self.device)
 
     self.loss_fn = nn.CrossEntropyLoss()
     self.optimizer = torch.optim.SGD(self.model.parameters(), lr=1e-3)
@@ -229,6 +226,11 @@ class JsTrain:
     return train_set.directory
 
 
+  def labels_are_ints(self):
+    die("Add implementation for labels_are_ints")
+    return False
+
+
   def train(self):
     train_set_dir = self.select_data_set()
     if not train_set_dir:
@@ -256,14 +258,22 @@ class JsTrain:
       images = images.reshape((self.batch_size, self.img_channels, self.img_height, self.img_width))
       tensor_images = torch.from_numpy(images)
 
+
+
       todo("we need to handle the labels differently if they are ints vs floats")
 
-      labels = read_ints(train_labels_path, img_index, 1, self.batch_size)
-      labels = labels.reshape(self.batch_size)
-      tensor_labels = torch.from_numpy(labels)
-
-      # We need the tensor labels to be 64-bits (long); perhaps pytorch prefers working with such values?
-      tensor_labels = tensor_labels.long()
+      if self.labels_are_ints():
+        record_size = self.train_info.label_length_bytes // BYTES_PER_INT
+        labels = read_ints(train_labels_path, img_index, record_size, self.batch_size)
+        labels = labels.reshape(self.batch_size)
+        tensor_labels = torch.from_numpy(labels)
+        # We need the tensor labels to be 64-bits (long); perhaps pytorch prefers working with such values?
+        tensor_labels = tensor_labels.long()
+      else:
+        record_size = self.train_info.label_length_bytes // BYTES_PER_FLOAT
+        labels = read_floats(train_labels_path, img_index, record_size, self.batch_size)
+        labels = labels.reshape(self.batch_size)
+        tensor_labels = torch.from_numpy(labels)
 
       tensor_images, tensor_labels = tensor_images.to(self.device), tensor_labels.to(self.device)
 
