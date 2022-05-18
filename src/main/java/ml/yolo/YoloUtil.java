@@ -15,13 +15,10 @@ import js.graphics.RectElement;
 import js.graphics.ScriptElement;
 import js.graphics.ScriptUtil;
 import js.graphics.gen.ElementProperties;
-import js.json.JSList;
 import ml.NetworkUtil;
 import gen.Yolo;
 
 public final class YoloUtil {
-
-  public static final boolean I20 = false && alert("Issue #20 in effect");
 
   private static final List<IPoint> DEFAULT_ANCHOR_BOXES = IPoint.toArrayList(//
       18, 22, //
@@ -157,10 +154,6 @@ public final class YoloUtil {
       result[cursor + 0] = box.x / (float) yolo.imageSize().x;
       result[cursor + 1] = box.y / (float) yolo.imageSize().y;
       cursor += 2;
-    }
-    if (I20) {
-      pr("anchorBoxPixels:", yolo.anchorBoxesPixels());
-      pr("rel to image size:", JSList.with(result));
     }
     return result;
   }

@@ -48,17 +48,17 @@ public final class CompileImagesOper extends AppOper {
       prepareTrainService();
       return;
     }
-    
+
     writeModelData();
     ImageCompiler imageCompiler = new ImageCompiler(config(), network(), files());
     Inspector insp = Inspector.build(config().inspectionDir());
     imageCompiler.setInspector(insp);
-    
+
     if (config().trainService())
       performTrainService(imageCompiler);
     else
       imageCompiler.compileTrainSet(config().targetDirTrain());
-    
+
     insp.flush();
   }
 

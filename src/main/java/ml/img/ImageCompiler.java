@@ -26,7 +26,6 @@ import js.graphics.ScriptElement;
 import js.graphics.ScriptUtil;
 import js.graphics.gen.Script;
 import ml.ModelWrapper;
-import ml.yolo.YoloUtil;
 
 /**
  * Used by CompileImagesOper to process images
@@ -73,19 +72,21 @@ public final class ImageCompiler extends BaseObject {
       mInspector.create("orig").image(img).elements(entry.scriptElementList());
       entry.setTransform(buildAugmentTransform());
       List<ScriptElement> annotations = entry.scriptElementList().elements();
-      
+
       BufferedImage targetImage = ImgUtil.build(model.inputImagePlanarSize(), img.getType());
       AugmentationConfig config = config().augmentationConfig();
       AffineTransformOp op = new AffineTransformOp(entry.transform().matrix().toAffineTransform(),
           AffineTransformOp.TYPE_BILINEAR);
-      List<ScriptElement> transformedScriptElements2 = arrayList();
-      model().transformAnnotations(annotations, transformedScriptElements2, entry.transform());
-      
-      // We don't want to mistakenly use the untransformed elements from this point on...
-      annotations = transformedScriptElements2;
+     
+      {
+        List<ScriptElement> transformed = arrayList();
+        model().transformAnnotations(annotations, transformed, entry.transform());
+        // We don't want to mistakenly use the untransformed elements from this point on...
+        annotations = transformed;
+      }
       op.filter(img, targetImage);
       mInspector.create("tfm").image(targetImage).elements(annotations);
- 
+
       imageFloats = ImgUtil.floatPixels(targetImage, model.inputImageChannels(), imageFloats);
 
       if (config.adjustBrightness())
@@ -102,17 +103,12 @@ public final class ImageCompiler extends BaseObject {
         Script.Builder script = Script.newBuilder();
         model.parseInferenceResult(model.lastLabelBytesWritten(), script);
         mInspector.elements(script.items());
-        if (YoloUtil.I20) {
-          mInspector.flush();
-          halt();
-        }
       }
 
       entry.releaseResources();
     }
     mEntriesValidated = true;
     Files.close(imagesStream, labelsStream);
-
     files().writePretty(infoPath, model.imageSetInfo());
   }
 

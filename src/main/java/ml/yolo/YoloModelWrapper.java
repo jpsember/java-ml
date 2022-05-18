@@ -121,36 +121,27 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
 
   @Override
   public void parseInferenceResult(byte[] modelOutput, Script.Builder script) {
-    if (I20)
-      pr("******** parseInferenceResult");
-    if (I20)
-      setVerbose();
     float[] imageLabelData = DataUtil.bytesToFloatsLittleEndian(modelOutput);
     List<ScriptElement> boxList = readImageResult(0.8f, imageLabelData);
-    if (mParserConfig.maxIOverU() > 0 && !I20) {
+    if (mParserConfig.maxIOverU() > 0)
       boxList = YoloUtil.performNonMaximumSuppression(boxList, mParserConfig.maxIOverU());
-    }
     script.items(boxList);
-    if (I20) {
-     pr("parsed elements:",INDENT,script);
-    }
   }
 
   private PlotInferenceResultsConfig mParserConfig = PlotInferenceResultsConfig.DEFAULT_INSTANCE;
 
   // ------------------------------------------------------------------
 
-
   private void writeScriptElements(List<ScriptElement> scriptElements) {
     log("writeScriptElements", INDENT, scriptElements);
 
     clearOutputLayer();
-    ScriptUtil.assertNoMixing(scriptElements );
+    ScriptUtil.assertNoMixing(scriptElements);
 
     // Compile annotations into ones that have a single bounding box
     List<RectElement> boxes = arrayList();
 
-    for (ScriptElement elem : scriptElements ) {
+    for (ScriptElement elem : scriptElements) {
       switch (elem.tag()) {
       default:
         throw badArg("unsupported element type", elem);
@@ -168,7 +159,6 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
       }
     }
 
-    
     List<RectElement> neighbors = generateNeighborVersions(boxes);
     boxes.addAll(neighbors);
     boxes.sort((a, b) -> -Integer.compare(ScriptUtil.confidence(a), ScriptUtil.confidence(b)));
@@ -176,8 +166,6 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
     log("sorted boxes, including neighbors:", INDENT, boxes);
 
     for (RectElement box : boxes) {
-      if (I20)
-        pr("Rect bounds:", box.bounds());
       if (verbose()) {
         log(" box:", box.toJson().toString());
         log("  cp:", box.bounds().midPoint());
@@ -195,8 +183,6 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
     Yolo yolo = modelConfig();
 
     if (yolo.neighborFactor() == 0)
-      return neighborList;
-    if (I20)
       return neighborList;
 
     log("generate neighbors, factor", yolo.neighborFactor(), "for box count", boxes.size());
@@ -296,8 +282,6 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
     //
     b[f + YoloUtil.F_BOX_XYWH + 2] = NetworkUtil.ln(mBoxSizeRelativeToAnchorBox.x);
     b[f + YoloUtil.F_BOX_XYWH + 3] = NetworkUtil.ln(mBoxSizeRelativeToAnchorBox.y);
-    if (I20)
-      pr("boxSizeRelAnchor:", b[f + YoloUtil.F_BOX_XYWH + 2], b[f + YoloUtil.F_BOX_XYWH + 3]);
 
     // The ground truth values for confidence are stored as *indicator variables*, hence 0f or 1f.
     // Hence, we store 1f here, since a box exists here.
@@ -306,17 +290,12 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
     //
 
     b[f + YoloUtil.F_CONFIDENCE] = NetworkUtil.logit(MyMath.percentToParameter(ScriptUtil.confidence(box)));
-    if (I20)
-      pr("box conf:", ScriptUtil.confidence(box), "asparam:", b[f + YoloUtil.F_CONFIDENCE]);
 
     // The class probabilities are the same; we store a one-hot indicator variable for this box's class.
     // We could just store the category number as a scalar instead of a one-hot vector, to save a bit of memory
     // and a bit of Python code, but this keeps the structure of the input and output box information the same
 
     b[f + YoloUtil.F_CLASS_PROBABILITIES + ScriptUtil.categoryOrZero(box)] = NetworkUtil.LOGIT_1;
-    if (I20)
-      pr("box classprob:", ScriptUtil.categoryOrZero(box),
-          b[f + YoloUtil.F_CLASS_PROBABILITIES + ScriptUtil.categoryOrZero(box)]);
   }
 
   private void constructOutputLayer() {
@@ -382,9 +361,6 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
     mBoxSizeRelativeToAnchorBox = new FPoint(//
         (box.width / (float) yolo.imageSize().x) / mAnchorSizeRelImage[mAnchorBox * 2 + 0], //
         (box.height / (float) yolo.imageSize().y) / mAnchorSizeRelImage[mAnchorBox * 2 + 1]);
-    if (I20) {
-      pr("box size:", box.size(), "relative to anchor box:", mBoxSizeRelativeToAnchorBox);
-    }
 
     mBoxGridCell = gridCell;
     mBoxLocationRelativeToCell = new FPoint(//
@@ -426,8 +402,6 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
       float union = boxArea + anchorSizeX * anchorSizeY - intersection;
       float currentIOverU = intersection / union;
 
-      if (I20)
-        pr("i:", i, "anchorSize:", anchorSizeX, anchorSizeY, "boxSize:", boxSizeX, boxSizeY);
       if (currentIOverU > bestIOverU) {
         bestIOverU = currentIOverU;
         bestAnchorBoxIndex = i;
@@ -437,8 +411,6 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
     mIOverU = bestIOverU;
     log("  anchor box:", mAnchorBox);
     log("    I over U:", mIOverU);
-    if (I20)
-      pr("anchorBox:", mAnchorBox, "I over U:", mIOverU);
   }
 
   private static RectElement labelledBox(IRect box, int category, float confidence, int rotationDegrees) {
@@ -521,9 +493,6 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
             continue;
 
           highestObjectnessLogitSeen = Math.max(highestObjectnessLogitSeen, objectnessLogit);
-          if (I20)
-            pr("found sufficient confidence, logit:", objectnessLogit);
-          todo("do we always want to perform sigmoid here, i.e., is it in input or an output?");
           float objectnessConfidence = NetworkUtil.sigmoid(objectnessLogit);
 
           if (verbose()) {
@@ -571,10 +540,6 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
           float by = NetworkUtil.sigmoid(f[k + 1]);
           float ws = NetworkUtil.exp(f[k + 2]);
           float hs = NetworkUtil.exp(f[k + 3]);
-          if (I20)
-            pr("bw,h exp':", f[k + 2], f[k + 3]);
-          if (I20)
-            pr("ws,hs:", ws, hs);
 
           todo("but can we precalculate the training labels to save some calc?");
 
@@ -588,8 +553,6 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
           float midpointY = (by + cellY) * mGridToImageScale.y;
 
           IRect boxRect = new FRect(midpointX - bw / 2, midpointY - bh / 2, bw, bh).toIRect();
-          if (I20)
-            pr("boxRect:", boxRect);
 
           // I think we want to use the 'objectness' confidence, without incorporating the best category's confidence in any way
           ElementProperties.Builder prop = ElementProperties.newBuilder();
