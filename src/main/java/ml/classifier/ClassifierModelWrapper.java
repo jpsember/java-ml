@@ -17,7 +17,7 @@ import js.graphics.gen.Script;
 import js.graphics.gen.ScriptElementList;
 import ml.ModelWrapper;
 
-public final class ClassifierModelWrapper extends ModelWrapper {
+public final class ClassifierModelWrapper extends ModelWrapper<Classifier> {
 
   @Override
   public void transformAnnotations(List<ScriptElement> in, List<ScriptElement> out,

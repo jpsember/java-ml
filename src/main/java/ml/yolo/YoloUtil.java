@@ -15,10 +15,13 @@ import js.graphics.RectElement;
 import js.graphics.ScriptElement;
 import js.graphics.ScriptUtil;
 import js.graphics.gen.ElementProperties;
+import js.json.JSList;
 import ml.NetworkUtil;
 import gen.Yolo;
 
 public final class YoloUtil {
+
+  public static final boolean I20 = alert("Issue #20 in effect");
 
   private static final List<IPoint> DEFAULT_ANCHOR_BOXES = IPoint.toArrayList(//
       18, 22, //
@@ -133,17 +136,31 @@ public final class YoloUtil {
    * Convert value output by the Yolo model to a box rotation, in degrees
    */
   public static int convertNetworkValueToRotationDegrees(float f) {
-    return Math.round(NetworkUtil .tanh(f) * RectElement.BOX_ROT_MAX);
+    return Math.round(NetworkUtil.tanh(f) * RectElement.BOX_ROT_MAX);
+  }
+
+  public static float[] anchorBoxSizes(Yolo yolo) {
+    float[] result = new float[yolo.anchorBoxesPixels().size() * 2];
+    int cursor = 0;
+    for (IPoint box : yolo.anchorBoxesPixels()) {
+      result[cursor + 0] = box.x;
+      result[cursor + 1] = box.y;
+      cursor += 2;
+    }
+    return result;
   }
 
   public static float[] anchorBoxesRelativeToImageSize(Yolo yolo) {
-    checkArgument(!yolo.anchorBoxesPixels().isEmpty());
     float[] result = new float[yolo.anchorBoxesPixels().size() * 2];
     int cursor = 0;
     for (IPoint box : yolo.anchorBoxesPixels()) {
       result[cursor + 0] = box.x / (float) yolo.imageSize().x;
       result[cursor + 1] = box.y / (float) yolo.imageSize().y;
       cursor += 2;
+    }
+    if (I20) {
+      pr("anchorBoxPixels:", yolo.anchorBoxesPixels());
+      pr("rel to image size:", JSList.with(result));
     }
     return result;
   }

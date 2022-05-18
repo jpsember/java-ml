@@ -34,7 +34,7 @@ import ml.yolo.YoloModelWrapper;
  * information about a neural network, its input image dimensions, and whatnot
  * to provide a handier way of manipulating these things.
  */
-public abstract class ModelWrapper extends BaseObject {
+public abstract class ModelWrapper<T extends AbstractData> extends BaseObject {
 
   /**
    * Construct an appropriate concrete ModelWrapper for a network
@@ -70,7 +70,7 @@ public abstract class ModelWrapper extends BaseObject {
     mInputImageChannels = network.modelConfig().getInt("image_channels");
     mInputImagePlanarSize = VolumeUtil.spatialDimension(mInputImageVolume);
     mInputImageVolumeProduct = VolumeUtil.product(mInputImageVolume);
-    mModelConfig = parseModelConfig(network.projectType(), network.modelConfig());
+    mModelConfig = (T) parseModelConfig(network.projectType(), network.modelConfig());
     init();
   }
 
@@ -120,7 +120,7 @@ public abstract class ModelWrapper extends BaseObject {
     throw die("Unsupported operation");
   }
 
-  public static <T extends AbstractData> T parseModelConfig(NetworkProjectType projectType, JSMap jsMap) {
+  private static AbstractData parseModelConfig(NetworkProjectType projectType, JSMap jsMap) {
     AbstractData prototype;
     switch (projectType) {
     default:
@@ -132,14 +132,14 @@ public abstract class ModelWrapper extends BaseObject {
       prototype = Classifier.DEFAULT_INSTANCE;
       break;
     }
-    return (T) prototype.parse(jsMap);
+    return prototype.parse(jsMap);
   }
 
   /**
    * Get the AbstractMessage representing this model (e.g. Yolo, Classifier)
    */
-  public <T extends AbstractData> T modelConfig() {
-    return (T) mModelConfig;
+  public T modelConfig() {
+    return mModelConfig;
   }
 
   public final NeuralNetwork network() {
@@ -260,7 +260,7 @@ public abstract class ModelWrapper extends BaseObject {
   public byte[] lastLabelBytesWritten() {
     return checkNotNull(mLastLabelBytesWritten, "no lastLabelBytesWritten available");
   }
-  
+
   // ------------------------------------------------------------------
 
   private static Vol determineInputImageVolume(NeuralNetwork network) {
@@ -272,7 +272,7 @@ public abstract class ModelWrapper extends BaseObject {
 
   private NeuralNetwork mNetwork;
   private Vol mInputImageVolume;
-  private AbstractData mModelConfig;
+  private T mModelConfig;
   private IPoint mInputImagePlanarSize;
   private int mInputImageChannels;
   private int mInputImageVolumeProduct;

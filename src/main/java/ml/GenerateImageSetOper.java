@@ -52,7 +52,7 @@ public class GenerateImageSetOper extends AppOper {
       throw setError("unsupported project type", projectType());
 
     case YOLO: {
-      Yolo yolo = model().modelConfig();
+      Yolo yolo = (Yolo) model().modelConfig();
       checkArgument(yolo.categoryCount() == config().categories().length(), "Yolo category count",
           yolo.categoryCount(), "disagrees with categories string length", config().categories());
     }
@@ -60,7 +60,7 @@ public class GenerateImageSetOper extends AppOper {
 
     case CLASSIFIER: {
       objectCount = 1;
-      Classifier c = model().modelConfig();
+      Classifier c = (Classifier) model().modelConfig();
       checkArgument(c.categoryCount() == config().categories().length(), "Classifier category count",
           c.categoryCount(), "disagrees with categories string length", config().categories());
     }
@@ -342,7 +342,7 @@ public class GenerateImageSetOper extends AppOper {
     return mModel;
   }
 
-  private ModelWrapper mModel;   
+  private ModelWrapper mModel;
   private IPoint mImageSize;
   private Random mRandom;
   private List<FontInfo> mFonts;

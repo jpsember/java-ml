@@ -34,91 +34,9 @@ import gen.Vol;
 import gen.Yolo;
 import ml.NetworkUtil;
 import ml.VolumeUtil;
+import static ml.yolo.YoloUtil.I20;
 
-public final class YoloModelWrapper extends ModelWrapper {
-
-  public void plotInferenceResults(PlotInferenceResultsConfig config) {
-
-    final String EVAL_IMAGES_FILENAME = "images.bin";
-    final String EVAL_RESULTS_FILENAME = "inference_results.bin";
-
-    Yolo yolo = modelConfig();
-
-    File imagesFile = Files.assertExists(new File(config.inferenceInputDir(), EVAL_IMAGES_FILENAME));
-    File resultsFile = Files.assertExists(new File(config.inferenceResultsDir(), EVAL_RESULTS_FILENAME));
-
-    int imageLengthInBytes = inputImageVolumeProduct() * Float.BYTES;
-    int imageCount = (int) (imagesFile.length() / imageLengthInBytes);
-
-    Files.assertFileLength(imagesFile, imageCount * (long) imageLengthInBytes, "images");
-    Files.assertFileLength(resultsFile, imageCount * (long) YoloUtil.imageLabelFloatCount(yolo) * Float.BYTES,
-        "results");
-
-    DataInputStream imagesInput = Files.dataInputStream(imagesFile);
-    DataInputStream resultsInput = Files.dataInputStream(resultsFile);
-
-    Files.S.backupAndRemake(config.outputDir());
-
-    File annotationDir = ScriptUtil.scriptDirForProject(config.outputDir());
-    Files.S.mkdirs(annotationDir);
-    YoloResultParser yr = new YoloResultParser(yolo);
-    yr.withConfidenceFilter(config.confidencePct() / 100f);
-
-    for (int imageNumber = 0; imageNumber < imageCount; imageNumber++) {
-      yr.setVerbose(config.inspectionFrameNumber() == imageNumber);
-      yr.log("Plot Inference Results, image", imageNumber);
-      float[] pixels = Files.readFloatsLittleEndian(imagesInput, inputImageVolumeProduct());
-      BufferedImage bi = ImgUtil.floatsToBufferedImage(pixels, inputImagePlanarSize(),
-          inputImageVolume().depth());
-
-      String imageFilenameRoot = String.format("%03d", imageNumber);
-      File imgDest = new File(config.outputDir(), imageFilenameRoot + ".jpg");
-      ImgUtil.writeImage(Files.S, bi, imgDest);
-
-      float[] imageLabelData = Files.readFloatsLittleEndian(resultsInput,
-          YoloUtil.imageLabelFloatCount(yolo));
-      List<ScriptElement> boxList = yr.readImageResult(imageLabelData);
-      if (config.maxIOverU() > 0) {
-        boxList = YoloUtil.performNonMaximumSuppression(boxList, config.maxIOverU());
-      }
-
-      Script.Builder script = Script.newBuilder();
-
-      if (config.plotAnchorBoxes() && imageNumber == 0) {
-        generateAnchorBoxSummary(boxList);
-      }
-      script.items(boxList);
-
-      File annotPath = new File(annotationDir, imageFilenameRoot + ".json");
-      ScriptUtil.write(Files.S, script, annotPath);
-    }
-
-    Files.close(imagesInput, resultsInput);
-  }
-
-  private void generateAnchorBoxSummary(List<ScriptElement> elements) {
-    Yolo yolo = modelConfig();
-    FPoint blockSize = yolo.blockSize().toFPoint();
-    FPoint halfBlock = blockSize.scaledBy(0.5f);
-    int numBox = YoloUtil.anchorBoxCount(yolo);
-
-    for (int i = 0; i < numBox; i++) {
-      IPoint cpt;
-      {
-        int row = i / 3;
-        int col = (i % 3);
-        cpt = new IPoint(col * blockSize.x * 4 + halfBlock.x, row * blockSize.y * 4 + halfBlock.y);
-      }
-
-      FPoint box = yolo.anchorBoxesPixels().get(i).toFPoint();
-      float x = cpt.x - box.x / 2;
-      float y = cpt.y - box.y / 2;
-      elements.add(new RectElement(ElementProperties.newBuilder().category(0),
-          new FRect(x, y, box.x, box.y).toIRect()));
-      elements.add(new RectElement(ElementProperties.newBuilder().category(1),
-          new FRect(cpt.x - halfBlock.x, cpt.y - halfBlock.x, blockSize.x, blockSize.y).toIRect()));
-    }
-  }
+public final class YoloModelWrapper extends ModelWrapper<Yolo> {
 
   @Override
   public void extractShapes(Script script, List<ScriptElement> target) {
@@ -132,11 +50,10 @@ public final class YoloModelWrapper extends ModelWrapper {
   @Override
   public boolean processLayer(NetworkAnalyzer analyzer, int layerIndex) {
     Layer.Builder builder = analyzer.layerBuilder(layerIndex);
-    if (builder.type() == LayerType.YOLO) {
-      auxProcessLayer(analyzer, builder);
-      return true;
-    }
-    return false;
+    if (builder.type() != LayerType.YOLO)
+      return false;
+    auxProcessLayer(analyzer, builder);
+    return true;
   }
 
   private void auxProcessLayer(NetworkAnalyzer analyzer, Layer.Builder layer) {
@@ -180,14 +97,11 @@ public final class YoloModelWrapper extends ModelWrapper {
     sb.append(" categories:" + yol.categoryCount());
   }
 
-  public Yolo yolo() {
-    return modelConfig();
-  }
-
   @Override
   public void init() {
     Yolo yolo = modelConfig();
-    mAnchorBoxes = YoloUtil.anchorBoxesRelativeToImageSize(yolo);
+    mAnchorSizeRelImage = YoloUtil.anchorBoxesRelativeToImageSize(yolo);
+    mAnchorSize  = YoloUtil.anchorBoxSizes(yolo);
     mBlockSize = yolo.blockSize();
     mPixelToGridCellScale = new FPoint(1f / mBlockSize.x, 1f / mBlockSize.y);
     mGridSize = YoloUtil.gridSize(yolo);
@@ -210,17 +124,20 @@ public final class YoloModelWrapper extends ModelWrapper {
 
   @Override
   public void parseInferenceResult(byte[] modelOutput, Script.Builder script) {
+    if (I20)
+      pr("******** parseInferenceResult");
     float[] imageLabelData = DataUtil.bytesToFloatsLittleEndian(modelOutput);
     List<ScriptElement> boxList = resultParser().readImageResult(imageLabelData);
     if (mParserConfig.maxIOverU() > 0) {
       boxList = YoloUtil.performNonMaximumSuppression(boxList, mParserConfig.maxIOverU());
     }
     script.items(boxList);
+    halt();
   }
 
   private YoloResultParser resultParser() {
     if (mYoloResultParser == null) {
-      YoloResultParser parser = new YoloResultParser(yolo());
+      YoloResultParser parser = new YoloResultParser(modelConfig());
       parser.withConfidenceFilter(mParserConfig.confidencePct() / 100f);
       mYoloResultParser = parser;
     }
@@ -263,7 +180,8 @@ public final class YoloModelWrapper extends ModelWrapper {
     log("sorted boxes, including neighbors:", INDENT, boxes);
 
     for (RectElement box : boxes) {
-
+      if (I20)
+        pr("elem bounds:", box.bounds());
       if (verbose()) {
         log(" box:", box.toJson().toString());
         log("  cp:", box.bounds().midPoint());
@@ -281,6 +199,8 @@ public final class YoloModelWrapper extends ModelWrapper {
     Yolo yolo = modelConfig();
 
     if (yolo.neighborFactor() == 0)
+      return neighborList;
+    if (I20)
       return neighborList;
 
     log("generate neighbors, factor", yolo.neighborFactor(), "for box count", boxes.size());
@@ -390,14 +310,14 @@ public final class YoloModelWrapper extends ModelWrapper {
   }
 
   private void constructOutputLayer() {
-    mFieldsPerAnchorBox = YoloUtil.valuesPerAnchorBox(yolo());
+    mFieldsPerAnchorBox = YoloUtil.valuesPerAnchorBox(modelConfig());
     mFieldsPerGridCell = mFieldsPerAnchorBox * numAnchorBoxes();
     mFieldsPerImage = mFieldsPerGridCell * mGridSize.product();
     mOutputLayer = new float[mFieldsPerImage];
 
     if (verbose()) {
       JSMap m = map();
-      m.putNumbered("categories", numCategories());
+      m.putNumbered("categories", modelConfig().categoryCount());
       m.putNumbered("f per anchor", mFieldsPerAnchorBox);
       m.putNumbered("anchor boxes", numAnchorBoxes());
       m.putNumbered("f per cell", mFieldsPerGridCell);
@@ -412,7 +332,7 @@ public final class YoloModelWrapper extends ModelWrapper {
   }
 
   private IPoint determineBoxGridCell(IPoint midpoint) {
-    IPoint blockSize = yolo().blockSize();
+    IPoint blockSize = modelConfig().blockSize();
     return new IPoint(Math.floorDiv(midpoint.x, blockSize.x), Math.floorDiv(midpoint.y, blockSize.y));
   }
 
@@ -451,8 +371,11 @@ public final class YoloModelWrapper extends ModelWrapper {
     }
 
     mBoxSizeRelativeToAnchorBox = new FPoint(//
-        (box.width / (float) yolo.imageSize().x) / mAnchorBoxes[mAnchorBox * 2 + 0], //
-        (box.height / (float) yolo.imageSize().y) / mAnchorBoxes[mAnchorBox * 2 + 1]);
+        (box.width / (float) yolo.imageSize().x) / mAnchorSizeRelImage[mAnchorBox * 2 + 0], //
+        (box.height / (float) yolo.imageSize().y) / mAnchorSizeRelImage[mAnchorBox * 2 + 1]);
+    if (I20) {
+      pr("box size:", box.size(), "relative to anchor box:", mBoxSizeRelativeToAnchorBox);
+    }
 
     mBoxGridCell = gridCell;
     mBoxLocationRelativeToCell = new FPoint(//
@@ -466,12 +389,8 @@ public final class YoloModelWrapper extends ModelWrapper {
   }
 
   private int numAnchorBoxes() {
-    // TODO: we can optimize things by precomputing this and other constants, and storing in instance fields,
-    return mAnchorBoxes.length / 2;
-  }
-
-  private int numCategories() {
-    return yolo().categoryCount();
+    // TODO: we can optimize things by precomputing this and other constants, and storing in instance fields
+    return mAnchorSizeRelImage.length / 2;
   }
 
   /**
@@ -481,16 +400,18 @@ public final class YoloModelWrapper extends ModelWrapper {
     Yolo yolo = modelConfig();
     FPoint boxSize = boxSizeI.toFPoint();
 
-    float[] anchorBoxes = mAnchorBoxes;
+    float[] anchorBoxes = mAnchorSizeRelImage;
 
     float bestIOverU = 0;
     int bestAnchorBoxIndex = 0;
 
     for (int i = 0; i < numAnchorBoxes(); i++) {
 
-      // The anchor box dimensions are multiples of the block size.
+      todo("this could be precomputed");
       FPoint anchorSize = new FPoint(anchorBoxes[i * 2 + 0], anchorBoxes[i * 2 + 1])
-          .scaledBy(yolo.blockSize());
+          .scaledBy(yolo.blockSize());  
+      halt("No, these are relative to image, not block size");
+      //!!! No, not scaled by block size; scaled by image
 
       // We want the intersection / union.
       // I think this is the same whether we align the two boxes at their centerpoints 
@@ -502,6 +423,8 @@ public final class YoloModelWrapper extends ModelWrapper {
       float union = boxSize.product() + anchorSize.product() - intersection;
       float currentIOverU = intersection / union;
 
+      if (I20)
+        pr("i:", i, "anchorSize:", anchorSize, "boxSize:", boxSize);
       if (currentIOverU > bestIOverU) {
         bestIOverU = currentIOverU;
         bestAnchorBoxIndex = i;
@@ -511,6 +434,8 @@ public final class YoloModelWrapper extends ModelWrapper {
     mIOverU = bestIOverU;
     log("  anchor box:", mAnchorBox);
     log("    I over U:", mIOverU);
+    if (I20)
+      pr("anchorBox:", mAnchorBox, "I over U:", mIOverU);
   }
 
   private static RectElement labelledBox(IRect box, int category, float confidence, int rotationDegrees) {
@@ -518,7 +443,9 @@ public final class YoloModelWrapper extends ModelWrapper {
         .confidence(MyMath.parameterToPercentage(confidence)).rotation(rotationDegrees), box);
   }
 
-  private float[] mAnchorBoxes;
+  private float[] mAnchorSizeRelImage;
+  private float[] mAnchorSize;
+  
   private IPoint mGridSize;
   private IPoint mBlockSize;
   private FPoint mPixelToGridCellScale;
@@ -533,5 +460,93 @@ public final class YoloModelWrapper extends ModelWrapper {
   private int mFieldsPerGridCell;
   private int mFieldsPerImage;
   private float[] mOutputLayer;
+
+  // ------------------------------------------------------------------
+  // To be deleted later
+  // ------------------------------------------------------------------
+
+  @Deprecated // The parseInferenceResult method should serve this purpose
+  public void plotInferenceResults(PlotInferenceResultsConfig config) {
+
+    final String EVAL_IMAGES_FILENAME = "images.bin";
+    final String EVAL_RESULTS_FILENAME = "inference_results.bin";
+
+    Yolo yolo = modelConfig();
+
+    File imagesFile = Files.assertExists(new File(config.inferenceInputDir(), EVAL_IMAGES_FILENAME));
+    File resultsFile = Files.assertExists(new File(config.inferenceResultsDir(), EVAL_RESULTS_FILENAME));
+
+    int imageLengthInBytes = inputImageVolumeProduct() * Float.BYTES;
+    int imageCount = (int) (imagesFile.length() / imageLengthInBytes);
+
+    Files.assertFileLength(imagesFile, imageCount * (long) imageLengthInBytes, "images");
+    Files.assertFileLength(resultsFile, imageCount * (long) YoloUtil.imageLabelFloatCount(yolo) * Float.BYTES,
+        "results");
+
+    DataInputStream imagesInput = Files.dataInputStream(imagesFile);
+    DataInputStream resultsInput = Files.dataInputStream(resultsFile);
+
+    Files.S.backupAndRemake(config.outputDir());
+
+    File annotationDir = ScriptUtil.scriptDirForProject(config.outputDir());
+    Files.S.mkdirs(annotationDir);
+    YoloResultParser yr = new YoloResultParser(yolo);
+    yr.withConfidenceFilter(config.confidencePct() / 100f);
+
+    for (int imageNumber = 0; imageNumber < imageCount; imageNumber++) {
+      yr.setVerbose(config.inspectionFrameNumber() == imageNumber);
+      yr.log("Plot Inference Results, image", imageNumber);
+      float[] pixels = Files.readFloatsLittleEndian(imagesInput, inputImageVolumeProduct());
+      BufferedImage bi = ImgUtil.floatsToBufferedImage(pixels, inputImagePlanarSize(),
+          inputImageVolume().depth());
+
+      String imageFilenameRoot = String.format("%03d", imageNumber);
+      File imgDest = new File(config.outputDir(), imageFilenameRoot + ".jpg");
+      ImgUtil.writeImage(Files.S, bi, imgDest);
+
+      float[] imageLabelData = Files.readFloatsLittleEndian(resultsInput,
+          YoloUtil.imageLabelFloatCount(yolo));
+      List<ScriptElement> boxList = yr.readImageResult(imageLabelData);
+      if (config.maxIOverU() > 0) {
+        boxList = YoloUtil.performNonMaximumSuppression(boxList, config.maxIOverU());
+      }
+
+      Script.Builder script = Script.newBuilder();
+
+      if (config.plotAnchorBoxes() && imageNumber == 0) {
+        generateAnchorBoxSummary(boxList);
+      }
+      script.items(boxList);
+
+      File annotPath = new File(annotationDir, imageFilenameRoot + ".json");
+      ScriptUtil.write(Files.S, script, annotPath);
+    }
+
+    Files.close(imagesInput, resultsInput);
+  }
+
+  private void generateAnchorBoxSummary(List<ScriptElement> elements) {
+    Yolo yolo = modelConfig();
+    FPoint blockSize = yolo.blockSize().toFPoint();
+    FPoint halfBlock = blockSize.scaledBy(0.5f);
+    int numBox = YoloUtil.anchorBoxCount(yolo);
+
+    for (int i = 0; i < numBox; i++) {
+      IPoint cpt;
+      {
+        int row = i / 3;
+        int col = (i % 3);
+        cpt = new IPoint(col * blockSize.x * 4 + halfBlock.x, row * blockSize.y * 4 + halfBlock.y);
+      }
+
+      FPoint box = yolo.anchorBoxesPixels().get(i).toFPoint();
+      float x = cpt.x - box.x / 2;
+      float y = cpt.y - box.y / 2;
+      elements.add(new RectElement(ElementProperties.newBuilder().category(0),
+          new FRect(x, y, box.x, box.y).toIRect()));
+      elements.add(new RectElement(ElementProperties.newBuilder().category(1),
+          new FRect(cpt.x - halfBlock.x, cpt.y - halfBlock.x, blockSize.x, blockSize.y).toIRect()));
+    }
+  }
 
 }
