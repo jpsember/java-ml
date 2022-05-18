@@ -1,6 +1,6 @@
 {
       "network_path" : "network.json",
         "categories" : "AB",
-       "image_total" : 100,
+       "image_total" : 20,
   "scale_factor_max" : 4,
 }

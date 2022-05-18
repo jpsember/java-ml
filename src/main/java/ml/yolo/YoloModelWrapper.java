@@ -100,9 +100,9 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
     mAnchorSizeRelImage = YoloUtil.anchorBoxesRelativeToImageSize(yolo);
     mAnchorSize = YoloUtil.anchorBoxSizes(yolo);
     mBlockSize = yolo.blockSize();
-    mPixelToGridCellScale = new FPoint(1f / mBlockSize.x, 1f / mBlockSize.y);
     mGridSize = YoloUtil.gridSize(yolo);
     mGridToImageScale = yolo.blockSize().toFPoint();
+    mPixelToGridCellScale = new FPoint(1f / mGridToImageScale.x, 1f / mGridToImageScale.y);
     constructOutputLayer();
   }
 
@@ -124,7 +124,8 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
   public void parseInferenceResult(byte[] modelOutput, Script.Builder script) {
     if (I20)
       pr("******** parseInferenceResult");
-    if (I20) setVerbose();
+    if (I20)
+      setVerbose();
     float[] imageLabelData = DataUtil.bytesToFloatsLittleEndian(modelOutput);
     List<ScriptElement> boxList = readImageResult(0.8f, imageLabelData);
     if (mParserConfig.maxIOverU() > 0 && !I20) {
@@ -149,6 +150,8 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
 
   // ------------------------------------------------------------------
 
+  private static final boolean oneOnly = false && alert("single element");
+
   private void writeScriptElements(ScriptElementList scriptElements) {
     log("writeScriptElements", INDENT, scriptElements);
 
@@ -163,21 +166,30 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
       default:
         throw badArg("unsupported element type", elem);
       case RectElement.TAG:
-      case PolygonElement.TAG:
+      case PolygonElement.TAG: {
         // We will assume that the polygon bounding box is a good enough approximation of the
         // object's bounding rectangle.  We hopefully have used the 'truncate box, then rotate its points'
         // heuristic earlier (if the original object bounds was a box; if it was a polygon, that heuristic
-        // doesn't apply)
-        boxes.add(labelledBox(elem.bounds(), ScriptUtil.categoryOrZero(elem), 1f,
-            ScriptUtil.rotationDegreesOrZero(elem)));
+        // doesn't apply){
+        IRect bounds = elem.bounds();
+       
+        boxes.add(
+            labelledBox(bounds, ScriptUtil.categoryOrZero(elem), 1f, ScriptUtil.rotationDegreesOrZero(elem)));
+      }
         break;
       }
+      if (oneOnly)
+        break;
     }
 
+    
     List<RectElement> neighbors = generateNeighborVersions(boxes);
+    if (oneOnly || alert("clearing nb")) neighbors.clear();
     boxes.addAll(neighbors);
     boxes.sort((a, b) -> -Integer.compare(ScriptUtil.confidence(a), ScriptUtil.confidence(b)));
+
     log("sorted boxes, including neighbors:", INDENT, boxes);
+pr("boxes:",boxes.size());
 
     for (RectElement box : boxes) {
       if (I20)
@@ -265,8 +277,6 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
 
   private void writeBoxToFieldsBuffer(RectElement box) {
 
-    // I wasn't aware there was a choice within TensorFlow for the label ordering: FORMAT_NHWC vs FORMAT_NCHW
-
     float[] b = mOutputLayer;
 
     int cellIndex = mBoxGridCell.x + mGridSize.x * mBoxGridCell.y;
@@ -310,18 +320,20 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
     //
     // !!! But as above, we probably want something different
     //
-    
-    
-    b[f + YoloUtil.F_CONFIDENCE] = NetworkUtil.logit( MyMath.percentToParameter(ScriptUtil.confidence(box)));
-if (I20) pr("box conf:",ScriptUtil.confidence(box),"asparam:",  b[f + YoloUtil.F_CONFIDENCE]);
+
+    b[f + YoloUtil.F_CONFIDENCE] = NetworkUtil.logit(MyMath.percentToParameter(ScriptUtil.confidence(box)));
+    if (I20)
+      pr("box conf:", ScriptUtil.confidence(box), "asparam:", b[f + YoloUtil.F_CONFIDENCE]);
 
     // The class probabilities are the same; we store a one-hot indicator variable for this box's class.
     // We could just store the category number as a scalar instead of a one-hot vector, to save a bit of memory
     // and a bit of Python code, but this keeps the structure of the input and output box information the same
 
-    b[f + YoloUtil.F_CLASS_PROBABILITIES + ScriptUtil.categoryOrZero(box)] =NetworkUtil.LOGIT_1;
-    if (I20) pr("box classprob:",ScriptUtil.categoryOrZero(box), b[f + YoloUtil.F_CLASS_PROBABILITIES + ScriptUtil.categoryOrZero(box)] );
-//pr("LOGIT_1:",NetworkUtil.LOGIT_1);
+    b[f + YoloUtil.F_CLASS_PROBABILITIES + ScriptUtil.categoryOrZero(box)] = NetworkUtil.LOGIT_1;
+    if (I20)
+      pr("box classprob:", ScriptUtil.categoryOrZero(box),
+          b[f + YoloUtil.F_CLASS_PROBABILITIES + ScriptUtil.categoryOrZero(box)]);
+    //pr("LOGIT_1:",NetworkUtil.LOGIT_1);
   }
 
   private void constructOutputLayer() {
@@ -470,18 +482,10 @@ if (I20) pr("box conf:",ScriptUtil.confidence(box),"asparam:",  b[f + YoloUtil.F
   private int mFieldsPerImage;
   private float[] mOutputLayer;
 
-  //  public YoloResultParser(Yolo yolo) {
-  //    mYolo = yolo;
-  //    mGridToImageScale = yolo.blockSize().toFPoint();
-  //    mGridSize = YoloUtil.gridSize(yolo);
-  //  }
-
-  //  public void withConfidenceFilter(float confidence) {
-  //    mConfidenceThreshold = confidence;
-  //  }
-
   private List<ScriptElement> readImageResult(float confidenceThreshold, float[] imageData) {
     todo("rename this method");
+    todo(
+        "Perhaps the x,y coordinates should be the location of the center of the anchor box, relative to the center of the grid cell");
     log("Constructing YOLO result for image");
     log("...confidence threshold %", pct(confidenceThreshold));
 
@@ -528,15 +532,14 @@ if (I20) pr("box conf:",ScriptUtil.confidence(box),"asparam:",  b[f + YoloUtil.F
         for (int anchorBox = 0; anchorBox < anchorBoxCount; anchorBox++, fieldSetIndex += fieldsPerBox) {
 
           float objectnessLogit = f[fieldSetIndex + F_CONFIDENCE];
-          pr("x:",cellX,"y:",cellY,"objlog:",objectnessLogit);
           // Note, this check will cause us to skip a lot of computation, which
           // suggests we probably don't want to embed the sigmoid/exp postprocessing steps into the model
           if (objectnessLogit < logitMinForResult)
             continue;
-          
-          
+
           highestObjectnessLogitSeen = Math.max(highestObjectnessLogitSeen, objectnessLogit);
-          pr("found sufficient confidence, logit:",objectnessLogit);
+          if (I20)
+            pr("found sufficient confidence, logit:", objectnessLogit);
           todo("do we always want to perform sigmoid here, i.e., is it in input or an output?");
           float objectnessConfidence = NetworkUtil.sigmoid(objectnessLogit);
 
