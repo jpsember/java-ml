@@ -3,7 +3,13 @@
              "source_dir" : "generated_images",
        "train_service" : false,
        "inspection_dir" : "inspection",
+
        "augmentation_config" : {
-        "horizontal_flip" : false,
- },
+            "horizontal_flip" : false,
+            "shear_disable" : true,
+            "scale_max" : 1.0,
+            "scale_min" : 0.8,
+            "rotate_degrees_max" : 5,
+            "translate_max" : 3,
+        },
 }

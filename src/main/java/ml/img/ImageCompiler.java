@@ -175,6 +175,7 @@ public final class ImageCompiler extends BaseObject {
   }
 
   private TransformWrapper buildAugmentTransform() {
+    todo("The translation should be a proportion of the image's (smallest) dimension");
     AugmentationConfig ac = config().augmentationConfig();
     boolean horizFlip = ac.horizontalFlip() && random().nextBoolean();
 
