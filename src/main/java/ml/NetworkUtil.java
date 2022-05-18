@@ -60,6 +60,8 @@ public final class NetworkUtil {
     return (float) ensureFinite(result, value, "logit");
   }
 
+  public static final float LOGIT_1 = logit(1f);
+
   public static float sigmoid(float value) {
     return (float) ensureFinite((1 / (1 + Math.exp(-value))), value, "sigmoid");
   }

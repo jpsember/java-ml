@@ -23,6 +23,7 @@ import gen.Yolo;
 /**
  * Parses output from a Yolo model to produce annotations
  */
+@Deprecated
 public final class YoloResultParser extends BaseObject {
 
   public YoloResultParser(Yolo yolo) {

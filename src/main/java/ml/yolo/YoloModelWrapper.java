@@ -1,25 +1,23 @@
 package ml.yolo;
 
-import java.awt.image.BufferedImage;
-import java.io.DataInputStream;
-import java.io.File;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import static js.base.Tools.*;
+import static ml.yolo.YoloUtil.*;
 
 import js.data.DataUtil;
-import js.file.Files;
 import js.geometry.FPoint;
 import js.geometry.FRect;
 import js.geometry.IPoint;
 import js.geometry.IRect;
 import js.geometry.MyMath;
-import js.graphics.ImgUtil;
 import js.graphics.PolygonElement;
 import js.graphics.RectElement;
 import js.graphics.ScriptElement;
 import js.graphics.ScriptUtil;
+import js.graphics.gen.CategoryConfidence;
 import js.graphics.gen.ElementProperties;
 import js.graphics.gen.Script;
 import js.graphics.gen.ScriptElementList;
@@ -34,7 +32,6 @@ import gen.Vol;
 import gen.Yolo;
 import ml.NetworkUtil;
 import ml.VolumeUtil;
-import static ml.yolo.YoloUtil.I20;
 
 public final class YoloModelWrapper extends ModelWrapper<Yolo> {
 
@@ -105,6 +102,7 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
     mBlockSize = yolo.blockSize();
     mPixelToGridCellScale = new FPoint(1f / mBlockSize.x, 1f / mBlockSize.y);
     mGridSize = YoloUtil.gridSize(yolo);
+    mGridToImageScale = yolo.blockSize().toFPoint();
     constructOutputLayer();
   }
 
@@ -126,9 +124,10 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
   public void parseInferenceResult(byte[] modelOutput, Script.Builder script) {
     if (I20)
       pr("******** parseInferenceResult");
+    if (I20) setVerbose();
     float[] imageLabelData = DataUtil.bytesToFloatsLittleEndian(modelOutput);
-    List<ScriptElement> boxList = resultParser().readImageResult(imageLabelData);
-    if (mParserConfig.maxIOverU() > 0) {
+    List<ScriptElement> boxList = readImageResult(0.8f, imageLabelData);
+    if (mParserConfig.maxIOverU() > 0 && !I20) {
       boxList = YoloUtil.performNonMaximumSuppression(boxList, mParserConfig.maxIOverU());
     }
     script.items(boxList);
@@ -136,16 +135,16 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
       halt();
   }
 
-  private YoloResultParser resultParser() {
-    if (mYoloResultParser == null) {
-      YoloResultParser parser = new YoloResultParser(modelConfig());
-      parser.withConfidenceFilter(mParserConfig.confidencePct() / 100f);
-      mYoloResultParser = parser;
-    }
-    return mYoloResultParser;
-  }
-
-  private YoloResultParser mYoloResultParser;
+  //  private YoloResultParser resultParser() {
+  //    if (mYoloResultParser == null) {
+  //      YoloResultParser parser = new YoloResultParser(modelConfig());
+  //      parser.withConfidenceFilter(mParserConfig.confidencePct() / 100f);
+  //      mYoloResultParser = parser;
+  //    }
+  //    return mYoloResultParser;
+  //  }
+  //
+  //  private YoloResultParser mYoloResultParser;
   private PlotInferenceResultsConfig mParserConfig = PlotInferenceResultsConfig.DEFAULT_INSTANCE;
 
   // ------------------------------------------------------------------
@@ -292,10 +291,8 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
     // !!!! But we want to have them in the same form as the predictions the model will produce,
     // so apply appropriate conversions
     //
-    b[f + YoloUtil.F_BOX_XYWH + 0] = 
-        NetworkUtil.logit(
-        mBoxLocationRelativeToCell.x);
-    b[f + YoloUtil.F_BOX_XYWH + 1] =  NetworkUtil.logit(mBoxLocationRelativeToCell.y);
+    b[f + YoloUtil.F_BOX_XYWH + 0] = NetworkUtil.logit(mBoxLocationRelativeToCell.x);
+    b[f + YoloUtil.F_BOX_XYWH + 1] = NetworkUtil.logit(mBoxLocationRelativeToCell.y);
 
     // The width and height can range from 0...+inf.
     // These are ground truth values, and hence don't need to be represented as logarithms
@@ -311,13 +308,20 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
     // The ground truth values for confidence are stored as *indicator variables*, hence 0f or 1f.
     // Hence, we store 1f here, since a box exists here.
     //
-    b[f + YoloUtil.F_CONFIDENCE] = MyMath.percentToParameter(ScriptUtil.confidence(box));
+    // !!! But as above, we probably want something different
+    //
+    
+    
+    b[f + YoloUtil.F_CONFIDENCE] = NetworkUtil.logit( MyMath.percentToParameter(ScriptUtil.confidence(box)));
+if (I20) pr("box conf:",ScriptUtil.confidence(box),"asparam:",  b[f + YoloUtil.F_CONFIDENCE]);
 
     // The class probabilities are the same; we store a one-hot indicator variable for this box's class.
     // We could just store the category number as a scalar instead of a one-hot vector, to save a bit of memory
     // and a bit of Python code, but this keeps the structure of the input and output box information the same
 
-    b[f + YoloUtil.F_CLASS_PROBABILITIES + ScriptUtil.categoryOrZero(box)] = 1f;
+    b[f + YoloUtil.F_CLASS_PROBABILITIES + ScriptUtil.categoryOrZero(box)] =NetworkUtil.LOGIT_1;
+    if (I20) pr("box classprob:",ScriptUtil.categoryOrZero(box), b[f + YoloUtil.F_CLASS_PROBABILITIES + ScriptUtil.categoryOrZero(box)] );
+//pr("LOGIT_1:",NetworkUtil.LOGIT_1);
   }
 
   private void constructOutputLayer() {
@@ -451,6 +455,7 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
   private float[] mAnchorSize;
 
   private IPoint mGridSize;
+  private FPoint mGridToImageScale;
   private IPoint mBlockSize;
   private FPoint mPixelToGridCellScale;
 
@@ -465,92 +470,191 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
   private int mFieldsPerImage;
   private float[] mOutputLayer;
 
-  // ------------------------------------------------------------------
-  // To be deleted later
-  // ------------------------------------------------------------------
+  //  public YoloResultParser(Yolo yolo) {
+  //    mYolo = yolo;
+  //    mGridToImageScale = yolo.blockSize().toFPoint();
+  //    mGridSize = YoloUtil.gridSize(yolo);
+  //  }
 
-  @Deprecated // The parseInferenceResult method should serve this purpose
-  public void plotInferenceResults(PlotInferenceResultsConfig config) {
+  //  public void withConfidenceFilter(float confidence) {
+  //    mConfidenceThreshold = confidence;
+  //  }
 
-    final String EVAL_IMAGES_FILENAME = "images.bin";
-    final String EVAL_RESULTS_FILENAME = "inference_results.bin";
+  private List<ScriptElement> readImageResult(float confidenceThreshold, float[] imageData) {
+    todo("rename this method");
+    log("Constructing YOLO result for image");
+    log("...confidence threshold %", pct(confidenceThreshold));
 
     Yolo yolo = modelConfig();
 
-    File imagesFile = Files.assertExists(new File(config.inferenceInputDir(), EVAL_IMAGES_FILENAME));
-    File resultsFile = Files.assertExists(new File(config.inferenceResultsDir(), EVAL_RESULTS_FILENAME));
-
-    int imageLengthInBytes = inputImageVolumeProduct() * Float.BYTES;
-    int imageCount = (int) (imagesFile.length() / imageLengthInBytes);
-
-    Files.assertFileLength(imagesFile, imageCount * (long) imageLengthInBytes, "images");
-    Files.assertFileLength(resultsFile, imageCount * (long) YoloUtil.imageLabelFloatCount(yolo) * Float.BYTES,
-        "results");
-
-    DataInputStream imagesInput = Files.dataInputStream(imagesFile);
-    DataInputStream resultsInput = Files.dataInputStream(resultsFile);
-
-    Files.S.backupAndRemake(config.outputDir());
-
-    File annotationDir = ScriptUtil.scriptDirForProject(config.outputDir());
-    Files.S.mkdirs(annotationDir);
-    YoloResultParser yr = new YoloResultParser(yolo);
-    yr.withConfidenceFilter(config.confidencePct() / 100f);
-
-    for (int imageNumber = 0; imageNumber < imageCount; imageNumber++) {
-      yr.setVerbose(config.inspectionFrameNumber() == imageNumber);
-      yr.log("Plot Inference Results, image", imageNumber);
-      float[] pixels = Files.readFloatsLittleEndian(imagesInput, inputImageVolumeProduct());
-      BufferedImage bi = ImgUtil.floatsToBufferedImage(pixels, inputImagePlanarSize(),
-          inputImageVolume().depth());
-
-      String imageFilenameRoot = String.format("%03d", imageNumber);
-      File imgDest = new File(config.outputDir(), imageFilenameRoot + ".jpg");
-      ImgUtil.writeImage(Files.S, bi, imgDest);
-
-      float[] imageLabelData = Files.readFloatsLittleEndian(resultsInput,
-          YoloUtil.imageLabelFloatCount(yolo));
-      List<ScriptElement> boxList = yr.readImageResult(imageLabelData);
-      if (config.maxIOverU() > 0) {
-        boxList = YoloUtil.performNonMaximumSuppression(boxList, config.maxIOverU());
-      }
-
-      Script.Builder script = Script.newBuilder();
-
-      if (config.plotAnchorBoxes() && imageNumber == 0) {
-        generateAnchorBoxSummary(boxList);
-      }
-      script.items(boxList);
-
-      File annotPath = new File(annotationDir, imageFilenameRoot + ".json");
-      ScriptUtil.write(Files.S, script, annotPath);
+    int expectedDataLength = mGridSize.product() * YoloUtil.valuesPerBlock(yolo);
+    if (imageData.length != expectedDataLength) {
+      throw die("length of image data:", imageData.length, "!= expected value:", expectedDataLength, INDENT,
+          yolo);
     }
 
-    Files.close(imagesInput, resultsInput);
-  }
+    List<ScriptElement> boxList = arrayList();
 
-  private void generateAnchorBoxSummary(List<ScriptElement> elements) {
-    Yolo yolo = modelConfig();
-    FPoint blockSize = yolo.blockSize().toFPoint();
-    FPoint halfBlock = blockSize.scaledBy(0.5f);
-    int numBox = YoloUtil.anchorBoxCount(yolo);
+    float[] f = imageData;
 
-    for (int i = 0; i < numBox; i++) {
-      IPoint cpt;
-      {
-        int row = i / 3;
-        int col = (i % 3);
-        cpt = new IPoint(col * blockSize.x * 4 + halfBlock.x, row * blockSize.y * 4 + halfBlock.y);
+    int anchorBoxCount = YoloUtil.anchorBoxCount(yolo);
+    int fieldsPerBox = YoloUtil.valuesPerAnchorBox(yolo);
+
+    final float logitMinForResult = NetworkUtil.logit(confidenceThreshold);
+
+    int categoryCount = yolo.categoryCount();
+
+    List<CategoryConfidence> categoryConfidences = arrayList();
+    StringBuilder sbLine = null;
+    StringBuilder sbGrid = null;
+    JSMap gridMap = null;
+    if (verbose()) {
+      sbLine = new StringBuilder();
+      sbGrid = new StringBuilder();
+      gridMap = map();
+    }
+
+    float highestObjectnessLogitSeen = 0f;
+    int fieldSetIndex = 0;
+    for (int cellY = 0; cellY < mGridSize.y; cellY++) {
+      if (verbose()) {
+        sbGrid.setLength(0);
+        sbGrid.append("[");
       }
 
-      FPoint box = yolo.anchorBoxesPixels().get(i).toFPoint();
-      float x = cpt.x - box.x / 2;
-      float y = cpt.y - box.y / 2;
-      elements.add(new RectElement(ElementProperties.newBuilder().category(0),
-          new FRect(x, y, box.x, box.y).toIRect()));
-      elements.add(new RectElement(ElementProperties.newBuilder().category(1),
-          new FRect(cpt.x - halfBlock.x, cpt.y - halfBlock.x, blockSize.x, blockSize.y).toIRect()));
+      for (int cellX = 0; cellX < mGridSize.x; cellX++) {
+
+        char cellString = 0;
+        for (int anchorBox = 0; anchorBox < anchorBoxCount; anchorBox++, fieldSetIndex += fieldsPerBox) {
+
+          float objectnessLogit = f[fieldSetIndex + F_CONFIDENCE];
+          pr("x:",cellX,"y:",cellY,"objlog:",objectnessLogit);
+          // Note, this check will cause us to skip a lot of computation, which
+          // suggests we probably don't want to embed the sigmoid/exp postprocessing steps into the model
+          if (objectnessLogit < logitMinForResult)
+            continue;
+          
+          
+          highestObjectnessLogitSeen = Math.max(highestObjectnessLogitSeen, objectnessLogit);
+          pr("found sufficient confidence, logit:",objectnessLogit);
+          todo("do we always want to perform sigmoid here, i.e., is it in input or an output?");
+          float objectnessConfidence = NetworkUtil.sigmoid(objectnessLogit);
+
+          if (verbose()) {
+            sbLine.setLength(0);
+            sbLine.append(String.format("y%2d  x%2d  ", cellY, cellX));
+            if (anchorBoxCount > 1)
+              sbLine.append(String.format("a%d  ", anchorBox));
+            sbLine.append(String.format("%5.1f  ", pct(objectnessConfidence)));
+          }
+
+          IPoint anchorBoxPixels = yolo.anchorBoxesPixels().get(anchorBox);
+          float anchorBoxWidth = anchorBoxPixels.x;
+          float anchorBoxHeight = anchorBoxPixels.y;
+
+          CategoryConfidence bestCategory = CategoryConfidence.DEFAULT_INSTANCE;
+          if (categoryCount > 1) {
+            int k = fieldSetIndex + F_CLASS_PROBABILITIES;
+            categoryConfidences.clear();
+            for (int i = 0; i < categoryCount; i++)
+              categoryConfidences
+                  .add(CategoryConfidence.newBuilder().category(i).confidenceLogit(f[k + i]).build());
+            Collections.sort(categoryConfidences,
+                (a, b) -> -Float.compare(a.confidenceLogit(), b.confidenceLogit()));
+            bestCategory = categoryConfidences.get(0);
+            if (verbose()) {
+              CategoryConfidence second = categoryConfidences.get(1);
+              sbLine.append(toString(bestCategory));
+              sbLine.append(toString(second));
+              sbLine.append(" ");
+            }
+            if (cellString == 0)
+              cellString = (char) ('0' + bestCategory.category());
+          }
+
+          int k = fieldSetIndex + F_BOX_XYWH;
+          if (verbose()) {
+            sbLine
+                .append(String.format("logt[%5.1f %5.1f %5.1f %5.1f]  ", f[k], f[k + 1], f[k + 2], f[k + 3]));
+          }
+
+          // Note that the x,y (centerpoints) are relative to the cell,
+          // while the width and height are relative to the anchor box size
+
+          float bx = NetworkUtil.sigmoid(f[k + 0]);
+          float by = NetworkUtil.sigmoid(f[k + 1]);
+          float ws = NetworkUtil.exp(f[k + 2]);
+          float hs = NetworkUtil.exp(f[k + 3]);
+          if (I20)
+            pr("bw,h exp':", f[k + 2], f[k + 3]);
+          if (I20)
+            pr("ws,hs:", ws, hs);
+
+          todo("but can we precalculate the training labels to save some calc?");
+
+          if (verbose()) {
+            sbLine.append(String.format("sg/ex[%4.2f %4.2f %4.2f %4.2f]  ", bx, by, ws, hs));
+          }
+
+          float bw = anchorBoxWidth * ws;
+          float bh = anchorBoxHeight * hs;
+          float midpointX = (bx + cellX) * mGridToImageScale.x;
+          float midpointY = (by + cellY) * mGridToImageScale.y;
+
+          IRect boxRect = new FRect(midpointX - bw / 2, midpointY - bh / 2, bw, bh).toIRect();
+          if (I20)
+            pr("boxRect:", boxRect);
+
+          // I think we want to use the 'objectness' confidence, without incorporating the best category's confidence in any way
+          ElementProperties.Builder prop = ElementProperties.newBuilder();
+          prop.category(bestCategory.category());
+          prop.confidence(MyMath.parameterToPercentage(objectnessConfidence));
+          // todo: add support anchor box property? 
+          // prop.anchor(anchorBox)
+          RectElement boxObj = new RectElement(prop, boxRect);
+
+          if (verbose()) {
+            sbLine.append(boxObj.bounds());
+            log(sbLine.toString());
+          }
+          boxList.add(boxObj);
+        }
+
+        if (verbose()) {
+          if (cellString == 0)
+            cellString = ':';
+          sbGrid.append(' ');
+          sbGrid.append(cellString);
+        }
+      }
+      if (verbose()) {
+        sbGrid.append("]");
+        gridMap.put(String.format("y %2d", cellY), sbGrid.toString());
+      }
     }
+
+    if (verbose()) {
+      pr();
+      pr(gridMap);
+      pr();
+      pr("Valid anchor boxes:", boxList.size());
+      todo("do we always want to perform sigmoid here, i.e., is it in input or an output?");
+      pr("Highest conf:", pct(NetworkUtil.sigmoid(highestObjectnessLogitSeen)));
+      if (boxList.isEmpty())
+        pr("*** No boxes detected");
+    }
+
+    return boxList;
   }
+
+  private static float pct(float confidence) {
+    return confidence * 100;
+  }
+
+  private static String toString(CategoryConfidence b) {
+    return String.format("'%d'(%4.1f) ", b.category(), b.confidenceLogit());
+  }
+
+  //private float mConfidenceThreshold = 0.8f;
 
 }

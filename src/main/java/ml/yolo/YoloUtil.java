@@ -21,7 +21,7 @@ import gen.Yolo;
 
 public final class YoloUtil {
 
-  public static final boolean I20 = true && alert("Issue #20 in effect");
+  public static final boolean I20 = false && alert("Issue #20 in effect");
 
   private static final List<IPoint> DEFAULT_ANCHOR_BOXES = IPoint.toArrayList(//
       18, 22, //
