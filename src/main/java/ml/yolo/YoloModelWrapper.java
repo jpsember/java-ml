@@ -101,14 +101,55 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
     mBlockSize = yolo.blockSize();
     mGridSize = YoloUtil.gridSize(yolo);
     mGridToImageScale = yolo.blockSize().toFPoint();
-    mPixelToGridCellScale = new FPoint(1f / mGridToImageScale.x, 1f / mGridToImageScale.y);
+    mImageToGridScale = new FPoint(1f / mGridToImageScale.x, 1f / mGridToImageScale.y);
     constructOutputLayer();
   }
 
   @Override
   public void accept(float[] image, List<ScriptElement> scriptElementList) {
     writeImage(image);
-    writeScriptElements(scriptElementList);
+
+    clearOutputLayer();
+    ScriptUtil.assertNoMixing(scriptElementList);
+
+    // Compile annotations into ones that have a single bounding box
+    List<RectElement> boxes = arrayList();
+
+    for (ScriptElement elem : scriptElementList) {
+      switch (elem.tag()) {
+      default:
+        throw badArg("unsupported element type", elem);
+      case RectElement.TAG:
+      case PolygonElement.TAG: {
+        // We will assume that the polygon bounding box is a good enough approximation of the
+        // object's bounding rectangle.  We hopefully have used the 'truncate box, then rotate its points'
+        // heuristic earlier (if the original object bounds was a box; if it was a polygon, that heuristic
+        // doesn't apply){
+        IRect bounds = elem.bounds();
+        boxes.add(
+            labelledBox(bounds, ScriptUtil.categoryOrZero(elem), 1f, ScriptUtil.rotationDegreesOrZero(elem)));
+      }
+        break;
+      }
+    }
+
+    List<RectElement> neighbors = generateNeighborVersions(boxes);
+    boxes.addAll(neighbors);
+    boxes.sort((a, b) -> -Integer.compare(ScriptUtil.confidence(a), ScriptUtil.confidence(b)));
+
+    log("sorted boxes, including neighbors:", INDENT, boxes);
+
+    for (RectElement box : boxes) {
+      if (verbose()) {
+        log(" box:", box.toJson().toString());
+        log("  cp:", box.bounds().midPoint());
+      }
+      chooseAnchorBox(box.bounds().size());
+      if (convertBoxToCell(box.bounds()))
+        writeBoxToFieldsBuffer(box);
+    }
+
+    writeLabels(mOutputLayer);
   }
 
   @Override
@@ -125,8 +166,6 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
     float[] f = DataUtil.bytesToFloatsLittleEndian(modelOutput);
     float confidenceThreshold = 0.8f; // TODO: make this a parameter
 
-    todo(
-        "Perhaps the x,y coordinates should be the location of the center of the anchor box, relative to the center of the grid cell");
     log("Constructing YOLO result for image");
     log("...confidence threshold %", pct(confidenceThreshold));
 
@@ -138,15 +177,14 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
     }
 
     List<ScriptElement> boxList = arrayList();
-
-    int anchorBoxCount = YoloUtil.anchorBoxCount(yolo);
-    int fieldsPerBox = YoloUtil.valuesPerAnchorBox(yolo);
-
+    final int anchorBoxCount = numAnchorBoxes();
+    final int fieldsPerBox = YoloUtil.valuesPerAnchorBox(yolo);
     final float logitMinForResult = NetworkUtil.logit(confidenceThreshold);
+    final int categoryCount = yolo.categoryCount();
+    final List<CategoryConfidence> categoryConfidences = arrayList();
 
-    int categoryCount = yolo.categoryCount();
-
-    List<CategoryConfidence> categoryConfidences = arrayList();
+    // ------------------------------------------------------------------
+    // For verbosity only
     StringBuilder sbLine = null;
     StringBuilder sbGrid = null;
     JSMap gridMap = null;
@@ -155,10 +193,12 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
       sbGrid = new StringBuilder();
       gridMap = map();
     }
+    // ------------------------------------------------------------------
 
     float highestObjectnessLogitSeen = 0f;
     int fieldSetIndex = 0;
     for (int cellY = 0; cellY < mGridSize.y; cellY++) {
+
       if (verbose()) {
         sbGrid.setLength(0);
         sbGrid.append("[");
@@ -216,15 +256,18 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
                 .append(String.format("logt[%5.1f %5.1f %5.1f %5.1f]  ", f[k], f[k + 1], f[k + 2], f[k + 3]));
           }
 
-          // Note that the x,y (centerpoints) are relative to the cell,
+          // Note that the x,y coordinates (which represent the center of the box)
+          // are relative to the cell,
           // while the width and height are relative to the anchor box size
 
+          // I considered making the x,y coordinates relative to the center of the cell, but there
+          // is no point as we are predicting the *sigmoid* of the relative to the cell, so 0 naturally
+          // predicts its center.
+          //
           float bx = NetworkUtil.sigmoid(f[k + 0]);
           float by = NetworkUtil.sigmoid(f[k + 1]);
           float ws = NetworkUtil.exp(f[k + 2]);
           float hs = NetworkUtil.exp(f[k + 3]);
-
-          todo("but can we precalculate the training labels to save some calc?");
 
           if (verbose()) {
             sbLine.append(String.format("sg/ex[%4.2f %4.2f %4.2f %4.2f]  ", bx, by, ws, hs));
@@ -232,6 +275,7 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
 
           float bw = anchorBoxWidth * ws;
           float bh = anchorBoxHeight * hs;
+
           float midpointX = (bx + cellX) * mGridToImageScale.x;
           float midpointY = (by + cellY) * mGridToImageScale.y;
 
@@ -241,8 +285,6 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
           ElementProperties.Builder prop = ElementProperties.newBuilder();
           prop.category(bestCategory.category());
           prop.confidence(MyMath.parameterToPercentage(objectnessConfidence));
-          // todo: add support anchor box property? 
-          // prop.anchor(anchorBox)
           RectElement boxObj = new RectElement(prop, boxRect);
 
           if (verbose()) {
@@ -284,52 +326,6 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
   private PlotInferenceResultsConfig mParserConfig = PlotInferenceResultsConfig.DEFAULT_INSTANCE;
 
   // ------------------------------------------------------------------
-
-  private void writeScriptElements(List<ScriptElement> scriptElements) {
-    log("writeScriptElements", INDENT, scriptElements);
-
-    clearOutputLayer();
-    ScriptUtil.assertNoMixing(scriptElements);
-
-    // Compile annotations into ones that have a single bounding box
-    List<RectElement> boxes = arrayList();
-
-    for (ScriptElement elem : scriptElements) {
-      switch (elem.tag()) {
-      default:
-        throw badArg("unsupported element type", elem);
-      case RectElement.TAG:
-      case PolygonElement.TAG: {
-        // We will assume that the polygon bounding box is a good enough approximation of the
-        // object's bounding rectangle.  We hopefully have used the 'truncate box, then rotate its points'
-        // heuristic earlier (if the original object bounds was a box; if it was a polygon, that heuristic
-        // doesn't apply){
-        IRect bounds = elem.bounds();
-        boxes.add(
-            labelledBox(bounds, ScriptUtil.categoryOrZero(elem), 1f, ScriptUtil.rotationDegreesOrZero(elem)));
-      }
-        break;
-      }
-    }
-
-    List<RectElement> neighbors = generateNeighborVersions(boxes);
-    boxes.addAll(neighbors);
-    boxes.sort((a, b) -> -Integer.compare(ScriptUtil.confidence(a), ScriptUtil.confidence(b)));
-
-    log("sorted boxes, including neighbors:", INDENT, boxes);
-
-    for (RectElement box : boxes) {
-      if (verbose()) {
-        log(" box:", box.toJson().toString());
-        log("  cp:", box.bounds().midPoint());
-      }
-      chooseAnchorBox(box.bounds().size());
-      if (convertBoxToCell(box.bounds()))
-        writeBoxToFieldsBuffer(box);
-    }
-
-    writeLabels(mOutputLayer);
-  }
 
   private List<RectElement> generateNeighborVersions(List<RectElement> boxes) {
     List<RectElement> neighborList = arrayList();
@@ -473,9 +469,10 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
     Arrays.fill(mOutputLayer, 0);
   }
 
-  private IPoint determineBoxGridCell(IPoint midpoint) {
+  private IPoint determineBoxGridCell(IPoint pointWithinImage) {
     IPoint blockSize = modelConfig().blockSize();
-    return new IPoint(Math.floorDiv(midpoint.x, blockSize.x), Math.floorDiv(midpoint.y, blockSize.y));
+    return new IPoint(Math.floorDiv(pointWithinImage.x, blockSize.x),
+        Math.floorDiv(pointWithinImage.y, blockSize.y));
   }
 
   private boolean cellWithinGrid(IPoint gridCell) {
@@ -516,9 +513,10 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
         (box.height / (float) yolo.imageSize().y) / mAnchorSizeRelImage[mAnchorBox * 2 + 1]);
 
     mBoxGridCell = gridCell;
+
     mBoxLocationRelativeToCell = new FPoint(//
-        midPoint.x * mPixelToGridCellScale.x - gridCell.x, //
-        midPoint.y * mPixelToGridCellScale.y - gridCell.y);
+        midPoint.x * mImageToGridScale.x - gridCell.x, //
+        midPoint.y * mImageToGridScale.y - gridCell.y);
 
     log("  grid cell:", mBoxGridCell);
     log("  loc(cell):", mBoxLocationRelativeToCell);
@@ -577,7 +575,7 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
   private IPoint mGridSize;
   private FPoint mGridToImageScale;
   private IPoint mBlockSize;
-  private FPoint mPixelToGridCellScale;
+  private FPoint mImageToGridScale;
 
   private IPoint mBoxGridCell;
   private FPoint mBoxLocationRelativeToCell;
