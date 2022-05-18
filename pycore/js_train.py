@@ -13,9 +13,6 @@ class JsTrain:
 
   def __init__(self, train_script_file):
     self.signature = None
-    self.cp_disabled = False
-    todo("Checkpoint disabling should be handled by streaming service / prep")
-    #self.cp_disabled = warning("disabled checkpoints")
     self.verbose = False
     self.device = None
     self.model = None
@@ -403,21 +400,18 @@ class JsTrain:
 
   def restore_checkpoint(self):
     accuracy = -1
-    if not self.cp_disabled:
-      path = self.most_recent_checkpoint()
-      if path:
-        checkpoint = torch.load(path)
-        self.model.load_state_dict(checkpoint['model_state_dict'])
-        self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
-        self.epoch_number = checkpoint['epoch']
-        accuracy = checkpoint.get('accuracy', -1)
-        pr("Restored checkpoint at epoch:", self.epoch_number,"Accuracy:",accuracy)
+    path = self.most_recent_checkpoint()
+    if path:
+      checkpoint = torch.load(path)
+      self.model.load_state_dict(checkpoint['model_state_dict'])
+      self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+      self.epoch_number = checkpoint['epoch']
+      accuracy = checkpoint.get('accuracy', -1)
+      pr("Restored checkpoint at epoch:", self.epoch_number,"Accuracy:",accuracy)
     return accuracy
 
 
   def save_checkpoint(self):
-    if self.cp_disabled:
-      return
     path = self.construct_checkpoint_path_for_epoch(self.epoch_number)
     if os.path.exists(path):
       return
