@@ -21,8 +21,8 @@ public final class ClassifierModelWrapper extends ModelWrapper<Classifier> {
   @Override
   public void transformAnnotations(List<ScriptElement> in, List<ScriptElement> out,
       TransformWrapper transform) {
-    // Classifiers have no annotations
-    return;
+    // Annotations hold ony the category, so pass through unchanged
+    out.addAll(in);
   }
 
   @Override
