@@ -60,6 +60,10 @@ class JsTrain:
     todo("have target accuracy a parameter somehow")
     self.target_accuracy = 95
 
+    self.last_checkpoint_epoch = None   # epoch last saved as checkpoint
+    self.checkpoint_interval_ms = None  # interval between checkpoints; increases nonlinearly up to a max value
+    self.checkpoint_last_time_ms = None # time last checkpoint was written
+
 
   def prepare_train_info(self, train_dir):
     # If train info has not been read yet, read it from the supplied training set directory
@@ -255,8 +259,6 @@ class JsTrain:
       images = images.reshape((self.batch_size, self.img_channels, self.img_height, self.img_width))
       tensor_images = torch.from_numpy(images)
 
-
-
       todo("we need to handle the labels differently if they are ints vs floats")
 
       if self.labels_are_ints():
@@ -290,25 +292,16 @@ class JsTrain:
         print(f"loss: {loss:>7f}  [{current:>5d}/{self.train_images:>5d}]")
 
 
-
   def init_test(self):
     die("init_test needs an implementation")
-    #self.loss = 0
-    #self.correct = 0
 
 
   def update_test(self, pred, tensor_labels):
     die("update_test needs an implementation")
-    # predicted_labels = pred.argmax(1)
-    # self.loss += self.loss_fn(pred, tensor_labels).item()
-    # self.correct += (predicted_labels == tensor_labels).type(torch.float).sum().item()
+
 
   def finish_test(self, stats:Stats, test_image_count: int):
     die("finish_test needs an implementation")
-    # stats = self.stat_test
-    # stats.set_accuracy((100.0 * correct) / test_image_count)
-    # stats.set_loss(loss)
-
 
 
   def test(self):
@@ -340,9 +333,6 @@ class JsTrain:
       pred = self.model(tensor_images)
 
       self.update_test(pred, tensor_labels)
-      # predicted_labels = pred.argmax(1)
-      # loss += self.loss_fn(pred, tensor_labels).item()
-      # correct += (predicted_labels == tensor_labels).type(torch.float).sum().item()
 
     stats = self.stat_test
     self.finish_test(stats, test_image_count)
@@ -359,10 +349,8 @@ class JsTrain:
 
   def run_training_session(self):
     accuracy = self.restore_checkpoint()
-    if accuracy >= self.target_accuracy:
-      self.quit_session("checkpoint already at target accuracy")
 
-    last_saved_checkpoint = self.epoch_number
+    self.last_checkpoint_epoch = self.epoch_number
 
     while not self.abort_flag:
       self.train()
@@ -371,27 +359,31 @@ class JsTrain:
       self.test()
       self.epoch_number += 1
 
-      next_checkpoint = last_saved_checkpoint + min(20, round(pow(last_saved_checkpoint + 120, .5)))
-      if self.epoch_number >= next_checkpoint:
-        self.save_checkpoint()
-        last_saved_checkpoint = self.epoch_number
+      current_time = time_ms()
+      if not self.checkpoint_last_time_ms:
+        self.checkpoint_interval_ms = 30000
+        self.checkpoint_last_time_ms = current_time
 
-      if self.stat_test.accuracy >= self.target_accuracy:
-        # If we only did a single epoch, don't bother saving another checkpoint
-        if self.epoch_number != 1 + last_saved_checkpoint:
-          self.save_checkpoint()
+      ms_until_save = (self.checkpoint_last_time_ms + self.checkpoint_interval_ms) - current_time
+      if ms_until_save <= 0:
+        self.save_checkpoint()
+
+      if self.stat_test.accuracy_sm >= self.target_accuracy:
+        self.save_checkpoint()
         self.quit_session("target accuracy reached")
 
 
   def most_recent_checkpoint(self):
+    checkpoint_count = 0
     highest_epoch, best_path = -1, None
     for f in os.listdir(self.checkpoint_dir):
       if f.endswith(".pt"):
         x = chomp(f,".pt")
+        checkpoint_count += 1
         epoch = int(x)
         if epoch > highest_epoch:
           highest_epoch, best_path = epoch, os.path.join(self.checkpoint_dir, f)
-    return best_path
+    return checkpoint_count, best_path
 
 
   def construct_checkpoint_path_for_epoch(self, epoch_number):
@@ -400,7 +392,7 @@ class JsTrain:
 
   def restore_checkpoint(self):
     accuracy = -1
-    path = self.most_recent_checkpoint()
+    _, path = self.most_recent_checkpoint()
     if path:
       checkpoint = torch.load(path)
       self.model.load_state_dict(checkpoint['model_state_dict'])
@@ -412,9 +404,14 @@ class JsTrain:
 
 
   def save_checkpoint(self):
-    path = self.construct_checkpoint_path_for_epoch(self.epoch_number)
-    if os.path.exists(path):
+    diff = self.epoch_number - self.last_checkpoint_epoch
+    check_state(diff >= 0,"epoch number less than last saved")
+    # Don't save a checkpoint if we haven't done some minimum number of epochs
+    if diff <= 3:
       return
+
+    path = self.construct_checkpoint_path_for_epoch(self.epoch_number)
+    check_state(not os.path.exists(path), "checkpoint already exists")
     pr("Saving checkpoint:",path)
     # Save to a temporary file and rename afterward, to avoid leaving partially written files around in
     # case user quits program or something
@@ -426,6 +423,9 @@ class JsTrain:
                 'accuracy': self.stat_test.accuracy,
                 }, path_tmp)
     os.rename(path_tmp, path)
+    self.last_checkpoint_epoch = self.epoch_number
+    self.checkpoint_last_time_ms = time_ms()
+    self.checkpoint_interval_ms = min(int(self.checkpoint_interval_ms * 1.2), 10 * 60 * 1000)
 
 
   def log(self, *args):
