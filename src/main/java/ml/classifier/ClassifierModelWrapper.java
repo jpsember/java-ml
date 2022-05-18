@@ -12,7 +12,7 @@ import js.geometry.IPoint;
 import js.geometry.IRect;
 import js.graphics.RectElement;
 import js.graphics.ScriptElement;
-import js.graphics.TextElement;
+import js.graphics.ScriptUtil;
 import js.graphics.gen.Script;
 import ml.ModelWrapper;
 
@@ -51,13 +51,8 @@ public final class ClassifierModelWrapper extends ModelWrapper<Classifier> {
     int category = categories[0];
     Classifier cl = modelConfig();
     checkArgument(category >= 0 && category < cl.categoryCount());
-
-    ScriptElement elem;
-    if (todo("add support for TextElements to scredit"))
-      elem = new RectElement(null,
-          IRect.withLocAndSize(IPoint.with(10 + category * 30, 5), IPoint.with(5, 5)));
-    else
-      elem = new TextElement("" + category, IPoint.with(20, 30));
+    ScriptElement elem = new RectElement(ScriptUtil.setCategory(null, category),
+        IRect.withLocAndSize(IPoint.with(10 + category * 30, 5), IPoint.with(5, 5)));
     script.items().add(elem);
   }
 
