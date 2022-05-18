@@ -101,7 +101,7 @@ public final class ImageCompiler extends BaseObject {
         // Parse the labels we generated, and write as the annotations to an inspection image
         mInspector.create("parsed").image(targetImage);
         Script.Builder script = Script.newBuilder();
-        model.parseInferenceResult(model.lastLabelBytesWritten(), script);
+        model.parseInferenceResult(model.lastLabelBytesWritten(), 80, script);
         mInspector.elements(script.items());
       }
 

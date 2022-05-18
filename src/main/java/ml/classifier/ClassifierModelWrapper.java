@@ -46,7 +46,7 @@ public final class ClassifierModelWrapper extends ModelWrapper<Classifier> {
   }
 
   @Override
-  public void parseInferenceResult(byte[] modelOutput, Script.Builder script) {
+  public void parseInferenceResult(byte[] modelOutput, int confidencePct, Script.Builder script) {
     int[] categories = DataUtil.bytesToIntsLittleEndian(modelOutput);
     int category = categories[0];
     Classifier cl = modelConfig();

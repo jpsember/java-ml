@@ -63,7 +63,7 @@ public class EvalModelOper extends AppOper {
           imageSetInfo.imageLengthBytes() / Float.BYTES);
       byte[] labelBytes = Files.readBytes(labelsStream, imageSetInfo.labelLengthBytes());
       Script.Builder script = Script.newBuilder();
-      model.parseInferenceResult(labelBytes, script);
+      model.parseInferenceResult(labelBytes, 80, script);
       Script s = script.build();
 
       BufferedImage bufferedImage = ImgUtil.floatsToBufferedImage(imageFloats, model.inputImagePlanarSize(),

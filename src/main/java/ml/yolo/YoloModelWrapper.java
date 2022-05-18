@@ -17,12 +17,12 @@ import js.graphics.PolygonElement;
 import js.graphics.RectElement;
 import js.graphics.ScriptElement;
 import js.graphics.ScriptUtil;
-import js.graphics.gen.CategoryConfidence;
 import js.graphics.gen.ElementProperties;
 import js.graphics.gen.Script;
 import js.json.JSMap;
 import ml.ModelWrapper;
 import ml.NetworkAnalyzer;
+import gen.CategoryConfidence;
 import gen.ImageSetInfo;
 import gen.Layer;
 import gen.LayerType;
@@ -161,25 +161,17 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
   }
 
   @Override
-  public void parseInferenceResult(byte[] modelOutput, Script.Builder script) {
+  public void parseInferenceResult(byte[] modelOutput, int confidencePct, Script.Builder script) {
     Yolo yolo = modelConfig();
     float[] f = DataUtil.bytesToFloatsLittleEndian(modelOutput);
-    float confidenceThreshold = 0.8f; // TODO: make this a parameter
 
     log("Constructing YOLO result for image");
-    log("...confidence threshold %", pct(confidenceThreshold));
-
-    if (!alert("this is probably redundant")) {
-      int expectedDataLength = mGridSize.product() * YoloUtil.valuesPerBlock(yolo);
-      if (f.length != expectedDataLength) {
-        throw die("length of image data:", f.length, "!= expected value:", expectedDataLength, INDENT, yolo);
-      }
-    }
+    log("...confidence threshold %", confidencePct);
 
     List<ScriptElement> boxList = arrayList();
     final int anchorBoxCount = numAnchorBoxes();
     final int fieldsPerBox = YoloUtil.valuesPerAnchorBox(yolo);
-    final float logitMinForResult = NetworkUtil.logit(confidenceThreshold);
+    final float logitMinForResult = NetworkUtil.logit(confidencePct / 100f);
     final int categoryCount = yolo.categoryCount();
     final List<CategoryConfidence> categoryConfidences = arrayList();
 
@@ -211,7 +203,8 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
 
           float objectnessLogit = f[fieldSetIndex + F_CONFIDENCE];
           // Note, this check will cause us to skip a lot of computation, which
-          // suggests we probably don't want to embed the sigmoid/exp postprocessing steps into the model
+          // suggests we probably don't want to embed the sigmoid/exp postprocessing steps into the model;
+          // but then again, the model probably has very optimized, parallel versions of those functions
           if (objectnessLogit < logitMinForResult)
             continue;
 
@@ -230,6 +223,7 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
           float anchorBoxWidth = anchorBoxPixels.x;
           float anchorBoxHeight = anchorBoxPixels.y;
 
+          // This can be optimized... avoid all this object construction
           CategoryConfidence bestCategory = CategoryConfidence.DEFAULT_INSTANCE;
           if (categoryCount > 1) {
             int k = fieldSetIndex + F_CLASS_PROBABILITIES;

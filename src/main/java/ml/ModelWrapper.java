@@ -204,7 +204,7 @@ public abstract class ModelWrapper<T extends AbstractData> extends BaseObject {
   /**
    * Parse model output to a Script
    */
-  public void parseInferenceResult(byte[] modelOutput, Script.Builder script) {
+  public void parseInferenceResult(byte[] modelOutput, int confidencePct, Script.Builder script) {
     modelNotSupported();
   }
 

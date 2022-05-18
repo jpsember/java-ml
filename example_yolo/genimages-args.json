@@ -3,4 +3,9 @@
         "categories" : "AB",
        "image_total" : 20,
   "scale_factor_max" : 4,
+
+    // Until we are confident the model is learning,
+    // omit noise
+
+  "noise_factor" : 0,
 }
