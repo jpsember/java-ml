@@ -52,7 +52,7 @@ public final class ClassifierModelWrapper extends ModelWrapper<Classifier> {
     Classifier cl = modelConfig();
     checkArgument(category >= 0 && category < cl.categoryCount());
     ScriptElement elem = new RectElement(ScriptUtil.setCategory(null, category),
-        IRect.withLocAndSize(IPoint.with(10 + category * 30, 5), IPoint.with(5, 5)));
+        new IRect(inputImagePlanarSize()));
     script.items().add(elem);
   }
 
