@@ -35,9 +35,7 @@ public final class YoloResultParser extends BaseObject {
     mConfidenceThreshold = confidence;
   }
 
-
   public List<ScriptElement> readImageResult(float[] imageData) {
- 
     log("Constructing YOLO result for image");
     log("...confidence threshold %", pct(mConfidenceThreshold));
 
@@ -135,6 +133,8 @@ public final class YoloResultParser extends BaseObject {
           float by = NetworkUtil.sigmoid(f[k + 1]);
           float ws = NetworkUtil.exp(f[k + 2]);
           float hs = NetworkUtil.exp(f[k + 3]);
+if (I20)pr("bw,h exp':",f[k+2],f[k+3]);
+if (I20)pr("ws,hs:",ws,hs);
 
           todo("but can we precalculate the training labels to save some calc?");
 
@@ -148,7 +148,8 @@ public final class YoloResultParser extends BaseObject {
           float midpointY = (by + cellY) * mGridToImageScale.y;
 
           IRect boxRect = new FRect(midpointX - bw / 2, midpointY - bh / 2, bw, bh).toIRect();
-
+          if (I20)pr("boxRect:",boxRect);
+          
           // I think we want to use the 'objectness' confidence, without incorporating the best category's confidence in any way
           ElementProperties.Builder prop = ElementProperties.newBuilder();
           prop.category(bestCategory.category());

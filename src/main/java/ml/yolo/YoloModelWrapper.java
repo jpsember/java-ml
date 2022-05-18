@@ -101,7 +101,7 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
   public void init() {
     Yolo yolo = modelConfig();
     mAnchorSizeRelImage = YoloUtil.anchorBoxesRelativeToImageSize(yolo);
-    mAnchorSize  = YoloUtil.anchorBoxSizes(yolo);
+    mAnchorSize = YoloUtil.anchorBoxSizes(yolo);
     mBlockSize = yolo.blockSize();
     mPixelToGridCellScale = new FPoint(1f / mBlockSize.x, 1f / mBlockSize.y);
     mGridSize = YoloUtil.gridSize(yolo);
@@ -132,7 +132,8 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
       boxList = YoloUtil.performNonMaximumSuppression(boxList, mParserConfig.maxIOverU());
     }
     script.items(boxList);
-    halt();
+    if (I20)
+      halt();
   }
 
   private YoloResultParser resultParser() {
@@ -296,7 +297,8 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
     //
     b[f + YoloUtil.F_BOX_XYWH + 2] = mBoxSizeRelativeToAnchorBox.x;
     b[f + YoloUtil.F_BOX_XYWH + 3] = mBoxSizeRelativeToAnchorBox.y;
-
+    if (I20)pr("boxSizeRelAnchor:",b[f + YoloUtil.F_BOX_XYWH + 2],b[f + YoloUtil.F_BOX_XYWH + 3]);
+    
     // The ground truth values for confidence are stored as *indicator variables*, hence 0f or 1f.
     // Hence, we store 1f here, since a box exists here.
     //
@@ -397,34 +399,28 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
    * Choose best anchor box for current box
    */
   private void chooseAnchorBox(IPoint boxSizeI) {
-    Yolo yolo = modelConfig();
-    FPoint boxSize = boxSizeI.toFPoint();
-
-    float[] anchorBoxes = mAnchorSizeRelImage;
-
+    float boxSizeX = boxSizeI.x;
+    float boxSizeY = boxSizeI.y;
+    float boxArea = boxSizeX * boxSizeY;
     float bestIOverU = 0;
     int bestAnchorBoxIndex = 0;
 
     for (int i = 0; i < numAnchorBoxes(); i++) {
-
-      todo("this could be precomputed");
-      FPoint anchorSize = new FPoint(anchorBoxes[i * 2 + 0], anchorBoxes[i * 2 + 1])
-          .scaledBy(yolo.blockSize());  
-      halt("No, these are relative to image, not block size");
-      //!!! No, not scaled by block size; scaled by image
+      float anchorSizeX = mAnchorSize[i * 2 + 0];
+      float anchorSizeY = mAnchorSize[i * 2 + 1];
 
       // We want the intersection / union.
       // I think this is the same whether we align the two boxes at their centerpoints 
       // OR at their bottom left corners.
 
-      float minWidth = Math.min(boxSize.x, anchorSize.x);
-      float minHeight = Math.min(boxSize.y, anchorSize.y);
+      float minWidth = Math.min(boxSizeX, anchorSizeX);
+      float minHeight = Math.min(boxSizeY, anchorSizeY);
       float intersection = minWidth * minHeight;
-      float union = boxSize.product() + anchorSize.product() - intersection;
+      float union = boxArea + anchorSizeX * anchorSizeY - intersection;
       float currentIOverU = intersection / union;
 
       if (I20)
-        pr("i:", i, "anchorSize:", anchorSize, "boxSize:", boxSize);
+        pr("i:", i, "anchorSize:", anchorSizeX, anchorSizeY, "boxSize:", boxSizeX, boxSizeY);
       if (currentIOverU > bestIOverU) {
         bestIOverU = currentIOverU;
         bestAnchorBoxIndex = i;
@@ -445,7 +441,7 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
 
   private float[] mAnchorSizeRelImage;
   private float[] mAnchorSize;
-  
+
   private IPoint mGridSize;
   private IPoint mBlockSize;
   private FPoint mPixelToGridCellScale;
