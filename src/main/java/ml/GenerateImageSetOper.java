@@ -2,7 +2,6 @@ package ml;
 
 import static js.base.Tools.*;
 
-import java.awt.Color;
 import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics2D;
@@ -43,6 +42,8 @@ public class GenerateImageSetOper extends AppOper {
     return "Generate annotated images procedurally";
   }
 
+  // private static Color OBVIOUS_COLORS[] = {};
+
   @Override
   public void perform() {
     mModel = ModelWrapper.constructFor(null, config().network(), config().networkPath());
@@ -74,7 +75,8 @@ public class GenerateImageSetOper extends AppOper {
     if (obviousMode) {
       checkArgument(projectType() == NetworkProjectType.CLASSIFIER,
           "obvious mode only supported in CLASSIFIER");
-      checkArgument(config().categories().length() == 2, "obvious mode only supports two categories");
+      checkArgument(config().categories().length() <= Plotter.rgbColorList().size(),
+          "obvious mode doesn't support that many categories");
     }
 
     ModelWrapper model = model();
@@ -193,7 +195,7 @@ public class GenerateImageSetOper extends AppOper {
       plotNoise(p);
 
       if (obviousMode) {
-        p.graphics().setColor(firstCat == 0 ? Color.RED : Color.GREEN);
+        p.graphics().setColor(Plotter.rgbColorList().get(firstCat));
         p.fillRect();
       }
 

@@ -4,12 +4,12 @@
     "layers" : [
       { "type" : "fc", "filters" :  512},
       { "type" : "fc", "filters" :  512},
-      { "type" : "fc", "filters" :  2},
+      { "type" : "fc", "filters" :  3},
       { "type" : "output" }
     ],
 
   "model_config" : {
-    "category_count" : 2,
+    "category_count" : 3,
     "image_channels" : 3,
     "image_size" : [ 24,24 ]
   }

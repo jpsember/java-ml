@@ -4,6 +4,10 @@
        "train_service" : false,
        "inspection_dir" : "inspection",
 
+       // Java seems to be spending the most time; try to recycle things more
+        "recycle" : 5,
+
+
        "augmentation_config" : {
             "horizontal_flip" : false,
             "shear_disable" : true,
