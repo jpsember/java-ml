@@ -19,4 +19,7 @@ fields {
 
   int max_objects = 4;
 
+  // Plots solid colors for each category and nothing else
+  //
+  bool obvious_mode;
 }

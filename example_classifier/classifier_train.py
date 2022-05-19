@@ -25,7 +25,7 @@ class ClassifierTrain(JsTrain):
 
   def update_test(self, pred, tensor_labels):
     predicted_labels = pred.argmax(1)
-    if self.k < 20:
+    if False and self.k < 20:
       self.k += 1
       pr("pred:")
       pr(pred)

@@ -94,7 +94,7 @@ class JsTrain:
     self.model = self.define_model()
 
     self.loss_fn = nn.CrossEntropyLoss()
-    self.optimizer = torch.optim.SGD(self.model.parameters(), lr=1e-3)
+    self.optimizer = torch.optim.SGD(self.model.parameters(), lr=1e-3, momentum = 0.9)
 
 
   def define_model(self):
@@ -268,7 +268,7 @@ class JsTrain:
         # We need the tensor labels to be 64-bits (long); perhaps pytorch prefers working with such values?
         tensor_labels = tensor_labels.long()
         #-----------------
-        if True:
+        if False:
           pr("tensor_labels:")
           pr(tensor_labels)
         #-----------------
@@ -283,7 +283,7 @@ class JsTrain:
       # Compute prediction error
       pred = self.model(tensor_images)
       # -----------------
-      if True:
+      if False:
         pr("Prediction:")
         pr(pred)
       #-----------------
@@ -291,11 +291,12 @@ class JsTrain:
       # See: https://pytorch.org/docs/stable/generated/torch.nn.CrossEntropyLoss.html
       loss = self.loss_fn(pred, tensor_labels)
       # -----------------
-      if True:
+      if False:
         pr("Loss:")
         pr(loss.item())
       #-----------------
       # NOTE: this assumes the loss function returned is independent of the batch size
+      # Does reading the loss value mess things up?
       self.stat_loss.set_value(loss.item())
 
       # Backpropagation
@@ -328,7 +329,7 @@ class JsTrain:
 
     todo("What controls the gradient? The test, or the train???")
     todo("does the test image count have any bearing?")
-    test_image_count = min(self.train_info.image_count, 200)
+    test_image_count = min(self.train_info.image_count, 20)
 
     with torch.no_grad():
       floats_per_image = self.train_info.image_length_bytes // BYTES_PER_FLOAT

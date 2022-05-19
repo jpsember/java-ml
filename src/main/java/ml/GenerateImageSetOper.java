@@ -2,6 +2,7 @@ package ml;
 
 import static js.base.Tools.*;
 
+import java.awt.Color;
 import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics2D;
@@ -69,6 +70,13 @@ public class GenerateImageSetOper extends AppOper {
 
     }
 
+    boolean obviousMode = config().obviousMode();
+    if (obviousMode) {
+      checkArgument(projectType() == NetworkProjectType.CLASSIFIER,
+          "obvious mode only supported in CLASSIFIER");
+      checkArgument(config().categories().length() == 2, "obvious mode only supports two categories");
+    }
+
     ModelWrapper model = model();
     mImageSize = model.inputImagePlanarSize();
 
@@ -101,10 +109,14 @@ public class GenerateImageSetOper extends AppOper {
         alert(
             "monochrome isn't necessarily supported yet; clients should just use single channel of generated images, e.g. green");
 
+      Integer firstCat = null;
+
       for (int objIndex = 0; objIndex < totalObjects; objIndex++) {
         p.with(randomElement(paints()).toBuilder().font(fi.mFont, 1f));
 
         int category = random().nextInt(categoriesString.length());
+        if (firstCat == null)
+          firstCat = category;
         String text = categoriesString.substring(category, category + 1);
 
         FontMetrics m = fi.metrics(p.graphics());
@@ -116,7 +128,7 @@ public class GenerateImageSetOper extends AppOper {
         boolean choseValidRectangle = false;
 
         AugmentationConfig aug = config().augmentationConfig();
-        
+
         for (int attempt = 0; attempt < 5; attempt++) {
 
           int mx = mImageSize.x / 2;
@@ -171,12 +183,19 @@ public class GenerateImageSetOper extends AppOper {
         rectList.add(tfmRect);
         scriptElements.add(rectElement);
 
+        if (obviousMode)
+          continue;
+
         Matrix tfm = Matrix.postMultiply(objectTfm, tfmFontOrigin);
         p.graphics().setTransform(tfm.toAffineTransform());
         p.graphics().drawString(text, 0, 0);
       }
-
       plotNoise(p);
+
+      if (obviousMode) {
+        p.graphics().setColor(firstCat == 0 ? Color.RED : Color.GREEN);
+        p.fillRect();
+      }
 
       if (insp.used()) {
         // TODO: inspector is kind of useless if we are writing out script projects anyways
