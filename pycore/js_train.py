@@ -6,6 +6,7 @@ import os.path
 from gen.image_set_info import *
 from gen.train_set import *
 from gen.compile_images_config import *
+from gen.train_param import *
 from pycore.stats import Stats
 
 
@@ -29,8 +30,10 @@ class JsTrain:
     script_path = os.path.realpath(train_script_file)
     self._proj_path = os.path.dirname(script_path)
 
-    t = self.proj_path("model_data/network.json")
-    self.network:NeuralNetwork = read_object(NeuralNetwork.default_instance, t)
+    param_dir = self.proj_path("model_data")
+    self.train_config = read_object(TrainParam.default_instance, os.path.join(param_dir,"train_param.json"))
+    self.network:NeuralNetwork = read_object(NeuralNetwork.default_instance, os.path.join(param_dir,"network.json"))
+
     inp_vol = self.network.layers[0].input_volume
 
     self.img_width = inp_vol.width
@@ -50,15 +53,14 @@ class JsTrain:
     t = self.proj_path("compileimages-args.json")
     config:CompileImagesConfig = read_object(CompileImagesConfig.default_instance, t)
     self.checkpoint_dir = config.target_dir_checkpoint
-    self.train_set_count = config.max_train_sets - 1  # Service tries to provide one more than needed
-    check_state(self.train_set_count > 1)
-    self.recycle_factor = config.recycle
-    self.train_set_list: [TrainSetBuilder] = [None] * self.train_set_count
+
+    train_set_count = self.train_config.max_train_sets - 1  # Service tries to provide one more than needed
+    check_state(train_set_count > 1)
+    self.train_set_list: [TrainSetBuilder] = [None] * train_set_count
+
     self.last_set_processed = TrainSet.default_instance
     self.last_id_generated = 100 # Set to something nonzero, as the differences are what's important
     self.prev_train_set_dir = None  # directory to be used for testing model
-    # TODO: this will be different for different networks, e.g. test_loss
-    self.target_accuracy = 95
 
     self.last_checkpoint_epoch = None   # epoch last saved as checkpoint
     self.checkpoint_interval_ms = None  # interval between checkpoints; increases nonlinearly up to a max value
@@ -127,8 +129,9 @@ class JsTrain:
     for idx, x in enumerate(self.train_set_list):
       if x is None:
         continue
-      check_state(x.used <= self.recycle_factor)
-      if x.used == self.recycle_factor:
+      recycle_factor = self.train_config.recycle
+      check_state(x.used <= recycle_factor)
+      if x.used == recycle_factor:
         self.log("discarding stale:", self.show_train_set_elem(x))
         delete_directory(x.directory, "set_")
         self.train_set_list[idx] = None
@@ -202,7 +205,7 @@ class JsTrain:
         if cursor_object.id == self.last_id_generated:
           continue
 
-        dist = self.train_set_count
+        dist = len(self.train_set_list)
         if cursor_object.id != 0:
           dist = min(dist, self.last_id_generated - cursor_object.id)
         if dist > max_dist:
@@ -383,7 +386,7 @@ class JsTrain:
         self.save_checkpoint()
 
       if self.with_test:
-        if self.stat_test_acc.value_sm >= self.target_accuracy:
+        if self.stat_test_acc.value_sm >= self.train_config.target_accuracy:
           self.save_checkpoint()
           self.quit_session("target accuracy reached")
 

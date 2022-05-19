@@ -8,6 +8,7 @@ import java.util.SortedMap;
 
 import gen.CompileImagesConfig;
 import gen.NeuralNetwork;
+import gen.TrainParam;
 import js.app.AppOper;
 import js.base.DateTimeTools;
 import js.file.DirWalk;
@@ -42,6 +43,10 @@ public final class CompileImagesOper extends AppOper {
     return super.config();
   }
 
+  private TrainParam trainParam() {
+    return config().trainParam();
+  }
+
   @Override
   public void perform() {
     if (config().prepare()) {
@@ -70,6 +75,7 @@ public final class CompileImagesOper extends AppOper {
     File modelDataDir = modelDataDir();
     files().remakeDirs(modelDataDir);
     files().writePretty(new File(modelDataDir, "network.json"), network());
+    files().writePretty(new File(modelDataDir, "train_param.json"), trainParam());
   }
 
   private NeuralNetwork network() {
@@ -125,7 +131,7 @@ public final class CompileImagesOper extends AppOper {
         break;
       }
 
-      if (countTrainSets() >= config().maxTrainSets()) {
+      if (countTrainSets() >= trainParam().maxTrainSets()) {
         if (stopIfInactive())
           break;
         DateTimeTools.sleepForRealMs(100);
@@ -247,7 +253,7 @@ public final class CompileImagesOper extends AppOper {
     List<Integer> epochs = arrayList();
     epochs.addAll(epochMap.keySet());
 
-    while (epochs.size() > config().maxCheckpoints()) {
+    while (epochs.size() > trainParam().maxCheckpoints()) {
 
       final double power = 0.5f;
       int maxEpoch = last(epochs);
