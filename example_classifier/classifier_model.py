@@ -23,13 +23,11 @@ class ClassifierModel(nn.Module):
                       out_channels=lyr.output_volume.depth,
                       kernel_size=lyr.kernel_width,
                       stride=our_stride,
-                      padding=lyr.kernel_width//2, # half padding?
+                      padding=lyr.kernel_width//2, # half padding
                       )
-        todo("confirm stride parameter order")
         self.add_layer(t)
       elif lyr.type == "leaky_relu":
         self.add_layer(nn.LeakyReLU())
-        todo("what parameters do we need to pass to LeakyRelU?")
       elif lyr.type == "maxpool":
         # I am used to thinking of a maxpool has having a stride, but they expect a kernel_size parameter
         stride = none_to(lyr.stride, network.stride)

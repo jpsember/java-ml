@@ -58,7 +58,6 @@ class JsTrain:
     self.last_id_generated = 100 # Set to something nonzero, as the differences are what's important
     self.prev_train_set_dir = None  # directory to be used for testing model
     # TODO: this will be different for different networks, e.g. test_loss
-    todo("have target accuracy a parameter somehow")
     self.target_accuracy = 95
 
     self.last_checkpoint_epoch = None   # epoch last saved as checkpoint
@@ -327,9 +326,7 @@ class JsTrain:
     test_images_path = os.path.join(d, "images.bin")
     test_labels_path = os.path.join(d, "labels.bin")
 
-    todo("What controls the gradient? The test, or the train???")
-    todo("does the test image count have any bearing?")
-    test_image_count = min(self.train_info.image_count, 20)
+    test_image_count = min(self.train_info.image_count, 50)
 
     with torch.no_grad():
       floats_per_image = self.train_info.image_length_bytes // BYTES_PER_FLOAT
