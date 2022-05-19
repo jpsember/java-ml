@@ -102,15 +102,10 @@ public final class CompileImagesOper extends AppOper {
       }
     }
 
-    validateCheckpoints();
-
     // Write a new signature file with the current time
     files().writeString(sigFile, "" + System.currentTimeMillis());
 
-    // Construct checkpoint subdirectory if necessary
-    //
-    File cp = Files.assertNonEmpty(config().targetDirCheckpoint());
-    files().mkdirs(cp);
+    validateCheckpoints();
   }
 
   private void performTrainService(ImageCompiler imageCompiler) {
@@ -122,8 +117,7 @@ public final class CompileImagesOper extends AppOper {
     File tempDir = new File(config().targetDirTrain(), "_temp_");
     Files.assertDoesNotExist(tempDir, "Found old directory; need to prepare?");
 
-    File cp = Files.assertNonEmpty(config().targetDirCheckpoint());
-    Files.assertDirectoryExists(cp, "No checkpoints directory found; need to prepare?");
+    checkpointDir();
 
     while (true) {
       if (!signature.equals(readSignature())) {
@@ -155,7 +149,7 @@ public final class CompileImagesOper extends AppOper {
       files().moveDirectory(tempDir, newDir);
       mLastGeneratedFilesTime = currentTime();
 
-      {
+      if (verbose()) {
         long elapsed = mLastGeneratedFilesTime - startTime;
         float sec = elapsed / 1000f;
         if (mAvgGeneratedTimeSec < 0)
@@ -212,11 +206,29 @@ public final class CompileImagesOper extends AppOper {
   // ------------------------------------------------------------------
 
   /**
+   * Get checkpoint directory. If none exists, then constructs it if in prepare
+   * mode; otherwise, fails
+   */
+  private File checkpointDir() {
+    if (mCheckpointDir == null) {
+      File d = Files.assertNonEmpty(config().targetDirCheckpoint());
+      if (config().prepare())
+        files().mkdirs(d);
+      else
+        Files.assertDirectoryExists(d, "No checkpoint directory found; need to prepare?");
+      mCheckpointDir = d;
+    }
+    return mCheckpointDir;
+  }
+
+  private File mCheckpointDir;
+
+  /**
    * Determine if the existing checkpoints are still valid. If not, delete them.
    * We look at a checksum of the network parameters to determine this.
    */
   private void validateCheckpoints() {
-    File networkChecksumFile = new File(config().targetDirCheckpoint(), "network_checksum.txt");
+    File networkChecksumFile = new File(checkpointDir(), "network_checksum.txt");
     String savedChecksum = Files.readString(networkChecksumFile, "");
     String currentChecksum = "" + network().toJson().toString().hashCode();
     if (!currentChecksum.equals(savedChecksum)) {
@@ -284,8 +296,7 @@ public final class CompileImagesOper extends AppOper {
    */
   private SortedMap<Integer, File> getCheckpointEpochs() {
     SortedMap<Integer, File> map = treeMap();
-    File cpdir = config().targetDirCheckpoint();
-    for (File file : new DirWalk(cpdir).withRecurse(false).withExtensions("pt").files()) {
+    for (File file : new DirWalk(checkpointDir()).withRecurse(false).withExtensions("pt").files()) {
       int key = Integer.parseInt(Files.basename(file));
       map.put(key, file);
     }

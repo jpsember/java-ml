@@ -19,9 +19,10 @@ class JsTrain:
     self.loss_fn = None
     self.optimizer = None
     self.abort_flag = False
-    self.with_test = False
-    self.stat_loss = Stats()
-    self.stat_test = Stats()
+    self.with_test = True
+    self.stat_loss = Stats("Train Loss")
+    self.stat_test = Stats("Test Loss")
+    self.stat_test_acc = Stats("Test Accuracy")
 
     self.epoch_number = 0
 
@@ -31,7 +32,6 @@ class JsTrain:
     t = self.proj_path("model_data/network.json")
     self.network:NeuralNetwork = read_object(NeuralNetwork.default_instance, t)
     inp_vol = self.network.layers[0].input_volume
-    mc = self.network.model_config
 
     self.img_width = inp_vol.width
     self.img_height = inp_vol.height
@@ -279,7 +279,7 @@ class JsTrain:
       pred = self.model(tensor_images)
       loss = self.loss_fn(pred, tensor_labels)
       # NOTE: this assumes the loss function returned is independent of the batch size
-      self.stat_loss.set_loss(loss.item())
+      self.stat_loss.set_value(loss.item())
 
       # Backpropagation
       self.optimizer.zero_grad()
@@ -296,7 +296,7 @@ class JsTrain:
     die("update_test needs an implementation")
 
 
-  def finish_test(self, stats:Stats, test_image_count: int):
+  def finish_test(self, test_image_count: int):
     die("finish_test needs an implementation")
 
 
@@ -332,8 +332,7 @@ class JsTrain:
 
       self.update_test(pred, tensor_labels)
 
-    stats = self.stat_test
-    self.finish_test(stats, test_image_count)
+    self.finish_test(test_image_count)
 
 
   def quit_session(self, reason):
@@ -354,7 +353,7 @@ class JsTrain:
         break
       if self.with_test:
         self.test()
-        pr(f"Epoch {self.epoch_number:4}   {self.stat_loss.info()}   {self.stat_test.info()}")
+        pr(f"Epoch {self.epoch_number:4}   {self.stat_loss.info()}   {self.stat_test_acc.info()}  {self.stat_test.info()}")
       else:
         pr(f"Epoch {self.epoch_number:4}   {self.stat_loss.info()}")
       self.epoch_number += 1
@@ -369,7 +368,7 @@ class JsTrain:
         self.save_checkpoint()
 
       if self.with_test:
-        if self.stat_test.accuracy_sm >= self.target_accuracy:
+        if self.stat_test_acc.value_sm >= self.target_accuracy:
           self.save_checkpoint()
           self.quit_session("target accuracy reached")
 

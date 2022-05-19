@@ -2,27 +2,22 @@ from pycore.base import *
 
 class Stats:
 
-  def __init__(self):
-    self.loss = None
-    self.loss_sm = None
-    self.accuracy = None
-    self.accuracy_sm = None
+  def __init__(self, name:str):
+    self.value = None
+    self.value_sm = None
+    self.name = name
 
-  def set_loss(self, loss):
-    self.loss = loss
-    self.loss_sm = smooth(self.loss, self.loss_sm)
-
-  def set_accuracy(self, acc):
-    self.accuracy = acc
-    self.accuracy_sm = smooth(self.accuracy, self.accuracy_sm)
+  def set_value(self, value):
+    self.value = value
+    self.value_sm = smooth(self.value, self.value_sm)
 
   def info(self):
-    if self.loss is None:
-      return "(none)"
-    s = ""
-    if self.accuracy is not None:
-      s += f" acc: {self.accuracy:.1f} ({self.accuracy_sm:.1f})"
-    s += f" loss: {self.loss:.5f} ({self.loss_sm:.5f})"
+    s = self.name + ": "
+    v = self.value
+    if v is None:
+      s += "(none)"
+    else:
+      s += f"{v:.5f} ({self.value_sm:.5f})"
     return s.strip()
 
 
