@@ -3,7 +3,7 @@
 
     "layers" : [
       { "type" : "fc", "filters" :  512},
-      { "type" : "fc", "filters" :  1024},
+      { "type" : "fc", "filters" :  512},
       { "type" : "fc", "filters" :  2},
       { "type" : "output" }
     ],
