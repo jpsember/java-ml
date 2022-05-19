@@ -72,7 +72,7 @@ class JsTrain:
       return
     self.train_info = read_object(ImageSetInfo.default_instance, os.path.join(train_dir, "image_set_info.json"))
     self.train_images = self.train_info.image_count
-    self.batch_size = min(500, self.train_images)
+    self.batch_size = min(50, self.train_images)
     if self.train_images % self.batch_size != 0:
       warning("training image count",self.train_images,"is not a multiple of the batch size:",self.batch_size)
     self.batch_total = self.train_images // self.batch_size

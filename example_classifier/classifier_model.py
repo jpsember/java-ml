@@ -94,16 +94,7 @@ class ClassifierModel(nn.Module):
     # Reshape to fibre, if necessary
     #
     if in_vol.width != 1 or in_vol.height != 1:
-      t = nn.reshape(self.last_tensor(), (-1,))
-    return t
-
-
-  def reshape_if_nec(self, in_tensor):
-    t = None
-    size = in_tensor.size()
-    error_unless(len(size) == 3, "tensor is not 3-dim")
-    if size[0] != 1 or size[1] != 1:
-      t = nn.reshape(in_tensor,(-1,))
+      self.add_layer(nn.Flatten(), "output.Flatten")
     return t
 
 
