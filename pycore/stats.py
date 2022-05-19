@@ -19,7 +19,11 @@ class Stats:
   def info(self):
     if self.loss is None:
       return "(none)"
-    return f"acc:{self.accuracy:.1f}({self.accuracy_sm:.1f}) loss:{self.loss:.3f}({self.loss_sm:.3f})"
+    s = ""
+    if self.accuracy is not None:
+      s += f" acc: {self.accuracy:.1f} ({self.accuracy_sm:.1f})"
+    s += f" loss: {self.loss:.5f} ({self.loss_sm:.5f})"
+    return s.strip()
 
 
 def smooth(value, smoothed, t=0.05):

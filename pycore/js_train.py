@@ -20,6 +20,7 @@ class JsTrain:
     self.optimizer = None
     self.abort_flag = False
     self.with_test = False
+    self.stat_loss = Stats()
     self.stat_test = Stats()
 
     self.epoch_number = 0
@@ -235,8 +236,9 @@ class JsTrain:
 
 
   def train(self):
+
     train_set_dir = self.select_data_set()
-    if not train_set_dir:
+    if not train_set_dir:       # Are we still waiting for the stream service?
       return
 
     self.prepare_train_info(train_set_dir)
@@ -246,10 +248,6 @@ class JsTrain:
     train_labels_path = os.path.join(train_set_dir, "labels.bin")
 
     self.model.train()
-
-    images_processed = 0
-    report_freq = 64 * 100
-    next_report_time = report_freq
 
     for batch in range(self.batch_total):
       img_index = batch * self.batch_size
@@ -280,20 +278,14 @@ class JsTrain:
       # Compute prediction error
       pred = self.model(tensor_images)
       loss = self.loss_fn(pred, tensor_labels)
+      # NOTE: this assumes the loss function returned is independent of the batch size
+      self.stat_loss.set_loss(loss.item())
 
       # Backpropagation
       self.optimizer.zero_grad()
       loss.backward()
 
       self.optimizer.step()
-      images_processed += self.batch_size
-
-
-      todo("what the heck does this do?")
-      if images_processed >= next_report_time or True:
-        next_report_time += report_freq
-        loss, current = loss.item(), batch * len(tensor_images)
-        print(f"loss: {loss:>7f}  [{current:>5d}/{self.train_images:>5d}]")
 
 
   def init_test(self):
@@ -343,8 +335,6 @@ class JsTrain:
     stats = self.stat_test
     self.finish_test(stats, test_image_count)
 
-    pr(f"Epoch {self.epoch_number:4}   {stats.info()}")
-
 
   def quit_session(self, reason):
     if not self.abort_flag:
@@ -364,6 +354,9 @@ class JsTrain:
         break
       if self.with_test:
         self.test()
+        pr(f"Epoch {self.epoch_number:4}   {self.stat_loss.info()}   {self.stat_test.info()}")
+      else:
+        pr(f"Epoch {self.epoch_number:4}   {self.stat_loss.info()}")
       self.epoch_number += 1
 
       current_time = time_ms()
