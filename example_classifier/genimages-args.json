@@ -1,7 +1,7 @@
 {
   "network_path" : "network.json",
 
-   "categories" : "OI",
+   "categories" : "AB",
   // We shouldn't need a lot of images
   "image_total" : 300,
 
