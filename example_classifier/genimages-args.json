@@ -8,12 +8,11 @@
   // Using more restricted parameters to produce a strong model quickly
   "augmentation_config" : {
     "scale_max" : 2.0,
-    "rotate_degrees_max" : 1,
-    "translate_ratio_max":0.0001,
+    "rotate_degrees_max" : 5,
+    "translate_ratio_max":0.2,
   },
 
   "noise_factor" : 0, // Until we are confident the model is learning, omit noise
-
 
    "obvious_mode" : false,
 }
