@@ -2,7 +2,8 @@
   "network_path" : "network.json",
 
    "categories" : "OI",
-  "image_total" : 1000,
+  // We shouldn't need a lot of images
+  "image_total" : 200,
 
   // Using more restricted parameters to produce a strong model quickly
   "augmentation_config" : {

@@ -267,6 +267,11 @@ class JsTrain:
         tensor_labels = torch.from_numpy(labels)
         # We need the tensor labels to be 64-bits (long); perhaps pytorch prefers working with such values?
         tensor_labels = tensor_labels.long()
+        #-----------------
+        if True:
+          pr("tensor_labels:")
+          pr(tensor_labels)
+        #-----------------
       else:
         record_size = self.train_info.label_length_bytes // BYTES_PER_FLOAT
         labels = read_floats(train_labels_path, img_index, record_size, self.batch_size)
@@ -277,7 +282,19 @@ class JsTrain:
 
       # Compute prediction error
       pred = self.model(tensor_images)
+      # -----------------
+      if True:
+        pr("Prediction:")
+        pr(pred)
+      #-----------------
+
+      # See: https://pytorch.org/docs/stable/generated/torch.nn.CrossEntropyLoss.html
       loss = self.loss_fn(pred, tensor_labels)
+      # -----------------
+      if True:
+        pr("Loss:")
+        pr(loss.item())
+      #-----------------
       # NOTE: this assumes the loss function returned is independent of the batch size
       self.stat_loss.set_value(loss.item())
 
