@@ -42,8 +42,6 @@ public class GenerateImageSetOper extends AppOper {
     return "Generate annotated images procedurally";
   }
 
-  // private static Color OBVIOUS_COLORS[] = {};
-
   @Override
   public void perform() {
     mModel = ModelWrapper.constructFor(null, config().network(), config().networkPath());

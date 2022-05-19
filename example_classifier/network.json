@@ -9,7 +9,7 @@
     ],
 
   "model_config" : {
-    "category_count" : 3,
+    "category_count" : 2,
     "image_channels" : 3,
     "image_size" : [ 24,24 ]
   }
