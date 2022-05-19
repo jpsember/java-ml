@@ -19,7 +19,7 @@ class JsTrain:
     self.loss_fn = None
     self.optimizer = None
     self.abort_flag = False
-
+    self.with_test = False
     self.stat_test = Stats()
 
     self.epoch_number = 0
@@ -71,7 +71,9 @@ class JsTrain:
       return
     self.train_info = read_object(ImageSetInfo.default_instance, os.path.join(train_dir, "image_set_info.json"))
     self.train_images = self.train_info.image_count
-    self.batch_size = min(self.train_images, 150)
+    self.batch_size = min(500, self.train_images)
+    if self.train_images % self.batch_size != 0:
+      warning("training image count",self.train_images,"is not a multiple of the batch size:",self.batch_size)
     self.batch_total = self.train_images // self.batch_size
 
 
@@ -251,6 +253,7 @@ class JsTrain:
 
     for batch in range(self.batch_total):
       img_index = batch * self.batch_size
+      self.log("batch:", batch, "image offset:", img_index)
       floats_per_image = self.train_info.image_length_bytes // BYTES_PER_FLOAT
       images = read_floats(train_images_path, floats_per_image * img_index, floats_per_image, self.batch_size)
 
@@ -258,8 +261,6 @@ class JsTrain:
       #
       images = images.reshape((self.batch_size, self.img_channels, self.img_height, self.img_width))
       tensor_images = torch.from_numpy(images)
-
-      todo("we need to handle the labels differently if they are ints vs floats")
 
       if self.labels_are_ints():
         record_size = self.train_info.label_length_bytes // BYTES_PER_INT
@@ -286,7 +287,10 @@ class JsTrain:
 
       self.optimizer.step()
       images_processed += self.batch_size
-      if images_processed >= next_report_time:
+
+
+      todo("what the heck does this do?")
+      if images_processed >= next_report_time or True:
         next_report_time += report_freq
         loss, current = loss.item(), batch * len(tensor_images)
         print(f"loss: {loss:>7f}  [{current:>5d}/{self.train_images:>5d}]")
@@ -313,7 +317,9 @@ class JsTrain:
     test_images_path = os.path.join(d, "images.bin")
     test_labels_path = os.path.join(d, "labels.bin")
 
-    test_image_count = min(self.train_info.image_count, 20)
+    todo("What controls the gradient? The test, or the train???")
+    todo("does the test image count have any bearing?")
+    test_image_count = min(self.train_info.image_count, 200)
 
     with torch.no_grad():
       floats_per_image = self.train_info.image_length_bytes // BYTES_PER_FLOAT
@@ -348,7 +354,7 @@ class JsTrain:
 
 
   def run_training_session(self):
-    accuracy = self.restore_checkpoint()
+    self.restore_checkpoint()
 
     self.last_checkpoint_epoch = self.epoch_number
 
@@ -356,7 +362,8 @@ class JsTrain:
       self.train()
       if self.abort_flag:
         break
-      self.test()
+      if self.with_test:
+        self.test()
       self.epoch_number += 1
 
       current_time = time_ms()
@@ -368,9 +375,10 @@ class JsTrain:
       if ms_until_save <= 0:
         self.save_checkpoint()
 
-      if self.stat_test.accuracy_sm >= self.target_accuracy:
-        self.save_checkpoint()
-        self.quit_session("target accuracy reached")
+      if self.with_test:
+        if self.stat_test.accuracy_sm >= self.target_accuracy:
+          self.save_checkpoint()
+          self.quit_session("target accuracy reached")
 
 
   def most_recent_checkpoint(self):
@@ -391,16 +399,13 @@ class JsTrain:
 
 
   def restore_checkpoint(self):
-    accuracy = -1
     _, path = self.most_recent_checkpoint()
     if path:
       checkpoint = torch.load(path)
       self.model.load_state_dict(checkpoint['model_state_dict'])
       self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
       self.epoch_number = checkpoint['epoch']
-      accuracy = checkpoint.get('accuracy', -1)
-      pr("Restored checkpoint at epoch:", self.epoch_number,"Accuracy:",accuracy)
-    return accuracy
+      pr("Restored checkpoint at epoch:", self.epoch_number)
 
 
   def save_checkpoint(self):
@@ -419,8 +424,7 @@ class JsTrain:
     torch.save({
                 'epoch': self.epoch_number,
                 'model_state_dict': self.model.state_dict(),
-                'optimizer_state_dict': self.optimizer.state_dict(),
-                'accuracy': self.stat_test.accuracy,
+                'optimizer_state_dict': self.optimizer.state_dict()
                 }, path_tmp)
     os.rename(path_tmp, path)
     self.last_checkpoint_epoch = self.epoch_number
@@ -443,11 +447,3 @@ def train_set_defined(train_set:TrainSet):
 #
 def train_set_undefined(train_set:TrainSet):
   return not train_set_defined(train_set)
-
-
-
-#
-# if __name__ == "__main__":
-#   c = ClassifierTrain()
-#   c.prepare_pytorch()
-#   c.run_training_session()

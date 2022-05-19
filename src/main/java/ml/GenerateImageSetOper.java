@@ -9,6 +9,7 @@ import java.io.File;
 import java.util.List;
 import java.util.Random;
 
+import gen.AugmentationConfig;
 import gen.Classifier;
 import gen.GenerateImagesConfig;
 import gen.NetworkProjectType;
@@ -114,13 +115,15 @@ public class GenerateImageSetOper extends AppOper {
 
         boolean choseValidRectangle = false;
 
+        AugmentationConfig aug = config().augmentationConfig();
+        
         for (int attempt = 0; attempt < 5; attempt++) {
 
           int mx = mImageSize.x / 2;
           int my = mImageSize.y / 2;
 
-          float rangex = mx * config().translateFactor();
-          float rangey = my * config().translateFactor();
+          float rangex = mImageSize.x * aug.translateRatioMax();
+          float rangey = mImageSize.y * aug.translateRatioMax();
 
           int charWidth = m.charWidth(categoriesString.charAt(0));
           int charHeight = (int) (m.getAscent() * ASCENT_SCALE_FACTOR);
@@ -132,9 +135,9 @@ public class GenerateImageSetOper extends AppOper {
           Matrix tfmImageCenter = Matrix.getTranslate(randGuassian(mx - rangex, mx + rangex),
               randGuassian(my - rangey, my + rangey));
           Matrix tfmRotate = Matrix.getRotate(
-              randGuassian(-config().rotFactor() * MyMath.M_DEG, config().rotFactor() * MyMath.M_DEG));
-          float scaleMin = config().scaleFactorMin();
-          float scaleMax = config().scaleFactorMax();
+              randGuassian(-aug.rotateDegreesMax() * MyMath.M_DEG, aug.rotateDegreesMax() * MyMath.M_DEG));
+          float scaleMin = aug.scaleMin();
+          float scaleMax = aug.scaleMax();
           if (scaleMin <= 0)
             scaleMin = scaleMax * 0.65f;
           Matrix tfmScale = Matrix.getScale(randGuassian(scaleMin, scaleMax));

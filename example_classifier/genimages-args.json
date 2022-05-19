@@ -1,14 +1,14 @@
 {
   "network_path" : "network.json",
 
-   "categories" : "AB",
-  "image_total" : 2000,
+   "categories" : "OI",
+  "image_total" : 1000,
 
   // Using more restricted parameters to produce a strong model quickly
-  "translate_factor" : 0.2,
-  "scale_factor_min" : 1.3,
-  "scale_factor_max" : 2.8,
-  "rot_factor" : 5,
+  "augmentation_config" : {
+    "scale_max" : 2.0,
+    "rotate_degrees_max" : 5,
+  },
 
   "noise_factor" : 0, // Until we are confident the model is learning, omit noise
 }

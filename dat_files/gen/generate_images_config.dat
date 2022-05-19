@@ -9,13 +9,7 @@ fields {
 
   string categories = "AB";
 
-  float translate_factor = 0.5;
-
-  float scale_factor_max = 1.3;
-
-  float scale_factor_min; // If zero, sets it to scale_factor_max * .65
-
-  int rot_factor = 30;
+  AugmentationConfig augmentation_config;
 
   // If nonzero, generates random colored lines
   //

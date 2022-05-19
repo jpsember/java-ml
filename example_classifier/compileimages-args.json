@@ -7,9 +7,17 @@
        "augmentation_config" : {
             "horizontal_flip" : false,
             "shear_disable" : true,
-            "scale_max" : 1.0,
-            "scale_min" : 0.8,
+
+            // Try to avoid having any black boundary showing up
+            "scale_max" : 1.3,
+            "scale_min" : 1.0,
+
+            "rotate_disable" : true,
             "rotate_degrees_max" : 5,
-            "translate_max" : 3,
+
+            "translate_ratio_max" : 0.02,
+
+            "noise_factor" : 0,
         },
+
 }

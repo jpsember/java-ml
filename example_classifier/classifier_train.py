@@ -11,7 +11,8 @@ class ClassifierTrain(JsTrain):
     super().__init__(__file__)
     self.loss = None
     self.correct = None
-
+    todo("Document this")
+    self.k = 0
 
   def define_model(self):
     return ClassifierModel(self.network).to(self.device)
@@ -24,6 +25,12 @@ class ClassifierTrain(JsTrain):
 
   def update_test(self, pred, tensor_labels):
     predicted_labels = pred.argmax(1)
+    if self.k < 20:
+      self.k += 1
+      pr("pred:")
+      pr(pred)
+      pr("predicted_labels:")
+      pr(predicted_labels)
     self.loss += self.loss_fn(pred, tensor_labels).item()
     self.correct += (predicted_labels == tensor_labels).type(torch.float).sum().item()
 
