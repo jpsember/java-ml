@@ -15,5 +15,5 @@
   "noise_factor" : 0, // Until we are confident the model is learning, omit noise
 
 
-   "obvious_mode" : true,
+   "obvious_mode" : false,
 }
