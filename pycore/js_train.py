@@ -20,9 +20,8 @@ class JsTrain:
     self.loss_fn = None
     self.optimizer = None
     self.abort_flag = False
-    self.with_test = True
-    self.stat_loss = Stats("Train Loss")
-    self.stat_test = Stats("Test Loss")
+    self.stat_train_loss = Stats("Train Loss")
+    self.stat_test_loss = Stats("Test Loss")
     self.stat_test_acc = Stats("Test Accuracy")
 
     self.epoch_number = 0
@@ -32,6 +31,7 @@ class JsTrain:
 
     param_dir = self.proj_path("model_data")
     self.train_config = read_object(TrainParam.default_instance, os.path.join(param_dir,"train_param.json"))
+    todo("Add train_loss stopping criteria")
     self.network:NeuralNetwork = read_object(NeuralNetwork.default_instance, os.path.join(param_dir,"network.json"))
     self.dump_test_labels_counter = self.train_config.dump_test_labels_count
 
@@ -310,7 +310,7 @@ class JsTrain:
       #-----------------
       # NOTE: this assumes the loss function returned is independent of the batch size
       # Does reading the loss value mess things up?
-      self.stat_loss.set_value(loss.item())
+      self.stat_train_loss.set_value(loss.item())
 
       # Backpropagation
       self.optimizer.zero_grad()
@@ -341,7 +341,7 @@ class JsTrain:
     test_images_path = os.path.join(d, "images.bin")
     test_labels_path = os.path.join(d, "labels.bin")
 
-    test_image_count = min(self.train_info.image_count, 50)
+    test_image_count = min(self.train_info.image_count, self.train_config.test_size)
 
     with torch.no_grad():
       floats_per_image = self.train_info.image_length_bytes // BYTES_PER_FLOAT
@@ -362,6 +362,7 @@ class JsTrain:
       self.loss += self.loss_fn(pred, tensor_labels).item()
       self.update_test(pred, tensor_labels)
 
+    self.stat_test_loss.set_value(self.loss)
     self.finish_test(test_image_count)
 
 
@@ -370,6 +371,10 @@ class JsTrain:
       pr("...quitting training session, reason:", reason)
       self.abort_flag = True
       self.discard_signature()  # so streaming service stops as well
+
+
+  def with_test(self):
+    return self.train_config.test_size > 0
 
 
   def run_training_session(self):
@@ -381,11 +386,11 @@ class JsTrain:
       self.train()
       if self.abort_flag:
         break
-      if self.with_test:
+      s = f"Epoch {self.epoch_number:4}   {self.stat_train_loss.info()}"
+      if self.with_test():
         self.test()
-        pr(f"Epoch {self.epoch_number:4}   {self.stat_loss.info()}   {self.stat_test_acc.info()}  {self.stat_test.info()}")
-      else:
-        pr(f"Epoch {self.epoch_number:4}   {self.stat_loss.info()}")
+        s += f"   {self.stat_test_acc.info(0)}  {self.stat_test_loss.info()}"
+      pr(s)
       self.epoch_number += 1
 
       current_time = time_ms()
@@ -397,7 +402,7 @@ class JsTrain:
       if ms_until_save <= 0:
         self.save_checkpoint()
 
-      if self.with_test:
+      if self.with_test():
         if self.stat_test_acc.value_sm >= self.train_config.target_accuracy:
           self.save_checkpoint()
           self.quit_session("target accuracy reached")

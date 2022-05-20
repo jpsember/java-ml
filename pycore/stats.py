@@ -11,13 +11,16 @@ class Stats:
     self.value = value
     self.value_sm = smooth(self.value, self.value_sm)
 
-  def info(self):
+  def info(self, sig_digits = 2):
     s = self.name + ": "
     v = self.value
     if v is None:
       s += "(none)"
+    elif sig_digits == 0:
+      s += f"{int(v)} ({int(self.value_sm)})"
     else:
-      s += f"{v:.5f} ({self.value_sm:.5f})"
+      f = "." + str(sig_digits) + "f"
+      s += f"{v:{f}} ({self.value_sm:{f}})"
     return s.strip()
 
 

@@ -30,7 +30,6 @@ class ClassifierTrain(JsTrain):
 
   def finish_test(self,test_image_count: int):
     self.stat_test_acc.set_value((100.0 * self.correct) / test_image_count)
-    self.stat_test.set_value(self.loss)
 
 
   def labels_are_ints(self):
