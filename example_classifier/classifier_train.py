@@ -11,7 +11,6 @@ class ClassifierTrain(JsTrain):
     super().__init__(__file__)
     self.loss = None
     self.correct = None
-    self.display_progress_counter = 10
 
   def define_model(self):
     return ClassifierModel(self.network).to(self.device)
@@ -24,8 +23,7 @@ class ClassifierTrain(JsTrain):
 
   def update_test(self, pred, tensor_labels):
     predicted_labels = pred.argmax(1)
-    if self.display_progress_counter > 0:
-      self.display_progress_counter -= 1
+    if self.show_test_labels():
       pr("model prediction:")
       pr(pred)
       pr("predicted labels:")

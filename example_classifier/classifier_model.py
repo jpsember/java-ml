@@ -30,9 +30,7 @@ class ClassifierModel(nn.Module):
         self.add_layer(nn.LeakyReLU())
       elif lyr.type == "maxpool":
         # I am used to thinking of a maxpool has having a stride, but they expect a kernel_size parameter
-        stride = none_to(lyr.stride, network.stride)
-        if warning("using a constant stride of 2"):
-          stride = 2
+        stride = 2  # Ignoring any stride parameter in the layer!
         self.add_layer(nn.MaxPool2d(kernel_size=stride))
       elif lyr.type == "fc":
         self.add_layer(self.construct_fc())

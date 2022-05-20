@@ -16,5 +16,9 @@ Since I'm procedurally generating a large number of training images, and then du
 
 + Without a GPU to train on, maybe I need to stick to much smaller images, and assume that I can scale them back up later when a GPU becomes available?  Or is there a qualitative shift in the approach that will be necessary, or that won't apply?
 
+## Classification models
+
++ My experiments have seen cases where the loss function decreases steadily (albeit slowly) while the accuracy is stuck at zero, but then does a big jump to say 50 or more.  I think this is because the continuous floats are slowly moving up to the cutoff point of 0.5 where a classification switches from being 0 to 1, which makes an 'all zeros' become 'approximately half are 1s', which could explain this behaviour.
+
 
 

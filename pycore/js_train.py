@@ -33,6 +33,7 @@ class JsTrain:
     param_dir = self.proj_path("model_data")
     self.train_config = read_object(TrainParam.default_instance, os.path.join(param_dir,"train_param.json"))
     self.network:NeuralNetwork = read_object(NeuralNetwork.default_instance, os.path.join(param_dir,"network.json"))
+    self.dump_test_labels_counter = self.train_config.dump_test_labels_count
 
     inp_vol = self.network.layers[0].input_volume
 
@@ -67,15 +68,22 @@ class JsTrain:
     self.checkpoint_last_time_ms = None # time last checkpoint was written
 
 
+  def show_test_labels(self):
+    result = (self.dump_test_labels_counter > 0)
+    if result:
+      self.dump_test_labels_counter -= 1
+    return result
+
+
   def prepare_train_info(self, train_dir):
     # If train info has not been read yet, read it from the supplied training set directory
     if self.train_info is not None:
       return
     self.train_info = read_object(ImageSetInfo.default_instance, os.path.join(train_dir, "image_set_info.json"))
     self.train_images = self.train_info.image_count
-    self.batch_size = min(50, self.train_images)
+    self.batch_size = min(self.train_config.batch_size, self.train_images)
     if self.train_images % self.batch_size != 0:
-      warning("training image count",self.train_images,"is not a multiple of the batch size:",self.batch_size)
+      warning("training image count", self.train_images,"is not a multiple of the batch size:", self.batch_size)
     self.batch_total = self.train_images // self.batch_size
 
 

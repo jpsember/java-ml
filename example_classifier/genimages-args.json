@@ -2,7 +2,7 @@
   "network_path" : "network.json",
 
    "categories" : "AB",
-  "image_total" : 200,
+  "image_total" : 192,   // Batch size 32 * n
 
   // Using more restricted parameters to produce a strong model quickly
   "augmentation_config" : {
