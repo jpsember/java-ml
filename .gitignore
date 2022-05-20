@@ -34,6 +34,11 @@ target
 #
 src/main/java/gen
 
-checkpoints
 gen
+
+checkpoints
+generated_images
+inspection
+train_data
+model_data
 
