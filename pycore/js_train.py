@@ -67,6 +67,9 @@ class JsTrain:
     self.checkpoint_interval_ms = None  # interval between checkpoints; increases nonlinearly up to a max value
     self.checkpoint_last_time_ms = None # time last checkpoint was written
 
+    self.loss = None
+    self.correct = None
+
 
   def show_test_labels(self):
     result = (self.dump_test_labels_counter > 0)
@@ -317,7 +320,8 @@ class JsTrain:
 
 
   def init_test(self):
-    die("init_test needs an implementation")
+    self.loss = 0
+    self.correct = 0
 
 
   def update_test(self, pred, tensor_labels):
@@ -355,7 +359,7 @@ class JsTrain:
       tensor_labels = tensor_labels.long()
       tensor_images, tensor_labels = tensor_images.to(self.device), tensor_labels.to(self.device)
       pred = self.model(tensor_images)
-
+      self.loss += self.loss_fn(pred, tensor_labels).item()
       self.update_test(pred, tensor_labels)
 
     self.finish_test(test_image_count)

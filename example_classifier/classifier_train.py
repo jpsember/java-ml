@@ -8,17 +8,12 @@ from pycore.js_train import *
 class ClassifierTrain(JsTrain):
 
   def __init__(self):
+    # Is this necessary?
     super().__init__(__file__)
-    self.loss = None
-    self.correct = None
+
 
   def define_model(self):
     return ClassifierModel(self.network).to(self.device)
-
-
-  def init_test(self):
-    self.loss = 0
-    self.correct = 0
 
 
   def update_test(self, pred, tensor_labels):
@@ -30,7 +25,6 @@ class ClassifierTrain(JsTrain):
       pr(predicted_labels)
       pr("truth labels:")
       pr(tensor_labels)
-    self.loss += self.loss_fn(pred, tensor_labels).item()
     self.correct += (predicted_labels == tensor_labels).type(torch.float).sum().item()
 
 
