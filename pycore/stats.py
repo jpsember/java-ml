@@ -9,7 +9,8 @@ class Stats:
 
   def set_value(self, value):
     self.value = value
-    self.value_sm = smooth(self.value, self.value_sm)
+    t = 0.05
+    self.value_sm = (none_to(self.value_sm, value) * (1 - t)) + (value * t)
 
   def info(self, sig_digits = 2):
     s = self.name + ": "
@@ -22,8 +23,4 @@ class Stats:
       f = "." + str(sig_digits) + "f"
       s += f"{v:{f}} ({self.value_sm:{f}})"
     return s.strip()
-
-
-def smooth(value, smoothed, t=0.05):
-  return (none_to(smoothed, value) * (1 - t)) + (value * t)
 

@@ -402,10 +402,18 @@ class JsTrain:
       if ms_until_save <= 0:
         self.save_checkpoint()
 
+      done_msg = None
+
+      if self.stat_train_loss.value_sm <= self.train_config.target_loss:
+        done_msg = "Train loss reached target"
+
       if self.with_test():
         if self.stat_test_acc.value_sm >= self.train_config.target_accuracy:
-          self.save_checkpoint()
-          self.quit_session("target accuracy reached")
+          done_msg = "Test accuracy reached target"
+
+      if done_msg:
+        self.save_checkpoint()
+        self.quit_session(done_msg)
 
 
   def most_recent_checkpoint(self):

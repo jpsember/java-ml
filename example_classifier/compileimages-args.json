@@ -4,8 +4,6 @@
        "train_service" : false,
        "inspection_dir" : "inspection",
 
-       // Java seems to be spending the most time; try to recycle things more
-        "recycle" : 5,
 
        "augmentation_config" : {
             "horizontal_flip" : false,
@@ -21,6 +19,20 @@
             "translate_ratio_max" : 0.02,
 
             "noise_factor" : 0,
+        },
+
+
+
+        "train_param" : {
+
+          "target_loss" : 0.18,
+          "target_accuracy" : 98,
+          "test_size" : 20,
+
+          // Java seems to be spending the most time; try to recycle things more
+          // ...not sure this is true now that I've reduced the batch size...
+          // "recycle" : 5,
+
         },
 
 }
