@@ -34,6 +34,8 @@ target
 #
 src/main/java/gen
 
+# Generated Python data classes
+#
 gen
 
 checkpoints
