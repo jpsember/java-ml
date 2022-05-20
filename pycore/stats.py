@@ -7,10 +7,14 @@ class Stats:
     self.value_sm = None
     self.name = name
 
+
   def set_value(self, value):
+    orig_sm = none_to(self.value_sm, value)
     self.value = value
     t = 0.05
-    self.value_sm = (none_to(self.value_sm, value) * (1 - t)) + (value * t)
+    self.value_sm = (orig_sm * (1 - t)) + (value * t)
+    #pr(f"set value {self.name} {value} curr sm {orig_sm} now {self.value_sm}")
+
 
   def info(self, sig_digits = 2):
     s = self.name + ": "

@@ -23,7 +23,7 @@
       {"type" :"leaky_relu"},
       {"type" :"maxpool"},
 
-      {"type" :"fc", "filters": 100, "dropout" : 0 },
+      {"type" :"fc", "filters": 50, "dropout" : 0 },
       {"type" :"leaky_relu"},
 
 

@@ -29,20 +29,17 @@ class JsTrain:
     script_path = os.path.realpath(train_script_file)
     self._proj_path = os.path.dirname(script_path)
 
-    param_dir = self.proj_path("model_data")
-    self.train_config = read_object(TrainParam.default_instance, os.path.join(param_dir,"train_param.json"))
-    todo("Add train_loss stopping criteria")
-    self.network:NeuralNetwork = read_object(NeuralNetwork.default_instance, os.path.join(param_dir,"network.json"))
+    t = self.proj_path("model_data")
+    self.train_config = read_object(TrainParam.default_instance, os.path.join(t,"train_param.json"))
+    self.network:NeuralNetwork = read_object(NeuralNetwork.default_instance, os.path.join(t,"network.json"))
     self.dump_test_labels_counter = self.train_config.dump_test_labels_count
 
-    inp_vol = self.network.layers[0].input_volume
+    t = self.network.layers[0].input_volume
+    self.img_width = t.width
+    self.img_height = t.height
+    self.img_channels = t.depth
 
-    self.img_width = inp_vol.width
-    self.img_height = inp_vol.height
-    self.img_channels = inp_vol.depth
-
-    t = self.proj_path("train_data")
-    self.train_data_path = t
+    self.train_data_path = self.proj_path("train_data")
 
     # This information is not available until we have a training set to examine:
     #
@@ -280,11 +277,6 @@ class JsTrain:
         tensor_labels = torch.from_numpy(labels)
         # We need the tensor labels to be 64-bits (long); perhaps pytorch prefers working with such values?
         tensor_labels = tensor_labels.long()
-        #-----------------
-        if False:
-          pr("tensor_labels:")
-          pr(tensor_labels)
-        #-----------------
       else:
         record_size = self.train_info.label_length_bytes // BYTES_PER_FLOAT
         labels = read_floats(train_labels_path, img_index, record_size, self.batch_size)
@@ -295,19 +287,10 @@ class JsTrain:
 
       # Compute prediction error
       pred = self.model(tensor_images)
-      # -----------------
-      if False:
-        pr("Prediction:")
-        pr(pred)
-      #-----------------
 
       # See: https://pytorch.org/docs/stable/generated/torch.nn.CrossEntropyLoss.html
       loss = self.loss_fn(pred, tensor_labels)
-      # -----------------
-      if False:
-        pr("Loss:")
-        pr(loss.item())
-      #-----------------
+
       # NOTE: this assumes the loss function returned is independent of the batch size
       # Does reading the loss value mess things up?
       self.stat_train_loss.set_value(loss.item())

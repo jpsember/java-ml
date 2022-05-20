@@ -2,7 +2,7 @@
             "network_path" : "network.json",
              "source_dir" : "generated_images",
        "train_service" : false,
-       "inspection_dir" : "inspection",
+       // "inspection_dir" : "inspection",
 
 
        "augmentation_config" : {
@@ -26,11 +26,13 @@
         "train_param" : {
 
           "target_loss" : 0.18,
-          "target_accuracy" : 98,
+          "target_accuracy" : 95,
           "test_size" : 20,
 
           // Java seems to be spending the most time; try to recycle things more
           // ...not sure this is true now that I've reduced the batch size...
+          // ...but it also may have been that inspections were in effect
+          //
           // "recycle" : 5,
 
         },
