@@ -5,18 +5,25 @@
 from .classifier_model import ClassifierModel
 from pycore.js_train import *
 
+
 class ClassifierTrain(JsTrain):
+
 
   def __init__(self):
     # Is this necessary?
     super().__init__(__file__)
+
+    # With this model, we are interested in the classifier's accuracy, so we include
+    # it in the test reports
+    #
+    self.stat_acc = Stats("Accuracy")
 
 
   def define_model(self):
     return ClassifierModel(self.network).to(self.device)
 
 
-  def update_test(self, pred, tensor_labels):
+  def update_test(self, pred, tensor_labels, test_image_count:int):
     predicted_labels = pred.argmax(1)
     if self.show_test_labels():
       pr("model prediction:")
@@ -25,11 +32,18 @@ class ClassifierTrain(JsTrain):
       pr(predicted_labels)
       pr("truth labels:")
       pr(tensor_labels)
-    self.correct += (predicted_labels == tensor_labels).type(torch.float).sum().item()
+    correct = (predicted_labels == tensor_labels).type(torch.float).sum().item()
+    self.stat_acc.set_value((100.0 * correct) / test_image_count)
 
 
-  def finish_test(self,test_image_count: int):
-    self.stat_test_acc.set_value((100.0 * self.correct) / test_image_count)
+  def test_target_reached(self) -> bool:
+    return self.stat_acc.value_sm >= self.train_config.target_accuracy
+
+
+  # Append the accuracy to the test report
+  #
+  def test_report(self) -> str:
+    return super().test_report() + f"  {self.stat_acc.info(0)}"
 
 
   def labels_are_ints(self):

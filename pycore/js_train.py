@@ -22,7 +22,6 @@ class JsTrain:
     self.abort_flag = False
     self.stat_train_loss = Stats("Train Loss")
     self.stat_test_loss = Stats("Test Loss")
-    self.stat_test_acc = Stats("Test Accuracy")
 
     self.epoch_number = 0
 
@@ -63,9 +62,6 @@ class JsTrain:
     self.last_checkpoint_epoch = None   # epoch last saved as checkpoint
     self.checkpoint_interval_ms = None  # interval between checkpoints; increases nonlinearly up to a max value
     self.checkpoint_last_time_ms = None # time last checkpoint was written
-
-    self.loss = None
-    self.correct = None
 
 
   def show_test_labels(self):
@@ -302,23 +298,14 @@ class JsTrain:
       self.optimizer.step()
 
 
-  def init_test(self):
-    self.loss = 0
-    self.correct = 0
-
-
-  def update_test(self, pred, tensor_labels):
-    die("update_test needs an implementation")
-
-
-  def finish_test(self, test_image_count: int):
-    die("finish_test needs an implementation")
+  # Perform optional calculations for the test operation; default does nothing
+  #
+  def update_test(self, pred, tensor_labels, test_image_count:int):
+    pass
 
 
   def test(self):
     self.model.eval()
-
-    self.init_test()
 
     d = self.prev_train_set_dir
     test_images_path = os.path.join(d, "images.bin")
@@ -342,11 +329,9 @@ class JsTrain:
       tensor_labels = tensor_labels.long()
       tensor_images, tensor_labels = tensor_images.to(self.device), tensor_labels.to(self.device)
       pred = self.model(tensor_images)
-      self.loss += self.loss_fn(pred, tensor_labels).item()
-      self.update_test(pred, tensor_labels)
-
-    self.stat_test_loss.set_value(self.loss)
-    self.finish_test(test_image_count)
+      loss = self.loss_fn(pred, tensor_labels).item()
+      self.stat_test_loss.set_value(loss)
+      self.update_test(pred, tensor_labels, test_image_count)
 
 
   def quit_session(self, reason):
@@ -360,19 +345,36 @@ class JsTrain:
     return self.train_config.test_size > 0
 
 
+  # Generate a report for the test results.  Default implementation includes the stat_test_loss information
+  #
+  def test_report(self) -> str:
+    return f"  {self.stat_test_loss.info()}"
+
+
+  # Based upon the test results, determine if a training target has been reached.
+  # Default implementation returns False
+  #
+  def test_target_reached(self) -> bool:
+    return False
+
+
   def run_training_session(self):
     self.restore_checkpoint()
-
     self.last_checkpoint_epoch = self.epoch_number
+    done_msg = None
 
     while not self.abort_flag:
       self.train()
       if self.abort_flag:
         break
       s = f"Epoch {self.epoch_number:4}   {self.stat_train_loss.info()}"
+      if self.stat_train_loss.value_sm <= self.train_config.target_loss:
+        done_msg = "Train loss reached target"
       if self.with_test():
         self.test()
-        s += f"   {self.stat_test_acc.info(0)}  {self.stat_test_loss.info()}"
+        if self.test_target_reached():
+          done_msg = "Test accuracy reached target"
+        s += "   " + self.test_report()
       pr(s)
       self.epoch_number += 1
 
@@ -384,15 +386,6 @@ class JsTrain:
       ms_until_save = (self.checkpoint_last_time_ms + self.checkpoint_interval_ms) - current_time
       if ms_until_save <= 0:
         self.save_checkpoint()
-
-      done_msg = None
-
-      if self.stat_train_loss.value_sm <= self.train_config.target_loss:
-        done_msg = "Train loss reached target"
-
-      if self.with_test():
-        if self.stat_test_acc.value_sm >= self.train_config.target_accuracy:
-          done_msg = "Test accuracy reached target"
 
       if done_msg:
         self.save_checkpoint()
@@ -453,7 +446,6 @@ class JsTrain:
   def log(self, *args):
     if self.verbose:
       pr("(verbose:)", *args)
-
 
 
 # Determine if train_set is not None and not the default instance

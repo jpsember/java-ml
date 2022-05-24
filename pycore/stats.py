@@ -13,10 +13,9 @@ class Stats:
     self.value = value
     t = 0.05
     self.value_sm = (orig_sm * (1 - t)) + (value * t)
-    #pr(f"set value {self.name} {value} curr sm {orig_sm} now {self.value_sm}")
 
 
-  def info(self, sig_digits = 2):
+  def info(self, sig_digits = 3):
     s = self.name + ": "
     v = self.value
     if v is None:
@@ -27,4 +26,3 @@ class Stats:
       f = "." + str(sig_digits) + "f"
       s += f"{v:{f}} ({self.value_sm:{f}})"
     return s.strip()
-
