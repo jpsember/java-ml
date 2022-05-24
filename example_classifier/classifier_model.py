@@ -35,11 +35,7 @@ class ClassifierModel(nn.Module):
       elif lyr.type == "fc":
         self.add_layer(self.construct_fc())
       elif lyr.type == "output":
-        x = self.construct_output()
-        if x is not None:
-          self.add_layer(x)
-        else:
-          self.add_size(lyr.type)
+        self.construct_output()
       else:
         die("unsupported layer type:",lyr.type)
     self.layer = None
@@ -85,13 +81,11 @@ class ClassifierModel(nn.Module):
 
 
   def construct_output(self):
-    t = None
-    in_vol = self.layer.input_volume
     # Reshape to fibre, if necessary
     #
+    in_vol = self.layer.input_volume
     if in_vol.width != 1 or in_vol.height != 1:
       self.add_layer(nn.Flatten(), "output.Flatten")
-    return t
 
 
   def forward(self, x):
