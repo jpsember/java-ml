@@ -36,11 +36,15 @@ class JsModel(nn.Module):
       elif lyr.type == "output":
         self.construct_output()
       else:
-        die("unsupported layer type:",lyr.type)
+        self.process_custom_layer(lyr)
     self.layer = None
 
     self.stop_size_messages()
     self.layers = nn.Sequential(*self.tensors)
+
+
+  def process_custom_layer(self, lyr):
+    die("unsupported layer type:", lyr.type)
 
 
   def add_size(self, message):

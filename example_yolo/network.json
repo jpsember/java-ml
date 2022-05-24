@@ -22,19 +22,15 @@
           {"type" :"leaky_relu"},
           {"type" :"maxpool"},
 
-          {"type" :"conv", "filters": 256 },
+          {"type" :"conv", "filters": 128 },
           {"type" :"leaky_relu"},
           {"type" :"maxpool"},
 
-          // Add additional convolution layers that don't perform maxpooling,
-          // as the planar input size is already equal to the blocks grid size
+          // Reduce the depth of the volume, since it will be fully-connected
+          // to the YOLO output layer
           //
-          {"type" :"conv", "filters": 512 },
+          {"type" :"conv", "filters": 32 },
           {"type" :"leaky_relu"},
-
-          {"type" :"conv", "filters": 512 },
-          {"type" :"leaky_relu"},
-
 
           {"type":"yolo"},
         ],

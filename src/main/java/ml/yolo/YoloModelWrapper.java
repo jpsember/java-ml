@@ -63,25 +63,34 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
           gridSize);
       return;
     }
+    
     int valuesPerBlock = YoloUtil.valuesPerBlock(yol);
     IPoint grid = YoloUtil.gridSize(yol);
 
-    // I think what happens here is we apply 1x1 spatial filters to the input volume
-    // to produce an output volume that has the same spatial dimension as the input,
-    // but with the number of filters chosen to equal valuesPerBlock
-    int numFilters = valuesPerBlock;
+    // It is unclear to me how the various versions of YOLO work with the output layer.
+    //
+    
+    int inputDepth = 
+    layer.inputVolume().depth();
 
-    if (layer.filters() != 0 && layer.filters() != numFilters) {
-      analyzer.addProblem("Unexpected Yolo filters:", layer.filters(), "!=", numFilters);
-      return;
+    if (inputDepth != valuesPerBlock) {
+      // Add a fully-connected layer to generate outputs from the inputs.
+      
+      Vol inBox = layer.inputVolume();
+      Vol outputBox = VolumeUtil.build(grid.x, grid.y, valuesPerBlock);
+
+      
+      int inputVolume= VolumeUtil.product(inBox);
+      int outputVolume = VolumeUtil.product(outputBox);
+      layer.outputVolume(outputBox);
+      
+      NetworkUtil.calcWeightsForFC(layer, inputVolume, outputVolume);
+    
+    } else {
+      // The input volume has the same dimensions as the YOLO output layer, so assume the intention
+      // is to treat the input volume as the YOLO output directly.
+      layer.numWeights(0);
     }
-    layer.filters(numFilters);
-
-    Vol inBox = layer.inputVolume();
-    Vol outputBox = VolumeUtil.build(grid.x, grid.y, valuesPerBlock);
-
-    NetworkUtil.calcWeightsForConv(layer, VolumeUtil.fibre(inBox.depth()), valuesPerBlock, outputBox);
-    layer.outputVolume(outputBox);
   }
 
   @Override
