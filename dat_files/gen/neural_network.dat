@@ -1,6 +1,7 @@
 // Defines a neural network
 
 enum gen.NetworkProjectType;
+enum gen.DataType;
 
 fields {
   int version;
@@ -39,4 +40,7 @@ fields {
   // This is independent of the depth of the images the model manipulates.
   //
   bool monochrome_source_images;
+
+  DataType image_data_type;
+  DataType label_data_type;
 }

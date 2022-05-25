@@ -12,6 +12,7 @@ import java.util.Random;
 
 import gen.AugmentationConfig;
 import gen.CompileImagesConfig;
+import gen.DataType;
 import gen.NeuralNetwork;
 import gen.TransformWrapper;
 import js.base.BaseObject;
@@ -46,6 +47,8 @@ public final class ImageCompiler extends BaseObject {
     mInspector = Inspector.orNull(inspector);
   }
 
+  private boolean mUnsupportedFeatureWarning;
+
   public void compileTrainSet(File targetDir) {
     ModelWrapper model = model();
     files().remakeDirs(targetDir);
@@ -61,6 +64,9 @@ public final class ImageCompiler extends BaseObject {
     model.setLabelStream(labelsStream);
 
     float[] imageFloats = null;
+
+    DataType imageDataType = model.network().imageDataType();
+    DataType labelDataType = model.network().labelDataType();
 
     for (ImageEntry entry : entries()) {
       BufferedImage img = ImgUtil.read(entry.imageFile());
@@ -86,15 +92,30 @@ public final class ImageCompiler extends BaseObject {
       op.filter(img, targetImage);
       mInspector.create("tfm").image(targetImage).elements(annotations);
 
-      imageFloats = ImgUtil.floatPixels(targetImage, model.inputImageChannels(), imageFloats);
+      switch (imageDataType) {
+      default:
+        throw notSupported("ImageDataType:", imageDataType);
+      case FLOAT32: {
+        imageFloats = ImgUtil.floatPixels(targetImage, model.inputImageChannels(), imageFloats);
 
-      if (config.adjustBrightness())
-        applyRandomBrightness(imageFloats, config.brightShiftMin(), config.brightShiftMax());
+        if (config.adjustBrightness())
+          applyRandomBrightness(imageFloats, config.brightShiftMin(), config.brightShiftMax());
 
-      mInspector.create("float").imageSize(model.inputImagePlanarSize()).channels(model.inputImageChannels())
-          .image(imageFloats);
-
-      model.accept(imageFloats, annotations);
+        mInspector.create("float").imageSize(model.inputImagePlanarSize())
+            .channels(model.inputImageChannels()).image(imageFloats);
+        model.accept(imageFloats, annotations);
+      }
+        break;
+      case UNSIGNED_BYTE: {
+        if (!mUnsupportedFeatureWarning && config.adjustBrightness()) {
+          mUnsupportedFeatureWarning = true;
+          alert("adjust_brightness is not supported for data type", imageDataType);
+        }
+        notFinished("store image pixels, ensuring they are 8-bits etc");
+        model.accept(imageFloats, annotations);
+      }
+        break;
+      }
 
       if (mInspector.used()) {
         // Parse the labels we generated, and write as the annotations to an inspection image

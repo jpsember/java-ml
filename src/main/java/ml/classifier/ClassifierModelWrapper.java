@@ -33,10 +33,10 @@ public final class ClassifierModelWrapper extends ModelWrapper<Classifier> {
   }
 
   @Override
-  public void accept(float[] image, List<ScriptElement> scriptElementList) {
+  public void accept(Object imagePixelArray, List<ScriptElement> scriptElementList) {
     if (scriptElementList.size() != 1)
       throw badArg("expected single element:", INDENT, scriptElementList);
-    writeImage(image);
+    writeImage(imagePixelArray);
     ScriptElement elem = scriptElementList.get(0);
     int category = elem.properties().category();
     int[] intArray = new int[1];

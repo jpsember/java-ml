@@ -113,8 +113,9 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
   }
 
   @Override
-  public void accept(float[] image, List<ScriptElement> scriptElementList) {
-    writeImage(image);
+  public void accept(Object imagePixelsArray, List<ScriptElement> scriptElementList) {
+    
+    writeImage(imagePixelsArray);
 
     clearOutputLayer();
     ScriptUtil.assertNoMixing(scriptElementList);
