@@ -92,9 +92,9 @@ public final class ImageCompiler extends BaseObject {
       op.filter(img, targetImage);
       mInspector.create("tfm").image(targetImage).elements(annotations);
 
+      Object imagePixels = null;
+
       switch (imageDataType) {
-      default:
-        throw notSupported("ImageDataType:", imageDataType);
       case FLOAT32: {
         imageFloats = ImgUtil.floatPixels(targetImage, model.inputImageChannels(), imageFloats);
 
@@ -103,7 +103,7 @@ public final class ImageCompiler extends BaseObject {
 
         mInspector.create("float").imageSize(model.inputImagePlanarSize())
             .channels(model.inputImageChannels()).image(imageFloats);
-        model.accept(imageFloats, annotations);
+        imagePixels = imageFloats;
       }
         break;
       case UNSIGNED_BYTE: {
@@ -111,11 +111,15 @@ public final class ImageCompiler extends BaseObject {
           mUnsupportedFeatureWarning = true;
           alert("adjust_brightness is not supported for data type", imageDataType);
         }
-        notFinished("store image pixels, ensuring they are 8-bits etc");
-        model.accept(imageFloats, annotations);
+
+        checkArgument(model.inputImageChannels() == 3, "not supported yet for channels != 3");
+        imagePixels = ImgUtil.bgrPixels(targetImage);
       }
         break;
+      default:
+        throw notSupported("ImageDataType:", imageDataType);
       }
+      model.accept(imagePixels, annotations);
 
       if (mInspector.used()) {
         // Parse the labels we generated, and write as the annotations to an inspection image
