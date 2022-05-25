@@ -237,11 +237,6 @@ class JsTrain:
     return train_set.directory
 
 
-  def labels_are_ints(self):
-    die("Add implementation for labels_are_ints")
-    return False
-
-
   def train(self):
 
     train_set_dir = self.select_data_set()
@@ -269,7 +264,7 @@ class JsTrain:
         images = read_floats(train_images_path, floats_per_image * img_index, floats_per_image, self.batch_size)
       elif dt == DataType.UNSIGNED_BYTE:
         bytes_per_image = self.train_info.image_length_bytes
-        images = read_bytes(train_images_path, bytes_per_image * img_index, bytes_per_image, self.batch_size, True)
+        images = read_bytes(train_images_path, bytes_per_image * img_index, bytes_per_image, self.batch_size, convert_to_float=True)
         pr("images type:",type(images))
         pr("bytes per image:",bytes_per_image)
         pr("length:",len(images))
@@ -287,22 +282,16 @@ class JsTrain:
       images = images.reshape((self.batch_size, self.img_channels, self.img_height, self.img_width))
       tensor_images = torch.from_numpy(images)
 
-
-      pr("label_length_bytes:",self.train_info.label_length_bytes)
-      if self.labels_are_ints():
-        record_size = self.train_info.label_length_bytes // BYTES_PER_INT
-        labels = read_ints(train_labels_path, img_index, record_size, self.batch_size)
+      dt = self.network.label_data_type
+      if dt == DataType.UNSIGNED_BYTE:
+        record_size = self.train_info.label_length_bytes
+        labels = read_bytes(train_labels_path, img_index, record_size, self.batch_size, convert_to_float=False)
         warning("not sure why this reshape is necessary, or why the one in floats is failing")
         labels = labels.reshape(self.batch_size)
         tensor_labels = torch.from_numpy(labels)
         tensor_labels = tensor_labels.long()
       else:
-        record_size = self.train_info.label_length_bytes // BYTES_PER_FLOAT
-        labels = read_floats(train_labels_path, img_index, record_size, self.batch_size)
-        pr("read floats, shape:",labels.shape)
-        labels = labels.reshape(self.batch_size)
-        pr("after further reshape:",labels.shape)
-        tensor_labels = torch.from_numpy(labels)
+        die("Unsupported label data type:", dt)
 
       tensor_images, tensor_labels = tensor_images.to(self.device), tensor_labels.to(self.device)
 

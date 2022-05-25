@@ -9,6 +9,7 @@ def read_bytes(path: str, offset: int, record_size: int, record_count: int, conv
   t = np.fromfile(path, dtype=np.int8, count=record_size * record_count, offset= offset)
   pr("read_bytes, record count:", record_count, "size:", record_size, "input shape:", t.shape)
   if convert_to_float:
+    todo("can we just say t.byte()?")
     todo("scale from 0..255 to 0.0 ... 1.0")
     t = t.astype(np.float32)
   t = t.reshape((record_count, record_size))

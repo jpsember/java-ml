@@ -16,10 +16,6 @@ class YoloTrain(JsTrain):
     return YoloModel(self.network).to(self.device)
 
 
-  def labels_are_ints(self):
-    return False
-
-
 if __name__ == "__main__":
   c = YoloTrain()
   c.prepare_pytorch()

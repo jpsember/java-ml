@@ -46,10 +46,6 @@ class ClassifierTrain(JsTrain):
     return super().test_report() + f"  {self.stat_acc.info(0)}"
 
 
-  def labels_are_ints(self):
-    return True
-
-
 if __name__ == "__main__":
   c = ClassifierTrain()
   c.prepare_pytorch()
