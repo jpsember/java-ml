@@ -4,6 +4,7 @@ import static js.base.Tools.*;
 
 import java.io.File;
 
+import gen.DataType;
 import gen.Layer;
 import gen.NetworkProjectType;
 import gen.NeuralNetwork;
@@ -81,6 +82,19 @@ public final class NetworkUtil {
 
   public static float exp(float value) {
     return (float) ensureFinite(Math.exp(value), value, "ln");
+  }
+
+  public static int bytesPerValue(DataType dataType) {
+    switch (dataType) {
+    case FLOAT32:
+      return Float.BYTES;
+    case UNSIGNED_BYTE:
+      return Byte.BYTES;
+    case UNSIGNED_SHORT:
+      return Short.BYTES;
+    default:
+      throw notSupported(dataType);
+    }
   }
 
 }

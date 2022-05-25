@@ -231,21 +231,21 @@ public abstract class ModelWrapper<T extends AbstractData> extends BaseObject {
   public final void writeImage(Object imagePixelArray) {
     switch (network().imageDataType()) {
     default:
-      throw notSupported("image_data_type:",network().imageDataType());
-    case FLOAT32:
-    {
-      float[] imageFloats = (float[])imagePixelArray;
+      throw notSupported("image_data_type:", network().imageDataType());
+    case FLOAT32: {
+      float[] imageFloats = (float[]) imagePixelArray;
       Files.S.write(DataUtil.floatsToBytesLittleEndian(imageFloats), imageOutputStream());
-       }
+    }
       break;
+
+    case UNSIGNED_BYTE: {
+      byte[] imageBytes = (byte[]) imagePixelArray;
+      Files.S.write(imageBytes, imageOutputStream());
+    }
+      break;
+
     }
   }
-  
-  
-  //  
-  //  public final void writeImage(float[] imageFloats) {
-  //    Files.S.write(DataUtil.floatsToBytesLittleEndian(imageFloats), imageOutputStream());
-  //  }
 
   /**
    * Write labels associated with an image to the label's output stream

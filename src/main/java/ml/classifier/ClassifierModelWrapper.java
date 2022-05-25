@@ -14,6 +14,7 @@ import js.graphics.ScriptElement;
 import js.graphics.ScriptUtil;
 import js.graphics.gen.Script;
 import ml.ModelWrapper;
+import static ml.NetworkUtil.*;
 
 public final class ClassifierModelWrapper extends ModelWrapper<Classifier> {
 
@@ -27,8 +28,8 @@ public final class ClassifierModelWrapper extends ModelWrapper<Classifier> {
   @Override
   public void storeImageSetInfo(ImageSetInfo.Builder imageSetInfo) {
     imageSetInfo //
-        .labelLengthBytes(Float.BYTES * 1) //
-        .imageLengthBytes(inputImageVolumeProduct() * Float.BYTES) //
+        .labelLengthBytes(1 * bytesPerValue(network().labelDataType())) //
+        .imageLengthBytes(inputImageVolumeProduct() * bytesPerValue(network().imageDataType())) //
     ;
   }
 
@@ -39,9 +40,9 @@ public final class ClassifierModelWrapper extends ModelWrapper<Classifier> {
     writeImage(imagePixelArray);
     ScriptElement elem = scriptElementList.get(0);
     int category = elem.properties().category();
-    int[] intArray = new int[1];
-    intArray[0] = category;
-    writeLabels(intArray);
+    byte[] byteArray = new byte[1];
+    byteArray[0] = (byte)category;
+    writeLabels(byteArray);
   }
 
   @Override

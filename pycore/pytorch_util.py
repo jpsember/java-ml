@@ -5,6 +5,15 @@ from torch import nn
 from gen.vol import *
 
 
+def read_bytes(path: str, offset_in_bytes: int, record_size_in_bytes: int, record_count: int) -> np.ndarray:
+  t = np.fromfile(path, dtype=np.int8, count=record_size_in_bytes * record_count, offset= offset_in_bytes)
+  pr("reshaping floats, record count:",record_count,"size in bytes:",record_size_in_bytes,"input shape:",t.shape)
+  pr("I think I want to convert to floats before reshaping, for simplicity")
+  t = t.reshape((record_count, record_size_in_bytes))
+  pr("reshaped to:",t.shape)
+  return t
+
+
 def read_floats(path: str, offset_in_floats: int, record_size_in_floats: int, record_count: int) -> np.ndarray:
   t = np.fromfile(path, dtype=np.float32, count=record_size_in_floats * record_count, offset= offset_in_floats * BYTES_PER_FLOAT)
   pr("reshaping floats, record count:",record_count,"size in floats:",record_size_in_floats,"input shape:",t.shape)

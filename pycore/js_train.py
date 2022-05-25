@@ -5,6 +5,7 @@ import os
 import os.path
 from gen.image_set_info import *
 from gen.train_set import *
+from gen.data_type import *
 from gen.compile_images_config import *
 from gen.train_param import *
 from pycore.stats import Stats
@@ -258,8 +259,29 @@ class JsTrain:
     for batch in range(self.batch_total):
       img_index = batch * self.batch_size
       self.log("batch:", batch, "image offset:", img_index)
-      floats_per_image = self.train_info.image_length_bytes // BYTES_PER_FLOAT
-      images = read_floats(train_images_path, floats_per_image * img_index, floats_per_image, self.batch_size)
+
+      # Read image, converting to floats if necessary
+      #
+
+      dt = self.network.image_data_type
+      if dt == DataType.FLOAT32:
+        floats_per_image = self.train_info.image_length_bytes // BYTES_PER_FLOAT
+        images = read_floats(train_images_path, floats_per_image * img_index, floats_per_image, self.batch_size)
+      elif dt == DataType.UNSIGNED_BYTE:
+        bytes_per_image = self.train_info.image_length_bytes
+        images = read_bytes(train_images_path, bytes_per_image * img_index, bytes_per_image, self.batch_size)
+        pr("images type:",type(images))
+        pr("bytes per image:",bytes_per_image)
+        pr("length:",len(images))
+        # Convert bytes to floats, where 0=0.0, 255=1.0
+        #
+        images = images.astype(np.float32)
+        todo("scale from 0..255 to 0.0 ... 1.0")
+        pr("images type:",type(images))
+        pr("length:",len(images))
+        pr("shape:",images.size)
+      else:
+        die("Unsupported image data type:", dt)
 
       # Convert the numpy array it returned to a pytorch tensor
       #
