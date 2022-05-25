@@ -9,11 +9,17 @@ def read_bytes(path: str, offset: int, record_size: int, record_count: int, conv
   t = np.fromfile(path, dtype=np.int8, count=record_size * record_count, offset= offset)
   pr("read_bytes, record count:", record_count, "size:", record_size, "input shape:", t.shape)
   if convert_to_float:
-    todo("can we just say t.byte()?")
-    todo("scale from 0..255 to 0.0 ... 1.0")
-    t = t.astype(np.float32)
+    t = t.astype(np.float32) * (1.0 / 255)
+    todo("Verify that the rgb pixels were originally scaled to 255=1.0 in java ml code")
   t = t.reshape((record_count, record_size))
-  pr("...reshaped to:", t.shape)
+  if False and warning("doing experiment"):
+    pr("type, shape:",type(t),t.shape)
+    pr(t)
+    s = t.astype(np.int64)
+    pr("converted to longs:",type(s),s.dtype,s.shape)
+    pr(s)
+    die("bye")
+
   return t
 
 
