@@ -269,14 +269,13 @@ class JsTrain:
         images = read_floats(train_images_path, floats_per_image * img_index, floats_per_image, self.batch_size)
       elif dt == DataType.UNSIGNED_BYTE:
         bytes_per_image = self.train_info.image_length_bytes
-        images = read_bytes(train_images_path, bytes_per_image * img_index, bytes_per_image, self.batch_size)
+        images = read_bytes(train_images_path, bytes_per_image * img_index, bytes_per_image, self.batch_size, True)
         pr("images type:",type(images))
         pr("bytes per image:",bytes_per_image)
         pr("length:",len(images))
-        # Convert bytes to floats, where 0=0.0, 255=1.0
-        #
-        images = images.astype(np.float32)
-        todo("scale from 0..255 to 0.0 ... 1.0")
+        # # Convert bytes to floats, where 0=0.0, 255=1.0
+        # #
+        # images = images.astype(np.float32)
         pr("images type:",type(images))
         pr("length:",len(images))
         pr("shape:",images.size)
@@ -288,6 +287,8 @@ class JsTrain:
       images = images.reshape((self.batch_size, self.img_channels, self.img_height, self.img_width))
       tensor_images = torch.from_numpy(images)
 
+
+      pr("label_length_bytes:",self.train_info.label_length_bytes)
       if self.labels_are_ints():
         record_size = self.train_info.label_length_bytes // BYTES_PER_INT
         labels = read_ints(train_labels_path, img_index, record_size, self.batch_size)
