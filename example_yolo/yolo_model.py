@@ -13,9 +13,8 @@ class YoloModel(JsModel):
   def process_custom_layer(self, lyr):
     if lyr.type != "yolo":
       die("unsupported layer type:", lyr.type)
-    pr("layer:")
-    pr(lyr)
-    # If the input depth differs from the output depth, 
-    die("not finished")
-
-
+    if lyr.input_volume != lyr.output_volume:
+      self.add_layer(nn.Flatten(), "fc.Flatten")
+      self.add_layer(nn.Linear(vol_volume(lyr.input_volume), vol_volume(lyr.output_volume)), "fc.Linear")
+    else:
+      die("untested if input volume = output volume")

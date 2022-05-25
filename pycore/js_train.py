@@ -269,14 +269,16 @@ class JsTrain:
       if self.labels_are_ints():
         record_size = self.train_info.label_length_bytes // BYTES_PER_INT
         labels = read_ints(train_labels_path, img_index, record_size, self.batch_size)
+        warning("not sure why this reshape is necessary, or why the one in floats is failing")
         labels = labels.reshape(self.batch_size)
         tensor_labels = torch.from_numpy(labels)
-        # We need the tensor labels to be 64-bits (long); perhaps pytorch prefers working with such values?
         tensor_labels = tensor_labels.long()
       else:
         record_size = self.train_info.label_length_bytes // BYTES_PER_FLOAT
         labels = read_floats(train_labels_path, img_index, record_size, self.batch_size)
+        pr("read floats, shape:",labels.shape)
         labels = labels.reshape(self.batch_size)
+        pr("after further reshape:",labels.shape)
         tensor_labels = torch.from_numpy(labels)
 
       tensor_images, tensor_labels = tensor_images.to(self.device), tensor_labels.to(self.device)
