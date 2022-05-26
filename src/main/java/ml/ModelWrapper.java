@@ -61,7 +61,7 @@ public abstract class ModelWrapper<T extends AbstractData> extends BaseObject {
 
   private void auxInit(NeuralNetwork network) {
     mNetwork = NetworkUtil.validateNetwork(network);
-    mInputImageVolume = determineInputImageVolume(network);
+    mInputImageVolume = NetworkUtil.determineInputImageVolume(network);
     mInputImageChannels = network.modelConfig().getInt("image_channels");
     mInputImagePlanarSize = VolumeUtil.spatialDimension(mInputImageVolume);
     mInputImageVolumeProduct = VolumeUtil.product(mInputImageVolume);
@@ -75,13 +75,16 @@ public abstract class ModelWrapper<T extends AbstractData> extends BaseObject {
   public void init() {
   }
 
+  /**
+   * Apply a transformation to ScriptElements
+   */
   public void transformAnnotations(List<ScriptElement> in, List<ScriptElement> out,
       TransformWrapper transform) {
     for (ScriptElement orig : in)
       out.add(orig.applyTransform(transform.matrix()));
   }
 
-  public RuntimeException modelNotSupported() {
+  public final RuntimeException modelNotSupported() {
     return die("Unsupported; project type:", projectType());
   }
 
@@ -111,8 +114,11 @@ public abstract class ModelWrapper<T extends AbstractData> extends BaseObject {
     return false;
   }
 
+  /**
+   * Describe custom layers associated with this network
+   */
   public void describeLayer(NetworkAnalyzer an, Layer layer, StringBuilder sb) {
-    throw die("Unsupported operation");
+    modelNotSupported();
   }
 
   private static AbstractData parseModelConfig(NetworkProjectType projectType, JSMap jsMap) {
@@ -211,7 +217,7 @@ public abstract class ModelWrapper<T extends AbstractData> extends BaseObject {
   /**
    * Get ImageSetInfo builder, constructing if necessary
    */
-  public ImageSetInfo.Builder imageSetInfo() {
+  public final ImageSetInfo.Builder imageSetInfo() {
     if (mImageSetInfo == null) {
       mImageSetInfo = ImageSetInfo.newBuilder();
       storeImageSetInfo(mImageSetInfo);
@@ -271,18 +277,11 @@ public abstract class ModelWrapper<T extends AbstractData> extends BaseObject {
   /**
    * For inspection purposes, get the last bytes written via writeLabels()
    */
-  public byte[] lastLabelBytesWritten() {
+  public final byte[] lastLabelBytesWritten() {
     return checkNotNull(mLastLabelBytesWritten, "no lastLabelBytesWritten available");
   }
 
   // ------------------------------------------------------------------
-
-  private static Vol determineInputImageVolume(NeuralNetwork network) {
-    JSMap modelConfig = network.modelConfig();
-    IPoint imageSize = IPoint.get(modelConfig, "image_size");
-    int imageChannels = modelConfig.getInt("image_channels");
-    return VolumeUtil.build(imageSize.x, imageSize.y, imageChannels);
-  }
 
   private NeuralNetwork mNetwork;
   private Vol mInputImageVolume;

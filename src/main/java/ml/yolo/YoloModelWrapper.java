@@ -94,6 +94,7 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
 
   @Override
   public void describeLayer(NetworkAnalyzer an, Layer layer, StringBuilder sb) {
+    checkArgument(layer.type() == LayerType.YOLO);
     Yolo yol = modelConfig();
     sb.append("anchors:" + yol.anchorBoxesPixels().size());
     sb.append(" categories:" + yol.categoryCount());

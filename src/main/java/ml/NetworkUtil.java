@@ -10,6 +10,8 @@ import gen.NetworkProjectType;
 import gen.NeuralNetwork;
 import gen.Vol;
 import js.data.DataUtil;
+import js.geometry.IPoint;
+import js.json.JSMap;
 
 public final class NetworkUtil {
 
@@ -94,6 +96,13 @@ public final class NetworkUtil {
     default:
       throw notSupported(dataType);
     }
+  }
+
+  public static Vol determineInputImageVolume(NeuralNetwork network) {
+    JSMap modelConfig = network.modelConfig();
+    IPoint imageSize = IPoint.get(modelConfig, "image_size");
+    int imageChannels = modelConfig.getInt("image_channels");
+    return VolumeUtil.build(imageSize.x, imageSize.y, imageChannels);
   }
 
 }
