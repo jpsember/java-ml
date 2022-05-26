@@ -99,6 +99,7 @@ class JsTrain:
 
     self.model = self.define_model()
 
+    die("subclass should provide a loss function")
     self.loss_fn = nn.CrossEntropyLoss()
     self.optimizer = torch.optim.SGD(self.model.parameters(), lr=1e-3, momentum = 0.9)
 

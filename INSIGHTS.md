@@ -21,4 +21,7 @@ Since I'm procedurally generating a large number of training images, and then du
 + My experiments have seen cases where the loss function decreases steadily (albeit slowly) while the accuracy is stuck at zero, but then does a big jump to say 50 or more.  I think this is because the continuous floats are slowly moving up to the cutoff point of 0.5 where a classification switches from being 0 to 1, which makes an 'all zeros' become 'approximately half are 1s', which could explain this behaviour.
 
 
+## Logits and whatnot
+
+Logits, exponentials, and logarithms are often used in models so an unbounded trained value (-inf...+inf) can be bounded to something like -1...+1, or 0...1.  The labels fed in to the training should be the original values, and the appropriate conversions should be performed within the model's loss function.  One exception is at inference time, the Java code can take the model's output and apply the appropriate inverse functions (i.e. to convert -inf...+inf to a probability 0..1).
 
