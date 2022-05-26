@@ -160,6 +160,11 @@ class JsTrain:
     remove_if_exists(p)
 
 
+  def stop_signal_received(self):
+    x = os.path.join(self.train_data_path,"stop.txt")
+    return os.path.isfile(x)
+
+
   # Look for a directory that we haven't processed yet; return TrainSetBuilder representing it, or None
   #
   def find_unclaimed_obj(self):
@@ -372,6 +377,8 @@ class JsTrain:
         s += "   " + self.test_report()
       pr(s)
       self.epoch_number += 1
+      if self.stop_signal_received():
+        done_msg = "Stop signal received"
 
       current_time = time_ms()
       if not self.checkpoint_last_time_ms:

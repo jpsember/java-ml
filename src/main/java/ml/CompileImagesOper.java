@@ -93,9 +93,9 @@ public final class CompileImagesOper extends AppOper {
 
   private void prepareTrainService() {
 
-    // Delete any existing signature file
-    File sigFile = sigFile();
-    files().deletePeacefully(sigFile);
+    // Delete any existing signature file, or 'stop' signal file
+    files().deletePeacefully(sigFile());
+    files().deletePeacefully(stopSignalFile());
 
     // Delete existing training set subdirectories, or any temporary file associated with them
     {
@@ -109,7 +109,7 @@ public final class CompileImagesOper extends AppOper {
     }
 
     // Write a new signature file with the current time
-    files().writeString(sigFile, "" + System.currentTimeMillis());
+    files().writeString(sigFile(), "" + System.currentTimeMillis());
 
     validateCheckpoints();
   }
@@ -205,6 +205,10 @@ public final class CompileImagesOper extends AppOper {
 
   private File sigFile() {
     return new File(config().targetDirTrain(), "sig.txt");
+  }
+
+  private File stopSignalFile() {
+    return new File(config().targetDirTrain(), "stop.txt");
   }
 
   //------------------------------------------------------------------

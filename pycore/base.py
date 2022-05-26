@@ -563,7 +563,7 @@ def chomp(string, suffix):
 
 
 def txt_read(path, defcontents=None):
-  if defcontents and not os.path.isfile(path):
+  if defcontents is not None and not os.path.isfile(path):
     return defcontents
   with open(path) as f:
     contents = f.read()

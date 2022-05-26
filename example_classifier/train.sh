@@ -11,3 +11,4 @@ ml compileimages train_service &
 
 echo "Starting python training"
 ../main_classifier.py __file__
+
