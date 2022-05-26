@@ -2,6 +2,7 @@
 
 from .yolo_model import YoloModel
 from pycore.js_train import *
+from .loss_yolo import YoloLoss
 
 
 class YoloTrain(JsTrain):
@@ -16,7 +17,5 @@ class YoloTrain(JsTrain):
     return YoloModel(self.network).to(self.device)
 
 
-if __name__ == "__main__":
-  c = YoloTrain()
-  c.prepare_pytorch()
-  c.run_training_session()
+  def define_loss_function(self):
+    return YoloLoss()

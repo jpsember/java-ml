@@ -10,7 +10,6 @@ class ClassifierTrain(JsTrain):
 
 
   def __init__(self):
-    # Is this necessary?
     super().__init__(__file__)
 
     # With this model, we are interested in the classifier's accuracy, so we include
@@ -21,6 +20,10 @@ class ClassifierTrain(JsTrain):
 
   def define_model(self):
     return ClassifierModel(self.network).to(self.device)
+
+
+  def define_loss_function(self):
+    return nn.CrossEntropyLoss()
 
 
   def update_test(self, pred, tensor_labels, test_image_count:int):
@@ -44,9 +47,3 @@ class ClassifierTrain(JsTrain):
   #
   def test_report(self) -> str:
     return super().test_report() + f"  {self.stat_acc.info(0)}"
-
-
-if __name__ == "__main__":
-  c = ClassifierTrain()
-  c.prepare_pytorch()
-  c.run_training_session()

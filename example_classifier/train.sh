@@ -9,6 +9,6 @@ ml compileimages prepare
 echo "Starting train streamer in separate process"
 ml compileimages train_service &
 
-echo "Starting python training"
-../main_classifier.py __file__
+echo "Starting python training in separate process"
+../main_classifier.py __file__ &
 

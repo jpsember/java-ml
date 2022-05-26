@@ -98,10 +98,13 @@ class JsTrain:
     self.log("PyTorch is using device:",self.device)
 
     self.model = self.define_model()
-
-    die("subclass should provide a loss function")
-    self.loss_fn = nn.CrossEntropyLoss()
+    self.loss_fn = self.define_loss_function()
     self.optimizer = torch.optim.SGD(self.model.parameters(), lr=1e-3, momentum = 0.9)
+
+
+  def define_loss_function(self):
+    die("Supply a loss function")
+    return None
 
 
   def define_model(self):
