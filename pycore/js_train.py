@@ -259,7 +259,6 @@ class JsTrain:
     if dt == DataType.UNSIGNED_BYTE:
       record_size = self.train_info.label_length_bytes
       labels = read_bytes(labels_path, img_index, record_size, img_count, convert_to_float=False)
-      warning("not sure why this reshape is necessary, or why the one in floats is failing")
       labels = labels.reshape(img_count)
       labels = torch.from_numpy(labels)
       labels = labels.long()

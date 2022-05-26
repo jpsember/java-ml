@@ -2,6 +2,9 @@
 
     "project_type" : "yolo",
 
+    "image_data_type" : "unsigned_byte",
+    //"label_data_type" : "unsigned_byte",
+
     "alpha" : 0.1,
 
     "layers" :[

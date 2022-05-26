@@ -4,6 +4,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import static js.base.Tools.*;
+import static ml.NetworkUtil.*;
 import static ml.yolo.YoloUtil.*;
 
 import js.data.DataUtil;
@@ -63,29 +64,27 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
           gridSize);
       return;
     }
-    
+
     int valuesPerBlock = YoloUtil.valuesPerBlock(yol);
     IPoint grid = YoloUtil.gridSize(yol);
 
     // It is unclear to me how the various versions of YOLO work with the output layer.
     //
-    
-    int inputDepth = 
-    layer.inputVolume().depth();
+
+    int inputDepth = layer.inputVolume().depth();
 
     if (inputDepth != valuesPerBlock) {
       // Add a fully-connected layer to generate outputs from the inputs.
-      
+
       Vol inBox = layer.inputVolume();
       Vol outputBox = VolumeUtil.build(grid.x, grid.y, valuesPerBlock);
 
-      
-      int inputVolume= VolumeUtil.product(inBox);
+      int inputVolume = VolumeUtil.product(inBox);
       int outputVolume = VolumeUtil.product(outputBox);
       layer.outputVolume(outputBox);
-      
+
       NetworkUtil.calcWeightsForFC(layer, inputVolume, outputVolume);
-    
+
     } else {
       // The input volume has the same dimensions as the YOLO output layer, so assume the intention
       // is to treat the input volume as the YOLO output directly.
@@ -114,7 +113,7 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
 
   @Override
   public void accept(Object imagePixelsArray, List<ScriptElement> scriptElementList) {
-    
+
     writeImage(imagePixelsArray);
 
     clearOutputLayer();
@@ -163,8 +162,8 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
   @Override
   public void storeImageSetInfo(ImageSetInfo.Builder imageSetInfo) {
     imageSetInfo //
-        .labelLengthBytes(Float.BYTES * mFieldsPerImage) //
-        .imageLengthBytes(inputImageVolumeProduct() * Float.BYTES) //
+        .labelLengthBytes(mFieldsPerImage * bytesPerValue(network().labelDataType())) //
+        .imageLengthBytes(inputImageVolumeProduct() * bytesPerValue(network().imageDataType())) //
     ;
   }
 
