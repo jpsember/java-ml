@@ -1,9 +1,6 @@
 {
     "project_type" : "classifier",
 
-    "image_data_type" : "unsigned_byte",
-    "label_data_type" : "unsigned_byte",
-
     "layers" : [
 
       // What is the purpose of convolutional layers?

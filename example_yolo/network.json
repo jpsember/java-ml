@@ -2,8 +2,8 @@
 
     "project_type" : "yolo",
 
-    "image_data_type" : "unsigned_byte",
-    //"label_data_type" : "unsigned_byte",
+    // What type do we want for labels?
+    //"label_data_type" : "float32",
 
     "alpha" : 0.1,
 

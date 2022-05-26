@@ -58,7 +58,6 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
     IPoint gridSize = YoloUtil.gridSize(yol);
 
     if (!inputImageSize.equals(gridSize)) {
-      todo("Perhaps this shouldn't be a problem if fullyConnected is in effect?");
       analyzer.addProblem("Spatial dimension of input volume:", inputImageSize, "!= Yolo grid size",
           gridSize);
       return;
