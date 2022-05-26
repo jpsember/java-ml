@@ -259,14 +259,18 @@ class JsTrain:
     images = images.reshape((img_count, self.img_channels, self.img_height, self.img_width))
     images = torch.from_numpy(images)
 
-
     dt = self.network.label_data_type
     if dt == DataType.UNSIGNED_BYTE:
       record_size = self.train_info.label_length_bytes
-      labels = read_bytes(labels_path, img_index, record_size, img_count, convert_to_float=False)
+      labels = read_bytes(labels_path, img_index * record_size, record_size, img_count, convert_to_float=False)
       labels = labels.reshape(img_count)
       labels = torch.from_numpy(labels)
       labels = labels.long()
+    elif dt == DataType.FLOAT32:
+      record_size_floats = self.train_info.label_length_bytes // BYTES_PER_FLOAT
+      labels = read_floats(path=labels_path, offset_in_floats=img_index * record_size_floats,
+                  record_size_in_floats=record_size_floats, record_count=img_count)
+      labels = torch.from_numpy(labels)
     else:
       die("Unsupported label data type:", dt)
     return images, labels
