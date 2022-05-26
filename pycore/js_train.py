@@ -29,7 +29,7 @@ class JsTrain:
     script_path = os.path.realpath(train_script_file)
     self._proj_path = os.path.dirname(script_path)
 
-    t = self.proj_path("model_data")
+    t = self.proj_path("train_info")
     self.train_config = read_object(TrainParam.default_instance, os.path.join(t,"train_param.json"))
     self.network:NeuralNetwork = read_object(NeuralNetwork.default_instance, os.path.join(t,"network.json"))
     self.dump_test_labels_counter = self.train_config.dump_test_labels_count
@@ -426,6 +426,8 @@ class JsTrain:
     check_state(diff >= 0,"epoch number less than last saved")
     # Don't save a checkpoint if we haven't done some minimum number of epochs
     if diff <= 3:
+      if diff > 0:
+        pr("(...not bothering to save checkpoint for only", diff, "new epochs)")
       return
 
     path = self.construct_checkpoint_path_for_epoch(self.epoch_number)
