@@ -43,11 +43,10 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
   }
 
   @Override
-  public boolean processLayer(NetworkAnalyzer analyzer, int layerIndex) {
-    Layer.Builder builder = analyzer.layerBuilder(layerIndex);
-    if (builder.type() != LayerType.YOLO)
+  public boolean processLayer(NetworkAnalyzer analyzer,   Layer.Builder layer) {
+    if (layer.type() != LayerType.YOLO)
       return false;
-    auxProcessLayer(analyzer, builder);
+    auxProcessLayer(analyzer, layer);
     return true;
   }
 

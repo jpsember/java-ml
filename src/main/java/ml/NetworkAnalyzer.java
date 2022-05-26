@@ -113,8 +113,7 @@ public final class NetworkAnalyzer extends BaseObject {
 
     default:
       // Give model handler an opportunity to process this layer type
-      // TODO: we may want to provide the layer index and layer count
-      if (!handler().processLayer(this, mLayerIndex))
+      if (!handler().processLayer(this, builder))
         addProblem("Unsupported layer:", builder.type());
       break;
 

@@ -110,7 +110,7 @@ public abstract class ModelWrapper<T extends AbstractData> extends BaseObject {
    * 
    * Return true if we handled the layer, false otherwise
    */
-  public boolean processLayer(NetworkAnalyzer networkAnalyzer, int layerIndex) {
+  public boolean processLayer(NetworkAnalyzer networkAnalyzer, Layer.Builder layer) {
     return false;
   }
 
