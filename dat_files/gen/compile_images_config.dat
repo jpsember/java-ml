@@ -12,7 +12,7 @@ fields {
   int seed;
 
   File target_dir_train = "train_data";
-  File target_dir_model = "model_data";
+  File target_dir_model = "train_info";
   File target_dir_checkpoint = "checkpoints";
   File inspection_dir;
 
