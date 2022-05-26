@@ -24,7 +24,7 @@ public final class NetworkAnalyzer extends BaseObject {
 
   private NetworkAnalyzer(NeuralNetwork network) {
     mNetwork = NetworkUtil.validateNetwork(network);
-    mModel = ModelWrapper.constructFor(network());
+    mModel = ModelWrapper.constructFor(network(), null);
     setVolume(model().inputImageVolume());
   }
 
@@ -318,7 +318,7 @@ public final class NetworkAnalyzer extends BaseObject {
   }
 
   private final NeuralNetwork mNetwork;
-  private final ModelWrapper mModel;   
+  private final ModelWrapper mModel;
   private final List<String> mProblems = arrayList();
   private NeuralNetwork mResult;
   private int mLayerIndex;

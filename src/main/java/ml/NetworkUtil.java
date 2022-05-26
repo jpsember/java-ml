@@ -15,10 +15,10 @@ public final class NetworkUtil {
 
   public final static int VERSION = 0;
 
-  public static NeuralNetwork resolveNetwork(NeuralNetwork networkOrNull, File networkPath) {
+  public static NeuralNetwork resolveNetwork(NeuralNetwork networkOrNull, File networkPathOrNull) {
     NeuralNetwork network = DataUtil.resolveField(null, NeuralNetwork.DEFAULT_INSTANCE, networkOrNull,
-        networkPath);
-    return checkNotNull(network, "Cannot find network in path:", networkPath);
+        networkPathOrNull);
+    return checkNotNull(network, "Cannot find network in path:", networkPathOrNull);
   }
 
   public static NeuralNetwork validateNetwork(NeuralNetwork network) {

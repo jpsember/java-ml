@@ -40,7 +40,7 @@ public final class ImageCompiler extends BaseObject {
     if (seed <= 0)
       seed = 1965;
     mRandom = new Random(seed);
-    mModel = ModelWrapper.constructFor(network);
+    mModel = ModelWrapper.constructFor(network, null);
   }
 
   public void setInspector(Inspector inspector) {
