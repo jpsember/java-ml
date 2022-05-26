@@ -58,9 +58,12 @@ public abstract class ModelWrapper<T extends AbstractData> extends BaseObject {
     return handler;
   }
 
-  public static ModelWrapper constructFor(File baseDirectoryOrNull, NeuralNetwork networkOrNull,
-      File networkPath) {
-    return constructFor(NetworkUtil.resolveNetwork(baseDirectoryOrNull, networkOrNull, networkPath));
+  /**
+   * Construct an appropriate concrete ModelWrapper for a network, given
+   * arguments to resolve a network
+   */
+  public static ModelWrapper constructFor(NeuralNetwork networkOrNull, File networkPath) {
+    return constructFor(NetworkUtil.resolveNetwork(networkOrNull, networkPath));
   }
 
   private void auxInit(NeuralNetwork network) {

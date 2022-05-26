@@ -15,10 +15,9 @@ public final class NetworkUtil {
 
   public final static int VERSION = 0;
 
-  public static NeuralNetwork resolveNetwork(File baseDirectoryOrNull, NeuralNetwork networkOrNull,
-      File networkPath) {
-    NeuralNetwork network = DataUtil.resolveField(baseDirectoryOrNull, NeuralNetwork.DEFAULT_INSTANCE,
-        networkOrNull, networkPath);
+  public static NeuralNetwork resolveNetwork(NeuralNetwork networkOrNull, File networkPath) {
+    NeuralNetwork network = DataUtil.resolveField(null, NeuralNetwork.DEFAULT_INSTANCE, networkOrNull,
+        networkPath);
     return checkNotNull(network, "Cannot find network in path:", networkPath);
   }
 

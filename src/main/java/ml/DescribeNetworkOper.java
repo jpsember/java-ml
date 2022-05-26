@@ -255,7 +255,7 @@ public class DescribeNetworkOper extends AppOper {
       File path = mConfig.path();
       if (Files.empty(path))
         throw setError("No network_path defined");
-      mArchitecture = NetworkUtil.resolveNetwork(null, null, path);
+      mArchitecture = NetworkUtil.resolveNetwork(null, path);
     }
     return mArchitecture;
   }

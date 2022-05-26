@@ -44,7 +44,7 @@ public class GenerateImageSetOper extends AppOper {
 
   @Override
   public void perform() {
-    mModel = ModelWrapper.constructFor(null, config().network(), config().networkPath());
+    mModel = ModelWrapper.constructFor(config().network(), config().networkPath());
 
     int objectCount = -1;
 

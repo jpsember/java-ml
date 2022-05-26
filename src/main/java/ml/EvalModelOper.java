@@ -37,7 +37,7 @@ public class EvalModelOper extends AppOper {
 
   @Override
   public void perform() {
-    mModel = ModelWrapper.constructFor(null, config().network(), config().networkPath());
+    mModel = ModelWrapper.constructFor(config().network(), config().networkPath());
     ModelWrapper model = mModel;
 
     // Read and parse label information

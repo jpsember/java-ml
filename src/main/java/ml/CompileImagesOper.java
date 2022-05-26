@@ -80,7 +80,7 @@ public final class CompileImagesOper extends AppOper {
 
   private NeuralNetwork network() {
     if (mCompiledNetwork == null) {
-      NeuralNetwork netIn = NetworkUtil.resolveNetwork(null, config().network(), config().networkPath());
+      NeuralNetwork netIn = NetworkUtil.resolveNetwork(config().network(), config().networkPath());
       NetworkAnalyzer analyzer = NetworkAnalyzer.build(netIn);
       mCompiledNetwork = analyzer.result();
     }
