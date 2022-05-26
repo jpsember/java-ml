@@ -237,6 +237,37 @@ class JsTrain:
     return train_set.directory
 
 
+  # Helper function to read images and labels, for either training or testing
+  #
+  def read_images(self, images_path, labels_path, img_index, img_count):
+    dt = self.network.image_data_type
+    if dt == DataType.FLOAT32:
+      floats_per_image = self.train_info.image_length_bytes // BYTES_PER_FLOAT
+      images = read_floats(images_path, floats_per_image * img_index, floats_per_image, img_count)
+    elif dt == DataType.UNSIGNED_BYTE:
+      bytes_per_image = self.train_info.image_length_bytes
+      images = read_bytes(images_path, bytes_per_image * img_index, bytes_per_image, img_count,
+                          convert_to_float=True)
+    else:
+      die("Unsupported image data type:", dt)
+    # Convert the numpy array to a pytorch tensor
+    images = images.reshape((img_count, self.img_channels, self.img_height, self.img_width))
+    images = torch.from_numpy(images)
+
+
+    dt = self.network.label_data_type
+    if dt == DataType.UNSIGNED_BYTE:
+      record_size = self.train_info.label_length_bytes
+      labels = read_bytes(labels_path, img_index, record_size, img_count, convert_to_float=False)
+      warning("not sure why this reshape is necessary, or why the one in floats is failing")
+      labels = labels.reshape(img_count)
+      labels = torch.from_numpy(labels)
+      labels = labels.long()
+    else:
+      die("Unsupported label data type:", dt)
+    return images, labels
+
+
   def train(self):
 
     train_set_dir = self.select_data_set()
@@ -255,44 +286,7 @@ class JsTrain:
       img_index = batch * self.batch_size
       self.log("batch:", batch, "image offset:", img_index)
 
-      # Read image, converting to floats if necessary
-      #
-
-      dt = self.network.image_data_type
-      if dt == DataType.FLOAT32:
-        floats_per_image = self.train_info.image_length_bytes // BYTES_PER_FLOAT
-        images = read_floats(train_images_path, floats_per_image * img_index, floats_per_image, self.batch_size)
-      elif dt == DataType.UNSIGNED_BYTE:
-        bytes_per_image = self.train_info.image_length_bytes
-        images = read_bytes(train_images_path, bytes_per_image * img_index, bytes_per_image, self.batch_size, convert_to_float=True)
-        pr("images type:",type(images))
-        pr("bytes per image:",bytes_per_image)
-        pr("length:",len(images))
-        # # Convert bytes to floats, where 0=0.0, 255=1.0
-        # #
-        # images = images.astype(np.float32)
-        pr("images type:",type(images))
-        pr("length:",len(images))
-        pr("shape:",images.size)
-      else:
-        die("Unsupported image data type:", dt)
-
-      # Convert the numpy array it returned to a pytorch tensor
-      #
-      images = images.reshape((self.batch_size, self.img_channels, self.img_height, self.img_width))
-      tensor_images = torch.from_numpy(images)
-
-      dt = self.network.label_data_type
-      if dt == DataType.UNSIGNED_BYTE:
-        record_size = self.train_info.label_length_bytes
-        labels = read_bytes(train_labels_path, img_index, record_size, self.batch_size, convert_to_float=False)
-        warning("not sure why this reshape is necessary, or why the one in floats is failing")
-        labels = labels.reshape(self.batch_size)
-        tensor_labels = torch.from_numpy(labels)
-        tensor_labels = tensor_labels.long()
-      else:
-        die("Unsupported label data type:", dt)
-
+      tensor_images, tensor_labels = self.read_images(train_images_path, train_labels_path, img_index, self.batch_size)
       tensor_images, tensor_labels = tensor_images.to(self.device), tensor_labels.to(self.device)
 
       # Compute prediction error
@@ -328,19 +322,7 @@ class JsTrain:
     test_image_count = min(self.train_info.image_count, self.train_config.test_size)
 
     with torch.no_grad():
-      floats_per_image = self.train_info.image_length_bytes // BYTES_PER_FLOAT
-      images = read_floats(test_images_path, 0, floats_per_image, test_image_count)
-
-      # Convert the numpy array it returned to a pytorch tensor
-      #
-      images = images.reshape((test_image_count, self.img_channels, self.img_height, self.img_width))
-      tensor_images = torch.from_numpy(images)
-      labels = read_ints(test_labels_path, 0, 1, test_image_count)
-      labels = labels.reshape(test_image_count)
-      tensor_labels = torch.from_numpy(labels)
-
-      # We need the tensor labels to be 64-bits, just as we did for training
-      tensor_labels = tensor_labels.long()
+      tensor_images, tensor_labels = self.read_images(test_images_path, test_labels_path, 0, test_image_count)
       tensor_images, tensor_labels = tensor_images.to(self.device), tensor_labels.to(self.device)
       pred = self.model(tensor_images)
       loss = self.loss_fn(pred, tensor_labels).item()
