@@ -98,7 +98,7 @@ public final class CompileImagesOper extends AppOper {
     files().deletePeacefully(stopSignalFile());
 
     // Delete existing training set subdirectories, or any temporary file associated with them
-    {
+    if (config().targetDirTrain().isDirectory()) {
       DirWalk w = new DirWalk(config().targetDirTrain()).includeDirectories().withRecurse(false);
       for (File f : w.files()) {
         if (!f.isDirectory())
