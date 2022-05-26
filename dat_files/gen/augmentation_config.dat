@@ -5,7 +5,7 @@
 fields {
 
   bool horizontal_flip = true;
-  bool adjust_brightness = true;
+  bool adjust_brightness = false;
   float bright_shift_min = -.10;
   float bright_shift_max = .10;
 

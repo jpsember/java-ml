@@ -8,8 +8,7 @@ from gen.vol import *
 def read_bytes(path: str, offset: int, record_size: int, record_count: int, convert_to_float:bool) -> np.ndarray:
   t = np.fromfile(path, dtype=np.int8, count=record_size * record_count, offset= offset)
   if convert_to_float:
-    t = t.astype(np.float32) * (1.0 / 255)
-    todo("Verify that the rgb pixels were originally scaled to 255=1.0 in java ml code")
+    t = t.astype(np.float32) * (1.0 / 255) # This constant is the same as ImgUtil.RGB_TO_FLOAT
   t = t.reshape((record_count, record_size))
   return t
 

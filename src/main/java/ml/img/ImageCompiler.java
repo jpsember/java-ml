@@ -47,8 +47,6 @@ public final class ImageCompiler extends BaseObject {
     mInspector = Inspector.orNull(inspector);
   }
 
-  private boolean mUnsupportedFeatureWarning;
-
   public void compileTrainSet(File targetDir) {
     ModelWrapper model = model();
     files().remakeDirs(targetDir);
@@ -66,7 +64,6 @@ public final class ImageCompiler extends BaseObject {
     float[] imageFloats = null;
 
     DataType imageDataType = model.network().imageDataType();
-    DataType labelDataType = model.network().labelDataType();
 
     for (ImageEntry entry : entries()) {
       BufferedImage img = ImgUtil.read(entry.imageFile());
@@ -107,11 +104,8 @@ public final class ImageCompiler extends BaseObject {
       }
         break;
       case UNSIGNED_BYTE: {
-        if (!mUnsupportedFeatureWarning && config.adjustBrightness()) {
-          mUnsupportedFeatureWarning = true;
-          alert("adjust_brightness is not supported for data type", imageDataType);
-        }
-
+        if (config.adjustBrightness())  
+          notSupported("adjust_brightness is not supported for data type", imageDataType);
         checkArgument(model.inputImageChannels() == 3, "not supported yet for channels != 3");
         imagePixels = ImgUtil.bgrPixels(targetImage);
       }
