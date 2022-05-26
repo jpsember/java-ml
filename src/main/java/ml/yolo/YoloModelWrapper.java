@@ -43,7 +43,7 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
   }
 
   @Override
-  public boolean processLayer(NetworkAnalyzer analyzer,   Layer.Builder layer) {
+  public boolean processLayer(NetworkAnalyzer analyzer, Layer.Builder layer) {
     if (layer.type() != LayerType.YOLO)
       return false;
     auxProcessLayer(analyzer, layer);
@@ -352,25 +352,25 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
 
     // The x and y coordinates can range from 0...1.
     //
-    b[f + YoloUtil.F_BOX_XYWH + 0] = NetworkUtil.logit(mBoxLocationRelativeToCell.x);
-    b[f + YoloUtil.F_BOX_XYWH + 1] = NetworkUtil.logit(mBoxLocationRelativeToCell.y);
+    b[f + YoloUtil.F_BOX_XYWH + 0] = mBoxLocationRelativeToCell.x;
+    b[f + YoloUtil.F_BOX_XYWH + 1] = mBoxLocationRelativeToCell.y;
 
     // The width and height can range from 0...+inf.
     //
-    b[f + YoloUtil.F_BOX_XYWH + 2] = NetworkUtil.ln(mBoxSizeRelativeToAnchorBox.x);
-    b[f + YoloUtil.F_BOX_XYWH + 3] = NetworkUtil.ln(mBoxSizeRelativeToAnchorBox.y);
+    b[f + YoloUtil.F_BOX_XYWH + 2] = mBoxSizeRelativeToAnchorBox.x;
+    b[f + YoloUtil.F_BOX_XYWH + 3] = mBoxSizeRelativeToAnchorBox.y;
 
     // The ground truth values for confidence are stored as *indicator variables*, hence 0f or 1f.
-    // Hence, we store logit(1), since a box exists here.  Actually, the confidence could
+    // Hence, we store 1, since a box exists here.  Actually, the confidence could
     // be < 100% (really???); so read it from the box...
     //
-    b[f + YoloUtil.F_CONFIDENCE] = NetworkUtil.logit(MyMath.percentToParameter(ScriptUtil.confidence(box)));
+    b[f + YoloUtil.F_CONFIDENCE] = MyMath.percentToParameter(ScriptUtil.confidence(box));
 
     // The class probabilities are the same; we store a one-hot indicator variable for this box's class.
     // We could just store the category number as a scalar instead of a one-hot vector, to save a bit of memory
     // and a bit of Python code, but this keeps the structure of the input and output box information the same
 
-    b[f + YoloUtil.F_CLASS_PROBABILITIES + ScriptUtil.categoryOrZero(box)] = NetworkUtil.LOGIT_1;
+    b[f + YoloUtil.F_CLASS_PROBABILITIES + ScriptUtil.categoryOrZero(box)] = 1;
   }
 
   private void constructOutputLayer() {
