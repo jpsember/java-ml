@@ -1,9 +1,7 @@
 {
-
     "project_type" : "yolo",
 
-    // What type do we want for labels?
-    //"label_data_type" : "float32",
+    "label_data_type" : "float32",
 
     "alpha" : 0.1,
 
