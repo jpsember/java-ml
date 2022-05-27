@@ -50,12 +50,18 @@ class YoloLoss(nn.Module):
 
     height = gsize.y
     width = gsize.x
-    halt("batch_size:",batch_size,"width:",width,"height:",height)
 
 
     # Get x,y,w,h,conf,cls
     output = output.view(batch_size, self.num_anchors, -1, height * width)
+
     pr("output shape:",output.shape)
+    # output shape: torch.Size([32, 1, 7, 169])
+    #          32 = batch size
+    #           1 = a single anchor box per grid cell
+    #           7 = fields per anchor box
+    #         169 = grid cells
+    
     coord = torch.zeros_like(output[:, :, :4, :])
     coord[:, :, :2, :] = output[:, :, :2, :].sigmoid()
     coord[:, :, 2:4, :] = output[:, :, 2:4, :]
