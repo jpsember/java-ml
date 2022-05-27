@@ -28,14 +28,13 @@ class YoloLoss(nn.Module):
     #   anchors=[(1.3221, 1.73145), (3.19275, 4.00944), (5.05587, 8.09892), (9.47112, 4.84053),
     #                           (11.2364, 10.0071)])
     #
-    a = []
+    t = []
     bs = yolo.block_size
+    b_x, b_y = 1.0 / bs.x, 1.0 / bs.y
     for abp in yolo.anchor_boxes_pixels:
-      a.append((abp.x / float(bs.x),abp.y / float(bs.y)))
-    pr("anchors:",type(a),a)
-    a = torch.Tensor(a)
-    pr("anchors:",type(a),a)
-    self.anchors = a
+      t.append((abp.x * b_x, abp.y * b_y))
+    t = torch.Tensor(t)
+    self.anchors = t
 
 
   def forward(self, output, target):
@@ -139,9 +138,10 @@ class YoloLoss(nn.Module):
     return self.loss_tot, self.loss_coord, self.loss_conf, self.loss_cls
 
   def build_targets(self, pred_boxes, ground_truth, height, width):
+    y = self.yolo
     batch_size = len(ground_truth)
 
-    conf_mask = torch.ones(batch_size, self.num_anchors, height * width, requires_grad=False) * self.noobject_scale
+    conf_mask = torch.ones(batch_size, self.num_anchors, height * width, requires_grad=False) * y.lambda_noobj
     coord_mask = torch.zeros(batch_size, self.num_anchors, 1, height * width, requires_grad=False)
     cls_mask = torch.zeros(batch_size, self.num_anchors, height * width, requires_grad=False).byte()
     tcoord = torch.zeros(batch_size, self.num_anchors, 4, height * width, requires_grad=False)
@@ -155,7 +155,7 @@ class YoloLoss(nn.Module):
       # Build up tensors
       cur_pred_boxes = pred_boxes[
                        b * (self.num_anchors * height * width):(b + 1) * (self.num_anchors * height * width)]
-      if self.anchor_step == 4:
+      if False:  #self.anchor_step == 4:   ....something to do with alternate form of anchors?
         anchors = self.anchors.clone()
         anchors[:, :2] = 0
       else:
