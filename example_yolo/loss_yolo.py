@@ -13,28 +13,31 @@ class YoloLoss(nn.Module):
     self.network = network
     self.yolo = yolo
 
-    self.num_classes = network.num_classes   # ???
-    self.num_anchors = len(anchors)
-    self.anchor_step = len(anchors[0])
-    self.anchors = torch.Tensor(anchors)
-    self.reduction = reduction
-
-    self.coord_scale = coord_scale
-    self.noobject_scale = noobject_scale
-    self.object_scale = object_scale
-    self.class_scale = class_scale
-    self.thresh = thresh
-
+    # TODO: let's get rid of these instance fields and just call self.yolo.xxxx
+    #
+    self.num_classes = yolo.category_count
+    self.num_anchors = len(yolo.anchor_boxes_pixels)
+    pr("yolo:")
+    pr(yolo)
+    pr("num_classes:",self.num_classes)
+    pr("num_anchors:",self.num_anchors)
 
 
 
 
 
   def forward(self, output, target):
+    pr("forward, output:",output)
+    pr("target:",target)
+    pr("output.data.shape:",output.data.shape)
+
+
+    warning("I think my layer is a single array of length n, and the code I am converting expects it to be 2 or more dimensions")
 
     batch_size = output.data.size(0)
     height = output.data.size(2)
     width = output.data.size(3)
+    halt("batch_size:",batch_size,"width:",width,"height:",height)
 
     # Get x,y,w,h,conf,cls
     output = output.view(batch_size, self.num_anchors, -1, height * width)
@@ -155,22 +158,6 @@ class YoloLoss(nn.Module):
 
 
 
-
-
-
-  # def forward(self, inputs, targets, smooth=1):
-  #   warning("returning nonsensical loss value")
-  #   return inputs.max()
-  #
-  #   # inputs = F.sigmoid(inputs)
-  #   #
-  #   # inputs = inputs.view(-1)
-  #   # targets = targets.view(-1)
-  #   #
-  #   # intersection = (inputs * targets).sum()
-  #   # dice = (2. * intersection + smooth) / (inputs.sum() + targets.sum() + smooth)
-  #   #
-  #   # return 1 - dice
 
 def bbox_ious(boxes1, boxes2):
   b1x1, b1y1 = (boxes1[:, :2] - (boxes1[:, 2:4] / 2)).split(1, 1)
