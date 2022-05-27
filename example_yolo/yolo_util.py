@@ -25,7 +25,7 @@ def values_per_block(yolo : Yolo) -> int:
 def grid_size(yolo : Yolo) -> IPoint:
   bs = yolo.block_size
   image_size = yolo.image_size
-  grid = IPoint.with_x_y(image_size.x() // bs.x(), image_size.y() // bs.y())
+  grid = IPoint.with_x_y(image_size.x // bs.x, image_size.y // bs.y)
   return grid
 
 

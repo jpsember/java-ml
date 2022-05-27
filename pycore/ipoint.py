@@ -1,3 +1,4 @@
+from __future__ import annotations
 from pycore.base import *
 
 class IPoint(AbstractData):
@@ -12,13 +13,22 @@ class IPoint(AbstractData):
     self._y = 0
 
   @classmethod
-  def new_builder(cls):
+  def new_builder(cls) -> IPointBuilder:
     return IPointBuilder()
 
   def parse(self, lst):
     if len(lst) != 2:
       die("can't parse IPoint from:", lst)
     return IPoint.with_x_y(lst[0],lst[1])
+
+  def _x(self) -> int:
+    return self._x
+
+  def _y(self) -> int:
+    return self._y
+
+  x = property(_x)
+  y = property(_y)
 
 
   @classmethod
@@ -27,14 +37,6 @@ class IPoint(AbstractData):
     inst._x = x
     inst._y = y
     return inst
-
-
-  def x(self):
-    return self._x
-
-
-  def y(self):
-    return self._y
 
 
   def tuple(self):
@@ -73,11 +75,11 @@ IPoint.default_instance = IPoint()
 
 class IPointBuilder(IPoint):
 
-  def set_x(self, x):
+  def set_x(self, x) -> IPointBuilder:
     self._x = x
     return self
 
-  def set_y(self, x):
+  def set_y(self, x) -> IPointBuilder:
     self._y = x
     return self
 
@@ -87,3 +89,6 @@ class IPointBuilder(IPoint):
   def build(self):
     return IPoint.with_x_y(self._x, self._y)
 
+
+  x = property(IPoint._x, set_x)
+  y = property(IPoint._y, set_y)

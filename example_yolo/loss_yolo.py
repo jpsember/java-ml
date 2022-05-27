@@ -48,8 +48,8 @@ class YoloLoss(nn.Module):
     gsize = grid_size(y)
     pr("grid_size:",gsize)
 
-    height = gsize.y()
-    width = gsize.x()
+    height = gsize.y
+    width = gsize.x
     halt("batch_size:",batch_size,"width:",width,"height:",height)
 
 
