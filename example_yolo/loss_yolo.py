@@ -13,21 +13,13 @@ class YoloLoss(nn.Module):
     super(YoloLoss, self).__init__()
     self.network = network
     self.yolo = yolo
-
-    # TODO: let's get rid of these instance fields and just call self.yolo.xxxx
-    #
-    self.num_classes = yolo.category_count
     self.num_anchors = anchor_box_count(yolo)
-    #pr("yolo:", yolo)
-    pr("num_classes:",self.num_classes)
-    pr("num_anchors:",self.num_anchors)
 
+    # Construct a tensor containing the anchor boxes, normalized to the block size
+    #
 
-    # From  https://github.com/uvipen/Yolo-v2-pytorch/blob/master/src/yolo_net.py
-    #
-    #   anchors=[(1.3221, 1.73145), (3.19275, 4.00944), (5.05587, 8.09892), (9.47112, 4.84053),
-    #                           (11.2364, 10.0071)])
-    #
+    # Default values, from  https://github.com/uvipen/Yolo-v2-pytorch/blob/master/src/yolo_net.py
+    #   anchors=[(1.3221, 1.73145), (3.19275, 4.00944), (5.05587, 8.09892), (9.47112, 4.84053), (11.2364, 10.0071)])
     t = []
     bs = yolo.block_size
     b_x, b_y = 1.0 / bs.x, 1.0 / bs.y
@@ -39,29 +31,15 @@ class YoloLoss(nn.Module):
 
   def forward(self, output, target):
     y = self.yolo
-    pr("forward, output:", output)
-    pr("target:",target)
-    pr("output.data.shape:",output.data.shape)
-
-    warning("I think my layer is a single array of length n, and the code I am converting expects it to be 2 or more dimensions")
-
     batch_size = output.data.size(0)
-    labels_size = output.data.size(1)
     gsize = grid_size(y)
-    pr("batch_size:",batch_size)
-    pr("labels_size:",labels_size)
-    pr("values_per_block:",values_per_block(y))
-    pr("float_labels:",image_label_float_count(y))
-    pr("grid_size:",gsize)
-
     height = gsize.y
     width = gsize.x
-
+    grid_cell_total = width * height
 
     # Get x,y,w,h,conf,cls
-    output = output.view(batch_size, self.num_anchors, -1, height * width)
+    output = output.view(batch_size, self.num_anchors, -1, grid_cell_total)
 
-    pr("output shape:",output.shape)
     # output shape: torch.Size([32, 1, 7, 169])
     #          32 = batch size
     #           1 = a single anchor box per grid cell
@@ -84,16 +62,16 @@ class YoloLoss(nn.Module):
 
     # For now, maybe we don't need to examine category probabilities?
     #
-    cls = output[:, :, 5:, :].contiguous().view(batch_size * self.num_anchors, self.num_classes,
-                                                height * width).transpose(1, 2).contiguous().view(-1,
-                                                                                                  self.num_classes)
+    cls = output[:, :, 5:, :].contiguous().view(batch_size * self.num_anchors,
+                                                y.category_count,
+                                                grid_cell_total).transpose(1, 2).contiguous().view(-1,
+                                                                                                  y.category_count)
 
     # Create prediction boxes
-    pred_boxes = torch.FloatTensor(batch_size * self.num_anchors * height * width, 4)
+    pred_boxes = torch.FloatTensor(batch_size * self.num_anchors * grid_cell_total, 4)
     lin_x = torch.range(0, width - 1).repeat(height, 1).view(height * width)
-    lin_y = torch.range(0, height - 1).repeat(width, 1).t().contiguous().view(height * width)
+    lin_y = torch.range(0, height - 1).repeat(width, 1).t().contiguous().view(grid_cell_total)
 
-    todo("IDE complaining about 'contiguous'")
     anchor_w = self.anchors[:, 0].contiguous().view(self.num_anchors, 1)
     anchor_h = self.anchors[:, 1].contiguous().view(self.num_anchors, 1)
 
@@ -114,7 +92,7 @@ class YoloLoss(nn.Module):
     coord_mask, conf_mask, cls_mask, tcoord, tconf, tcls = self.build_targets(pred_boxes, target, height, width)
     coord_mask = coord_mask.expand_as(tcoord)
     tcls = tcls[cls_mask].view(-1).long()
-    cls_mask = cls_mask.view(-1, 1).repeat(1, self.num_classes)
+    cls_mask = cls_mask.view(-1, 1).repeat(1, y.category_count)
 
     if torch.cuda.is_available():
       tcoord = tcoord.cuda()
@@ -125,7 +103,7 @@ class YoloLoss(nn.Module):
       cls_mask = cls_mask.cuda()
 
     conf_mask = conf_mask.sqrt()
-    cls = cls[cls_mask].view(-1, self.num_classes)
+    cls = cls[cls_mask].view(-1, y.category_count)
 
     # Compute losses
     mse = nn.MSELoss(size_average=False)
@@ -162,6 +140,9 @@ class YoloLoss(nn.Module):
         anchors = torch.cat([torch.zeros_like(self.anchors), self.anchors], 1)
       gt = torch.zeros(len(ground_truth[b]), 4)
       for i, anno in enumerate(ground_truth[b]):
+        #   File "/Users/home/github_projects/ml/example_yolo/loss_yolo.py", line 143, in build_targets
+        #     gt[i, 0] = (anno[0] + anno[2] / 2) / self.reduction
+        #    IndexError: invalid index of a 0-dim tensor. Use `tensor.item()` in Python or `tensor.item<T>()` in C++ to convert a 0-dim tensor to a number
         gt[i, 0] = (anno[0] + anno[2] / 2) / self.reduction
         gt[i, 1] = (anno[1] + anno[3] / 2) / self.reduction
         gt[i, 2] = anno[2] / self.reduction
