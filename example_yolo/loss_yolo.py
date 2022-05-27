@@ -2,6 +2,7 @@ from gen.yolo import Yolo
 from pycore.pytorch_util import *
 from pycore.js_model import JsModel
 from gen.neural_network import NeuralNetwork
+from .yolo_util import *
 
 # Derived from https://neptune.ai/blog/pytorch-loss-functions
 
@@ -16,7 +17,7 @@ class YoloLoss(nn.Module):
     # TODO: let's get rid of these instance fields and just call self.yolo.xxxx
     #
     self.num_classes = yolo.category_count
-    self.num_anchors = len(yolo.anchor_boxes_pixels)
+    self.num_anchors = anchor_box_count(yolo)
     pr("yolo:")
     pr(yolo)
     pr("num_classes:",self.num_classes)
@@ -27,6 +28,7 @@ class YoloLoss(nn.Module):
 
 
   def forward(self, output, target):
+    y = self.yolo
     pr("forward, output:",output)
     pr("target:",target)
     pr("output.data.shape:",output.data.shape)
@@ -34,13 +36,26 @@ class YoloLoss(nn.Module):
 
     warning("I think my layer is a single array of length n, and the code I am converting expects it to be 2 or more dimensions")
 
+
     batch_size = output.data.size(0)
-    height = output.data.size(2)
-    width = output.data.size(3)
+    pr("batch_size:",batch_size)
+    labels_size = output.data.size(1)
+    pr("labels_size:",labels_size)
+
+    pr("values_per_block:",values_per_block(y))
+    pr("float_labels:",image_label_float_count(y))
+
+    gsize = grid_size(y)
+    pr("grid_size:",gsize)
+
+    height = gsize.y()
+    width = gsize.x()
     halt("batch_size:",batch_size,"width:",width,"height:",height)
+
 
     # Get x,y,w,h,conf,cls
     output = output.view(batch_size, self.num_anchors, -1, height * width)
+    pr("output shape:",output.shape)
     coord = torch.zeros_like(output[:, :, :4, :])
     coord[:, :, :2, :] = output[:, :, :2, :].sigmoid()
     coord[:, :, 2:4, :] = output[:, :, 2:4, :]

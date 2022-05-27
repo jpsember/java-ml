@@ -54,7 +54,8 @@ class IPoint(AbstractData):
   def build(self):
     return self
 
-
+  def product(self) -> int:
+    return self._x * self._y
 
   def __hash__(self):
     return self._x + self._y
