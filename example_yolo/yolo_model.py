@@ -9,7 +9,6 @@ class YoloModel(JsModel):
 
   def __init__(self, network: NeuralNetwork):
     super(YoloModel, self).__init__(network)
-    warning("the network arg doesn't seem to be required")
 
 
   def process_custom_layer(self, lyr):

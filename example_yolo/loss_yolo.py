@@ -134,7 +134,7 @@ class YoloLoss(nn.Module):
 
 
     # Perhaps I am far enough along I can adapt the code I need?
-    
+
     for b in range(batch_size):
       # This looks suspect
       if len(ground_truth[b]) == 0:
