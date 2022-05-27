@@ -28,12 +28,14 @@ class YoloLoss(nn.Module):
     #   anchors=[(1.3221, 1.73145), (3.19275, 4.00944), (5.05587, 8.09892), (9.47112, 4.84053),
     #                           (11.2364, 10.0071)])
     #
-    self.anchors = []
+    a = []
     bs = yolo.block_size
     for abp in yolo.anchor_boxes_pixels:
-      self.anchors.append((abp.x / float(bs.x),abp.y / float(bs.y)))
-    pr("anchors:",type(self.anchors),self.anchors)
-
+      a.append((abp.x / float(bs.x),abp.y / float(bs.y)))
+    pr("anchors:",type(a),a)
+    a = torch.Tensor(a)
+    pr("anchors:",type(a),a)
+    self.anchors = a
 
 
   def forward(self, output, target):
