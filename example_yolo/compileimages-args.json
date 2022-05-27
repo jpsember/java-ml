@@ -6,4 +6,7 @@
        "augmentation_config" : {
              "horizontal_flip" : false,
            },
+
+
+    "retain_existing_training_sets" : true,
 }

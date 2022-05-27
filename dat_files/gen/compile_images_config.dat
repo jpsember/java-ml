@@ -25,5 +25,9 @@ fields {
   //
   bool prepare;
 
+  // Temporary speed up while working on Yolo
+  //
+  bool retain_existing_training_sets;
+
   TrainParam train_param;
 }

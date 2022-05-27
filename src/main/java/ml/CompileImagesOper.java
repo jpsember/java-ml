@@ -97,17 +97,21 @@ public final class CompileImagesOper extends AppOper {
     files().deletePeacefully(sigFile());
     files().deletePeacefully(stopSignalFile());
 
-    if (!alert("NOT deleting existing dirs")) {
     // Delete existing training set subdirectories, or any temporary file associated with them
     if (config().targetDirTrain().isDirectory()) {
       DirWalk w = new DirWalk(config().targetDirTrain()).includeDirectories().withRecurse(false);
       for (File f : w.files()) {
         if (!f.isDirectory())
           continue;
+
+        if (config().retainExistingTrainingSets() && f.getName().startsWith(STREAM_PREFIX)) {
+          alert("Retaining existing training sets");
+          continue;
+        }
+
         if (f.getName().equals("_temp_") || f.getName().startsWith(STREAM_PREFIX))
           files().deleteDirectory(f);
       }
-    }
     }
 
     // Write a new signature file with the current time
