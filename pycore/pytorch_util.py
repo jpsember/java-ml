@@ -35,3 +35,11 @@ def write_ints(path: str, ints: np.ndarray):
 
 def vol_volume(vol:Vol) -> int:
   return vol.width * vol.height * vol.depth
+
+
+def show(label:str, obj):
+  if isinstance(obj, torch.Tensor):
+    t:torch.Tensor = obj
+    pr("Tensor", label, t.size(), t.dtype, t)
+  else:
+    pr(label,"type:",type(obj),"value:",obj)

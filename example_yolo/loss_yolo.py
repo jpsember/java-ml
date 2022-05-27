@@ -69,8 +69,8 @@ class YoloLoss(nn.Module):
 
     # Create prediction boxes
     pred_boxes = torch.FloatTensor(batch_size * self.num_anchors * grid_cell_total, 4)
-    lin_x = torch.range(0, width - 1).repeat(height, 1).view(height * width)
-    lin_y = torch.range(0, height - 1).repeat(width, 1).t().contiguous().view(grid_cell_total)
+    lin_x = torch.arange(0, width).repeat(height, 1).view(height * width)
+    lin_y = torch.arange(0, height).repeat(width, 1).t().contiguous().view(grid_cell_total)
 
     anchor_w = self.anchors[:, 0].contiguous().view(self.num_anchors, 1)
     anchor_h = self.anchors[:, 1].contiguous().view(self.num_anchors, 1)
@@ -89,6 +89,8 @@ class YoloLoss(nn.Module):
     pred_boxes = pred_boxes.cpu()
 
     # Get target values
+    show("target",target)
+    halt("I think it expects target to have a different shape")
     coord_mask, conf_mask, cls_mask, tcoord, tconf, tcls = self.build_targets(pred_boxes, target, height, width)
     coord_mask = coord_mask.expand_as(tcoord)
     tcls = tcls[cls_mask].view(-1).long()
@@ -116,6 +118,10 @@ class YoloLoss(nn.Module):
     return self.loss_tot, self.loss_coord, self.loss_conf, self.loss_cls
 
   def build_targets(self, pred_boxes, ground_truth, height, width):
+    pr("build_targets")
+    show("pred_boxes",pred_boxes)
+    show("ground_truth",ground_truth)
+
     y = self.yolo
     batch_size = len(ground_truth)
 
@@ -139,7 +145,11 @@ class YoloLoss(nn.Module):
       else:
         anchors = torch.cat([torch.zeros_like(self.anchors), self.anchors], 1)
       gt = torch.zeros(len(ground_truth[b]), 4)
+      show("gt",gt)
       for i, anno in enumerate(ground_truth[b]):
+        pr("i:",i,"b:",b,"anno:",anno)
+        show("anno",anno)
+
         #   File "/Users/home/github_projects/ml/example_yolo/loss_yolo.py", line 143, in build_targets
         #     gt[i, 0] = (anno[0] + anno[2] / 2) / self.reduction
         #    IndexError: invalid index of a 0-dim tensor. Use `tensor.item()` in Python or `tensor.item<T>()` in C++ to convert a 0-dim tensor to a number
