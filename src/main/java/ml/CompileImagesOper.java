@@ -133,7 +133,7 @@ public final class CompileImagesOper extends AppOper {
 
     while (true) {
       if (!signature.equals(readSignature())) {
-        pr("(CompileImagesOper: Signature file has changed or disappeared, stopping)");
+        log("(CompileImagesOper: Signature file has changed or disappeared, stopping)");
         break;
       }
 

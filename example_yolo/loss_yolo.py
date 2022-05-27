@@ -90,7 +90,7 @@ class YoloLoss(nn.Module):
 
     # Get target values
     show("target",target)
-    halt("I think it expects target to have a different shape")
+    #halt("I think it expects target to have a different shape")
     coord_mask, conf_mask, cls_mask, tcoord, tconf, tcls = self.build_targets(pred_boxes, target, height, width)
     coord_mask = coord_mask.expand_as(tcoord)
     tcls = tcls[cls_mask].view(-1).long()
@@ -132,7 +132,11 @@ class YoloLoss(nn.Module):
     tconf = torch.zeros(batch_size, self.num_anchors, height * width, requires_grad=False)
     tcls = torch.zeros(batch_size, self.num_anchors, height * width, requires_grad=False)
 
+
+    # Perhaps I am far enough along I can adapt the code I need?
+    
     for b in range(batch_size):
+      # This looks suspect
       if len(ground_truth[b]) == 0:
         continue
 
@@ -146,6 +150,8 @@ class YoloLoss(nn.Module):
         anchors = torch.cat([torch.zeros_like(self.anchors), self.anchors], 1)
       gt = torch.zeros(len(ground_truth[b]), 4)
       show("gt",gt)
+
+      show("ground_truth[b]",ground_truth[b])
       for i, anno in enumerate(ground_truth[b]):
         pr("i:",i,"b:",b,"anno:",anno)
         show("anno",anno)
