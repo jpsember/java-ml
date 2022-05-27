@@ -18,34 +18,39 @@ class YoloLoss(nn.Module):
     #
     self.num_classes = yolo.category_count
     self.num_anchors = anchor_box_count(yolo)
-    pr("yolo:")
-    pr(yolo)
+    #pr("yolo:", yolo)
     pr("num_classes:",self.num_classes)
     pr("num_anchors:",self.num_anchors)
 
 
+    # From  https://github.com/uvipen/Yolo-v2-pytorch/blob/master/src/yolo_net.py
+    #
+    #   anchors=[(1.3221, 1.73145), (3.19275, 4.00944), (5.05587, 8.09892), (9.47112, 4.84053),
+    #                           (11.2364, 10.0071)])
+    #
+    self.anchors = []
+    bs = yolo.block_size
+    for abp in yolo.anchor_boxes_pixels:
+      self.anchors.append((abp.x / float(bs.x),abp.y / float(bs.y)))
+    pr("anchors:",type(self.anchors),self.anchors)
 
 
 
   def forward(self, output, target):
     y = self.yolo
-    pr("forward, output:",output)
+    pr("forward, output:", output)
     pr("target:",target)
     pr("output.data.shape:",output.data.shape)
 
-
     warning("I think my layer is a single array of length n, and the code I am converting expects it to be 2 or more dimensions")
 
-
     batch_size = output.data.size(0)
-    pr("batch_size:",batch_size)
     labels_size = output.data.size(1)
+    gsize = grid_size(y)
+    pr("batch_size:",batch_size)
     pr("labels_size:",labels_size)
-
     pr("values_per_block:",values_per_block(y))
     pr("float_labels:",image_label_float_count(y))
-
-    gsize = grid_size(y)
     pr("grid_size:",gsize)
 
     height = gsize.y
@@ -61,11 +66,23 @@ class YoloLoss(nn.Module):
     #           1 = a single anchor box per grid cell
     #           7 = fields per anchor box
     #         169 = grid cells
-    
+
+    # Construct a tensor containing just the coordinates of the box  (F_BOX_XYWH)
+    #
     coord = torch.zeros_like(output[:, :, :4, :])
+
+    # Convert the predicted x,y (-inf...+inf) to 0...1 via sigmoid() function
     coord[:, :, :2, :] = output[:, :, :2, :].sigmoid()
+
+    # Convert predicted w,h (-inf...+inf) to ...?  **NOTE: Java code applies e^n here (exp function)
     coord[:, :, 2:4, :] = output[:, :, 2:4, :]
+
+    # Convert confidence (-inf...+inf) to probability 0...1 via sigmoid()
+    #
     conf = output[:, :, 4, :].sigmoid()
+
+    # For now, maybe we don't need to examine category probabilities?
+    #
     cls = output[:, :, 5:, :].contiguous().view(batch_size * self.num_anchors, self.num_classes,
                                                 height * width).transpose(1, 2).contiguous().view(-1,
                                                                                                   self.num_classes)
@@ -74,6 +91,8 @@ class YoloLoss(nn.Module):
     pred_boxes = torch.FloatTensor(batch_size * self.num_anchors * height * width, 4)
     lin_x = torch.range(0, width - 1).repeat(height, 1).view(height * width)
     lin_y = torch.range(0, height - 1).repeat(width, 1).t().contiguous().view(height * width)
+
+    todo("IDE complaining about 'contiguous'")
     anchor_w = self.anchors[:, 0].contiguous().view(self.num_anchors, 1)
     anchor_h = self.anchors[:, 1].contiguous().view(self.num_anchors, 1)
 

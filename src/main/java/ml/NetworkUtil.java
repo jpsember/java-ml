@@ -82,7 +82,7 @@ public final class NetworkUtil {
   }
 
   public static float exp(float value) {
-    return (float) ensureFinite(Math.exp(value), value, "ln");
+    return (float) ensureFinite(Math.exp(value), value, "exp");
   }
 
   public static int bytesPerValue(DataType dataType) {
