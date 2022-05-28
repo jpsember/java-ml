@@ -23,6 +23,7 @@ import js.json.JSMap;
 import ml.ModelWrapper;
 import ml.NetworkAnalyzer;
 import gen.ImageSetInfo;
+import gen.LabelForm;
 import gen.Layer;
 import gen.LayerType;
 import gen.PlotInferenceResultsConfig;
@@ -164,6 +165,22 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
         .labelLengthBytes(mFieldsPerImage * bytesPerValue(network().labelDataType())) //
         .imageLengthBytes(inputImageVolumeProduct() * bytesPerValue(network().imageDataType())) //
     ;
+  }
+
+  /**
+   * Parse model outputs
+   */
+  public Object parseLabels(LabelForm inputForm, Object input, LabelForm outputForm) {
+    if (inputForm == LabelForm.MODEL_OUTPUT_RAW && outputForm == LabelForm.MODEL_OUTPUT) {
+      return parseRawModelOutput((float[]) input);
+    }
+    
+    // Call default method to throw an exception
+    return super.parseLabels(inputForm, input, outputForm);
+  }
+
+  private List<ScriptElement> parseRawModelOutput(float[] input) {
+    throw notFinished();
   }
 
   @Override

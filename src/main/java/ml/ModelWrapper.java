@@ -18,6 +18,7 @@ import js.json.JSMap;
 
 import gen.Classifier;
 import gen.ImageSetInfo;
+import gen.LabelForm;
 import gen.Layer;
 import gen.NetworkProjectType;
 import gen.NeuralNetwork;
@@ -208,8 +209,17 @@ public abstract class ModelWrapper<T extends AbstractData> extends BaseObject {
   public abstract void storeImageSetInfo(ImageSetInfo.Builder imageSetInfo);
 
   /**
+   * Convert image labels from one form to another
+   */
+  public Object parseLabels(LabelForm fromForm, Object input, LabelForm toForm) {
+    throw notSupported("parseLabels not supported for project", projectType(), "from", fromForm, "to",
+        toForm);
+  }
+
+  /**
    * Parse model output to a Script
    */
+  @Deprecated
   public void parseInferenceResult(byte[] modelOutput, int confidencePct, Script.Builder script) {
     modelNotSupported();
   }
@@ -277,6 +287,7 @@ public abstract class ModelWrapper<T extends AbstractData> extends BaseObject {
   /**
    * For inspection purposes, get the last bytes written via writeLabels()
    */
+  @Deprecated // Add support to optionally convert to model's label format (floats)
   public final byte[] lastLabelBytesWritten() {
     return checkNotNull(mLastLabelBytesWritten, "no lastLabelBytesWritten available");
   }
