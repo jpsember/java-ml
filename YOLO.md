@@ -25,10 +25,16 @@ we store
 
 [ X | Y | W | H | J | c_0 | c_1 | ... | c_C-1 ]
 
-X, Y :  locations of box relative to the grid cell, 0...1
+X, Y :  locations of center of box relative to the grid cell, 0...1
 W, H :  box size relative to anchor box size
 
 J    : 'objectness' :  1,  if there is an object in this slot; otherwise, 0
 
 c_0, c_n : 0, except for i = the box's category, when we store 1
 
+
+
+
+## Investigate labelling boxes on boundaries as well, so model doesn't get penalized for edge cases
+
+The suppression filtering will remove the duplicates that can result from it.

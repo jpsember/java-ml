@@ -25,3 +25,13 @@ Since I'm procedurally generating a large number of training images, and then du
 
 Logits, exponentials, and logarithms are often used in models so an unbounded trained value (-inf...+inf) can be bounded to something like -1...+1, or 0...1.  The labels fed in to the training should be the original values, and the appropriate conversions should be performed within the model's loss function.  One exception is at inference time, the Java code can take the model's output and apply the appropriate inverse functions (i.e. to convert -inf...+inf to a probability 0..1).
 
+
+## Label conversions
+
+The format of training labels (e.g. bounding boxes with categories) can take multiple forms within the workflow:
+
++ scredit annotations
++ training labels
++ model outputs, before applying the inverse of functions (such as logistic or exp);
++ model outputs, after applying the above inverses to recover values equivalent to the training labels
+

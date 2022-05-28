@@ -193,7 +193,7 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
             continue;
 
           highestObjectnessLogitSeen = Math.max(highestObjectnessLogitSeen, objectnessLogit);
-          float objectnessConfidence = NetworkUtil.sigmoid(objectnessLogit);
+          float objectnessConfidence = NetworkUtil.logistic(objectnessLogit);
 
           IPoint anchorBoxPixels = yolo.anchorBoxesPixels().get(anchorBox);
           float anchorBoxWidth = anchorBoxPixels.x;
@@ -222,8 +222,8 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
           // is no point as we are predicting the *sigmoid* of the relative to the cell, so 0 naturally
           // predicts its center.
           //
-          float bx = NetworkUtil.sigmoid(f[k + 0]);
-          float by = NetworkUtil.sigmoid(f[k + 1]);
+          float bx = NetworkUtil.logistic(f[k + 0]);
+          float by = NetworkUtil.logistic(f[k + 1]);
           float ws = NetworkUtil.exp(f[k + 2]);
           float hs = NetworkUtil.exp(f[k + 3]);
 
@@ -250,7 +250,7 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
         pr("*** No boxes detected");
       else {
         pr("Valid anchor boxes:", boxList.size());
-        pr("Highest conf:", NetworkUtil.sigmoid(highestObjectnessLogitSeen) * 100);
+        pr("Highest conf:", NetworkUtil.logistic(highestObjectnessLogitSeen) * 100);
       }
     }
 
@@ -456,7 +456,7 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
   }
 
   /**
-   * Choose best anchor box for current box
+   * Choose best anchor box for a particular size of rectangle
    */
   private void chooseAnchorBox(IPoint boxSizeI) {
     float boxSizeX = boxSizeI.x;
