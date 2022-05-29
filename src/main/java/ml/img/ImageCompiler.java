@@ -13,6 +13,7 @@ import java.util.Random;
 import gen.AugmentationConfig;
 import gen.CompileImagesConfig;
 import gen.DataType;
+import gen.LabelForm;
 import gen.NeuralNetwork;
 import gen.TransformWrapper;
 import js.base.BaseObject;
@@ -25,7 +26,6 @@ import js.graphics.ImgUtil;
 import js.graphics.Inspector;
 import js.graphics.ScriptElement;
 import js.graphics.ScriptUtil;
-import js.graphics.gen.Script;
 import ml.ModelWrapper;
 
 /**
@@ -104,7 +104,7 @@ public final class ImageCompiler extends BaseObject {
       }
         break;
       case UNSIGNED_BYTE: {
-        if (config.adjustBrightness())  
+        if (config.adjustBrightness())
           notSupported("adjust_brightness is not supported for data type", imageDataType);
         checkArgument(model.inputImageChannels() == 3, "not supported yet for channels != 3");
         imagePixels = ImgUtil.bgrPixels(targetImage);
@@ -116,11 +116,13 @@ public final class ImageCompiler extends BaseObject {
       model.accept(imagePixels, annotations);
 
       if (mInspector.used()) {
+        alert("inspector is used");
         // Parse the labels we generated, and write as the annotations to an inspection image
         mInspector.create("parsed").image(targetImage);
-        Script.Builder script = Script.newBuilder();
-        model.parseInferenceResult(model.lastLabelBytesWritten(), 80, script);
-        mInspector.elements(script.items());
+        // Script.Builder script = Script.newBuilder();
+        List<ScriptElement> elements = (List<ScriptElement>) model.transformLabels(LabelForm.MODEL_INPUT,
+            model.getLabelBuffer(), LabelForm.SCREDIT);
+        mInspector.elements(elements);
       }
 
       entry.releaseResources();

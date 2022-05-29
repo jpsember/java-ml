@@ -87,7 +87,7 @@ public abstract class ModelWrapper<T extends AbstractData> extends BaseObject {
   }
 
   public final RuntimeException modelNotSupported(Object... messageObjects) {
-    return die("Unsupported; project type:", projectType(), BasePrinter.toString(messageObjects));
+    return die("Unsupported; project type:", projectType(), ";", BasePrinter.toString(messageObjects));
   }
 
   /**
@@ -216,12 +216,19 @@ public abstract class ModelWrapper<T extends AbstractData> extends BaseObject {
     if (fromForm == LabelForm.SCREDIT && toForm == LabelForm.MODEL_INPUT)
       return transformScreditToModelInput((List<ScriptElement>) input);
 
+    if (fromForm == LabelForm.MODEL_INPUT && toForm == LabelForm.SCREDIT)
+      return transformModelInputToScredit(input);
+
     throw notSupported("parseLabels not supported for project", projectType(), "from", fromForm, "to",
         toForm);
   }
 
   public Object transformScreditToModelInput(List<ScriptElement> scriptElements) {
     throw modelNotSupported("transformScreditToModelInput");
+  }
+
+  public List<ScriptElement> transformModelInputToScredit(Object input) {
+    throw modelNotSupported("transformModelInputToScredit");
   }
 
   /**
@@ -298,6 +305,10 @@ public abstract class ModelWrapper<T extends AbstractData> extends BaseObject {
   @Deprecated // Add support to optionally convert to model's label format (floats)
   public final byte[] lastLabelBytesWritten() {
     return checkNotNull(mLastLabelBytesWritten, "no lastLabelBytesWritten available");
+  }
+
+  public Object getLabelBuffer() {
+    throw modelNotSupported("getLabelBuffer");
   }
 
   // ------------------------------------------------------------------

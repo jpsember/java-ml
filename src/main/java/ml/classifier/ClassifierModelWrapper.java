@@ -36,9 +36,33 @@ public final class ClassifierModelWrapper extends ModelWrapper<Classifier> {
 
   @Override
   public void accept(Object imagePixelArray, List<ScriptElement> scriptElementList) {
-     writeImage(imagePixelArray);
+    writeImage(imagePixelArray);
     transformLabels(LabelForm.SCREDIT, scriptElementList, LabelForm.MODEL_INPUT);
     writeLabels(mCategoryBuffer);
+  }
+
+  @Override
+  public Object transformLabels(LabelForm inputForm, Object input, LabelForm outputForm) {
+    todo("add some model-specific code");
+    //    if (inputForm == LabelForm.MODEL_OUTPUT_RAW && outputForm == LabelForm.MODEL_OUTPUT) {
+    //      return parseRawModelOutput((float[]) input);
+    //    }
+    return super.transformLabels(inputForm, input, outputForm);
+  }
+
+  @Override
+  public List<ScriptElement> transformModelInputToScredit(Object input) {
+    Classifier cl = modelConfig();
+    byte[] categoryBytes = (byte[]) input;
+    List<ScriptElement> output = arrayList();
+    for (byte catByte : categoryBytes) {
+      int category = catByte;
+      checkArgument(category >= 0 && category < cl.categoryCount());
+      ScriptElement elem = new RectElement(ScriptUtil.setCategory(null, category),
+          new IRect(inputImagePlanarSize()));
+      output.add(elem);
+    }
+    return output;
   }
 
   @Override
@@ -63,6 +87,10 @@ public final class ClassifierModelWrapper extends ModelWrapper<Classifier> {
     ScriptElement elem = new RectElement(ScriptUtil.setCategory(null, category),
         new IRect(inputImagePlanarSize()));
     script.items().add(elem);
+  }
+
+  public byte[] getLabelBuffer() {
+    return mCategoryBuffer;
   }
 
   private byte[] mCategoryBuffer = new byte[1];
