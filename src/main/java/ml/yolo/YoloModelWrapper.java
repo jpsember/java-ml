@@ -170,13 +170,13 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
   /**
    * Parse model outputs
    */
-  public Object parseLabels(LabelForm inputForm, Object input, LabelForm outputForm) {
+  public Object transformLabels(LabelForm inputForm, Object input, LabelForm outputForm) {
     if (inputForm == LabelForm.MODEL_OUTPUT_RAW && outputForm == LabelForm.MODEL_OUTPUT) {
       return parseRawModelOutput((float[]) input);
     }
     
     // Call default method to throw an exception
-    return super.parseLabels(inputForm, input, outputForm);
+    return super.transformLabels(inputForm, input, outputForm);
   }
 
   private List<ScriptElement> parseRawModelOutput(float[] input) {

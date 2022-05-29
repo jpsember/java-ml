@@ -211,7 +211,7 @@ public abstract class ModelWrapper<T extends AbstractData> extends BaseObject {
   /**
    * Convert image labels from one form to another
    */
-  public Object parseLabels(LabelForm fromForm, Object input, LabelForm toForm) {
+  public Object transformLabels(LabelForm fromForm, Object input, LabelForm toForm) {
     throw notSupported("parseLabels not supported for project", projectType(), "from", fromForm, "to",
         toForm);
   }
