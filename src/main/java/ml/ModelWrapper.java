@@ -7,6 +7,7 @@ import java.io.File;
 import java.util.List;
 
 import js.base.BaseObject;
+import js.base.BasePrinter;
 import js.data.AbstractData;
 import js.data.DataUtil;
 import js.file.Files;
@@ -85,8 +86,8 @@ public abstract class ModelWrapper<T extends AbstractData> extends BaseObject {
       out.add(orig.applyTransform(transform.matrix()));
   }
 
-  public final RuntimeException modelNotSupported() {
-    return die("Unsupported; project type:", projectType());
+  public final RuntimeException modelNotSupported(Object... messageObjects) {
+    return die("Unsupported; project type:", projectType(), BasePrinter.toString(messageObjects));
   }
 
   /**
@@ -212,8 +213,15 @@ public abstract class ModelWrapper<T extends AbstractData> extends BaseObject {
    * Convert image labels from one form to another
    */
   public Object transformLabels(LabelForm fromForm, Object input, LabelForm toForm) {
+    if (fromForm == LabelForm.SCREDIT && toForm == LabelForm.MODEL_INPUT)
+      return transformScreditToModelInput((List<ScriptElement>) input);
+
     throw notSupported("parseLabels not supported for project", projectType(), "from", fromForm, "to",
         toForm);
+  }
+
+  public Object transformScreditToModelInput(List<ScriptElement> scriptElements) {
+    throw modelNotSupported("transformScreditToModelInput");
   }
 
   /**

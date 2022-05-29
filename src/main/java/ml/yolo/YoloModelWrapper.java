@@ -113,9 +113,13 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
 
   @Override
   public void accept(Object imagePixelsArray, List<ScriptElement> scriptElementList) {
-
     writeImage(imagePixelsArray);
+    transformLabels(LabelForm.SCREDIT, scriptElementList, LabelForm.MODEL_INPUT);
+    writeLabels(mOutputLayer);
+  }
 
+  @Override
+  public float[] transformScreditToModelInput(List<ScriptElement> scriptElementList) {
     clearOutputLayer();
     ScriptUtil.assertNoMixing(scriptElementList);
 
@@ -155,8 +159,7 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
       if (convertBoxToCell(box.bounds()))
         writeBoxToFieldsBuffer(box);
     }
-
-    writeLabels(mOutputLayer);
+    return mOutputLayer;
   }
 
   @Override
@@ -174,8 +177,7 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
     if (inputForm == LabelForm.MODEL_OUTPUT_RAW && outputForm == LabelForm.MODEL_OUTPUT) {
       return parseRawModelOutput((float[]) input);
     }
-    
-    // Call default method to throw an exception
+
     return super.transformLabels(inputForm, input, outputForm);
   }
 

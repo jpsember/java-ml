@@ -6,6 +6,7 @@ import java.util.List;
 
 import gen.Classifier;
 import gen.ImageSetInfo;
+import gen.LabelForm;
 import gen.TransformWrapper;
 import js.data.DataUtil;
 import js.geometry.IRect;
@@ -35,14 +36,22 @@ public final class ClassifierModelWrapper extends ModelWrapper<Classifier> {
 
   @Override
   public void accept(Object imagePixelArray, List<ScriptElement> scriptElementList) {
-    if (scriptElementList.size() != 1)
-      throw badArg("expected single element:", INDENT, scriptElementList);
-    writeImage(imagePixelArray);
-    ScriptElement elem = scriptElementList.get(0);
-    int category = elem.properties().category();
-    byte[] byteArray = new byte[1];
-    byteArray[0] = (byte)category;
-    writeLabels(byteArray);
+     writeImage(imagePixelArray);
+    transformLabels(LabelForm.SCREDIT, scriptElementList, LabelForm.MODEL_INPUT);
+    writeLabels(mCategoryBuffer);
+  }
+
+  @Override
+  public Object transformScreditToModelInput(List<ScriptElement> scriptElements) {
+    checkArgument(scriptElements.size() == 1);
+    // The buffer is only designed for a single element, but iterate anyways
+    int i = INIT_INDEX;
+    for (ScriptElement elem : scriptElements) {
+      i++;
+      int category = elem.properties().category();
+      mCategoryBuffer[i] = (byte) category;
+    }
+    return mCategoryBuffer;
   }
 
   @Override
@@ -56,4 +65,5 @@ public final class ClassifierModelWrapper extends ModelWrapper<Classifier> {
     script.items().add(elem);
   }
 
+  private byte[] mCategoryBuffer = new byte[1];
 }

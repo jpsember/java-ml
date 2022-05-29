@@ -8,5 +8,5 @@
            },
 
 
-    "retain_existing_training_sets" : true,
+    //"retain_existing_training_sets" : true,
 }
