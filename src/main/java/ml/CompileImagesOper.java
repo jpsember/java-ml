@@ -23,6 +23,21 @@ import ml.img.ImageCompiler;
  */
 public final class CompileImagesOper extends AppOper {
 
+  // ------------------------------------------------------------------
+  //
+  private static final boolean ISSUE_32 = alert("Issue #32 in effect (intermittent fail to train)");
+
+  private String id() {
+    checkState(ISSUE_32);
+    if (mIssue32Id == null)
+      mIssue32Id = "Issue #32 id:" + (System.currentTimeMillis() & 0xff);
+    return mIssue32Id;
+  }
+
+  private String mIssue32Id;
+  // 
+  // ------------------------------------------------------------------
+
   @Override
   public String userCommand() {
     return "compileimages";
@@ -53,6 +68,7 @@ public final class CompileImagesOper extends AppOper {
       prepareTrainService();
       return;
     }
+    pr("perform train service;", id());
 
     writeModelData();
     ImageCompiler imageCompiler = new ImageCompiler(config(), network(), files());
@@ -92,9 +108,12 @@ public final class CompileImagesOper extends AppOper {
   }
 
   private void prepareTrainService() {
+    pr("prepareTrainService", id());
 
-    // Delete any existing signature file, or 'stop' signal file
+    // Delete any existing signature file, or 'stop' signal file;
+    // If either exists, then pause a bit afterward to try to avoid race conditions
     files().deletePeacefully(sigFile());
+    pr("deleted", sigFile(), id());
     files().deletePeacefully(stopSignalFile());
 
     // Delete existing training set subdirectories, or any temporary file associated with them
@@ -116,13 +135,13 @@ public final class CompileImagesOper extends AppOper {
 
     // Write a new signature file with the current time
     files().writeString(sigFile(), "" + System.currentTimeMillis());
-
+    pr("wrote sig file", sigFile(), id());
     validateCheckpoints();
   }
 
   private void performTrainService(ImageCompiler imageCompiler) {
     String signature = readSignature();
-    checkState(nonEmpty(signature), "No signature file found; need to prepare?");
+    checkState(nonEmpty(signature), "No signature file found; need to prepare?", id());
 
     // Choose a temporary filename that can be atomically renamed when it is complete
     //
