@@ -18,7 +18,6 @@ import js.json.JSMap;
 
 import gen.Classifier;
 import gen.ImageSetInfo;
-import gen.LabelForm;
 import gen.Layer;
 import gen.NetworkProjectType;
 import gen.NeuralNetwork;
@@ -192,21 +191,6 @@ public abstract class ModelWrapper<T extends AbstractData> extends BaseObject {
    * Fill in information fields. Some fields may have already been filled in
    */
   public abstract void storeImageSetInfo(ImageSetInfo.Builder imageSetInfo);
-
-  /**
-   * Convert image labels from one form to another
-   */
-  @Deprecated // Use LabelledImage instead
-  public Object transformLabels(LabelForm fromForm, Object input, LabelForm toForm) {
-    if (fromForm == LabelForm.SCREDIT && toForm == LabelForm.MODEL_INPUT)
-      return transformScreditToModelInput((List<ScriptElement>) input);
-
-    if (fromForm == LabelForm.MODEL_INPUT && toForm == LabelForm.SCREDIT)
-      return transformModelInputToScredit(input);
-
-    throw notSupported("parseLabels not supported for project", projectType(), "from", fromForm, "to",
-        toForm);
-  }
 
   public Object transformScreditToModelInput(List<ScriptElement> scriptElements) {
     throw modelNotSupported("transformScreditToModelInput");

@@ -4,7 +4,6 @@ import static js.base.Tools.*;
 
 import java.util.List;
 
-import gen.LabelForm;
 import js.base.BasePrinter;
 import js.graphics.ScriptElement;
 
@@ -51,8 +50,7 @@ public final class LabelledImage {
   public List<ScriptElement> parseAnnotations() {
     if (mAnnotations != null)
       trouble("already has annotations");
-    mAnnotations = (List<ScriptElement>) model().transformLabels(LabelForm.MODEL_INPUT,
-        model().getLabelBuffer(), LabelForm.SCREDIT);
+    mAnnotations = model().transformModelInputToScredit(model().getLabelBuffer());
     return annotations();
   }
 

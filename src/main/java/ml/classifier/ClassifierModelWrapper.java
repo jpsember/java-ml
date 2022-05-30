@@ -6,7 +6,6 @@ import java.util.List;
 
 import gen.Classifier;
 import gen.ImageSetInfo;
-import gen.LabelForm;
 import gen.TransformWrapper;
 import js.data.DataUtil;
 import js.geometry.IRect;
@@ -38,17 +37,8 @@ public final class ClassifierModelWrapper extends ModelWrapper<Classifier> {
   @Override
   public void accept(LabelledImage labelledImage) {
     writeImage(labelledImage);
-    transformLabels(LabelForm.SCREDIT, labelledImage.annotations(), LabelForm.MODEL_INPUT);
+    transformScreditToModelInput(labelledImage.annotations());
     writeLabels(mCategoryBuffer);
-  }
-
-  @Override
-  public Object transformLabels(LabelForm inputForm, Object input, LabelForm outputForm) {
-    todo("add some model-specific code");
-    //    if (inputForm == LabelForm.MODEL_OUTPUT_RAW && outputForm == LabelForm.MODEL_OUTPUT) {
-    //      return parseRawModelOutput((float[]) input);
-    //    }
-    return super.transformLabels(inputForm, input, outputForm);
   }
 
   @Override

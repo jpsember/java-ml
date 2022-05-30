@@ -24,7 +24,6 @@ import ml.LabelledImage;
 import ml.ModelWrapper;
 import ml.NetworkAnalyzer;
 import gen.ImageSetInfo;
-import gen.LabelForm;
 import gen.Layer;
 import gen.LayerType;
 import gen.PlotInferenceResultsConfig;
@@ -112,7 +111,7 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
   public void accept(LabelledImage labelledImage) {
     labelledImage.useOnlySingleElement();
     writeImage(labelledImage);
-    transformLabels(LabelForm.SCREDIT, labelledImage.annotations(), LabelForm.MODEL_INPUT);
+    transformScreditToModelInput(labelledImage.annotations());
     writeLabels(mOutputLayer);
   }
 
@@ -166,19 +165,6 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
         .labelLengthBytes(mFieldsPerImage * bytesPerValue(network().labelDataType())) //
         .imageLengthBytes(inputImageVolumeProduct() * bytesPerValue(network().imageDataType())) //
     ;
-  }
-
-  @Override
-  public Object transformLabels(LabelForm inputForm, Object input, LabelForm outputForm) {
-    if (inputForm == LabelForm.MODEL_OUTPUT_RAW && outputForm == LabelForm.MODEL_OUTPUT) {
-      return parseRawModelOutput((float[]) input);
-    }
-
-    return super.transformLabels(inputForm, input, outputForm);
-  }
-
-  private List<ScriptElement> parseRawModelOutput(float[] input) {
-    throw notFinished();
   }
 
   @Override
