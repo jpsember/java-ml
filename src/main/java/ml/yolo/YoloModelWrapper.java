@@ -36,15 +36,6 @@ import ml.VolumeUtil;
 public final class YoloModelWrapper extends ModelWrapper<Yolo> {
 
   @Override
-  public void extractShapes(Script script, List<ScriptElement> target) {
-    assertNoMixing(script);
-    target.addAll(ScriptUtil.polygonElements(script));
-    for (RectElement b : ScriptUtil.rectElements(script)) {
-      target.add(b);
-    }
-  }
-
-  @Override
   public boolean processLayer(NetworkAnalyzer analyzer, Layer.Builder layer) {
     if (layer.type() != LayerType.YOLO)
       return false;
@@ -122,17 +113,6 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
     labelledImage.useOnlySingleElement();
     writeImage(labelledImage);
     transformLabels(LabelForm.SCREDIT, labelledImage.annotations(), LabelForm.MODEL_INPUT);
-    writeLabels(mOutputLayer);
-  }
-
-  @Override
-  public void accept(Object imagePixelsArray, List<ScriptElement> scriptElementList) {
-    if (alert("using only single element") && scriptElementList.size() > 1) {
-      scriptElementList = arrayList(first(scriptElementList));
-    }
-
-    writeImage(imagePixelsArray);
-    transformLabels(LabelForm.SCREDIT, scriptElementList, LabelForm.MODEL_INPUT);
     writeLabels(mOutputLayer);
   }
 

@@ -97,24 +97,6 @@ public abstract class ModelWrapper<T extends AbstractData> extends BaseObject {
   }
 
   /**
-   * Examine script and extract appropriate elements from it by appending to
-   * target
-   */
-  @Deprecated // Not sure this is used...
-  public void extractShapes(Script script, List<ScriptElement> target) {
-    throw modelNotSupported();
-  }
-
-  /**
-   * Raise exception if there is a mixture of rectangles and polygons in a
-   * script
-   */
-  public final void assertNoMixing(Script script) {
-    if (!ScriptUtil.rectElements(script).isEmpty() && !ScriptUtil.polygonElements(script).isEmpty())
-      badArg("Cannot mix rectangles and polygons");
-  }
-
-  /**
    * Perform NetworkAnalyzer for custom layers involving this model type
    * 
    * Return true if we handled the layer, false otherwise
@@ -208,16 +190,6 @@ public abstract class ModelWrapper<T extends AbstractData> extends BaseObject {
   public abstract void accept(LabelledImage labelledImage);
 
   /**
-   * Process an image and its annotations, converting to form suitable for
-   * training
-   * 
-   * @param imagePixelsArray
-   *          a primitive array of a datatype compatible with the network's
-   *          imageDataType field
-   */
-  public abstract void accept(Object imagePixelsArray, List<ScriptElement> scriptElementList);
-
-  /**
    * Fill in information fields. Some fields may have already been filled in
    */
   public abstract void storeImageSetInfo(ImageSetInfo.Builder imageSetInfo);
@@ -277,7 +249,7 @@ public abstract class ModelWrapper<T extends AbstractData> extends BaseObject {
       Files.S.write(DataUtil.floatsToBytesLittleEndian(image.pixelsF()), imageOutputStream());
       break;
 
-    case UNSIGNED_BYTE: 
+    case UNSIGNED_BYTE:
       Files.S.write(image.pixelsB(), imageOutputStream());
       break;
     }

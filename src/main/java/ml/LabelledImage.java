@@ -17,6 +17,10 @@ public final class LabelledImage {
     mModel = model;
   }
 
+  public ModelWrapper model() {
+    return mModel;
+  }
+
   public void setPixels(float[] imageFloats) {
     setPixelsDefined();
     mPixelsF = imageFloats;

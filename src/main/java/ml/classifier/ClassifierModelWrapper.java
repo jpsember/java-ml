@@ -43,13 +43,6 @@ public final class ClassifierModelWrapper extends ModelWrapper<Classifier> {
   }
 
   @Override
-  public void accept(Object imagePixelArray, List<ScriptElement> scriptElementList) {
-    writeImage(imagePixelArray);
-    transformLabels(LabelForm.SCREDIT, scriptElementList, LabelForm.MODEL_INPUT);
-    writeLabels(mCategoryBuffer);
-  }
-
-  @Override
   public Object transformLabels(LabelForm inputForm, Object input, LabelForm outputForm) {
     todo("add some model-specific code");
     //    if (inputForm == LabelForm.MODEL_OUTPUT_RAW && outputForm == LabelForm.MODEL_OUTPUT) {
