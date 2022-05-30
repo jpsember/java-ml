@@ -13,7 +13,6 @@ import java.util.Random;
 import gen.AugmentationConfig;
 import gen.CompileImagesConfig;
 import gen.DataType;
-import gen.LabelForm;
 import gen.NeuralNetwork;
 import gen.TransformWrapper;
 import js.base.BaseObject;
@@ -89,7 +88,7 @@ public final class ImageCompiler extends BaseObject {
       }
       op.filter(img, targetImage);
       mInspector.create("tfm").image(targetImage).elements(annotations);
-      
+
       LabelledImage image = new LabelledImage(model);
       image.setAnnotations(annotations);
 
@@ -115,17 +114,14 @@ public final class ImageCompiler extends BaseObject {
       default:
         throw notSupported("ImageDataType:", imageDataType);
       }
-      
+
       model.accept(image);
 
       if (mInspector.used()) {
         alert("inspector is used");
         // Parse the labels we generated, and write as the annotations to an inspection image
         mInspector.create("parsed").image(targetImage);
-        todo("can we use LabelledImage to simplify this?");
-        List<ScriptElement> elements = (List<ScriptElement>) model.transformLabels(LabelForm.MODEL_INPUT,
-            model.getLabelBuffer(), LabelForm.SCREDIT);
-        mInspector.elements(elements);
+        mInspector.elements(image.emptyCopy().parseAnnotations());
       }
 
       entry.releaseResources();

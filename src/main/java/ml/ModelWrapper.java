@@ -13,7 +13,6 @@ import js.data.DataUtil;
 import js.file.Files;
 import js.geometry.IPoint;
 import js.graphics.ScriptElement;
-import js.graphics.ScriptUtil;
 import js.graphics.gen.Script;
 import js.json.JSMap;
 
@@ -197,6 +196,7 @@ public abstract class ModelWrapper<T extends AbstractData> extends BaseObject {
   /**
    * Convert image labels from one form to another
    */
+  @Deprecated // Use LabelledImage instead
   public Object transformLabels(LabelForm fromForm, Object input, LabelForm toForm) {
     if (fromForm == LabelForm.SCREDIT && toForm == LabelForm.MODEL_INPUT)
       return transformScreditToModelInput((List<ScriptElement>) input);

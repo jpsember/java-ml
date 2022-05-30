@@ -4,6 +4,7 @@ import static js.base.Tools.*;
 
 import java.util.List;
 
+import gen.LabelForm;
 import js.base.BasePrinter;
 import js.graphics.ScriptElement;
 
@@ -15,6 +16,13 @@ public final class LabelledImage {
 
   public LabelledImage(ModelWrapper model) {
     mModel = model;
+  }
+
+  /**
+   * Create a new LabelledImage using this one's model
+   */
+  public LabelledImage emptyCopy() {
+    return new LabelledImage(model());
   }
 
   public ModelWrapper model() {
@@ -35,6 +43,17 @@ public final class LabelledImage {
     if (mAnnotations != null)
       trouble("already has annotations");
     mAnnotations = annotations;
+  }
+
+  /**
+   * Parse annotations from the model's label buffer
+   */
+  public List<ScriptElement> parseAnnotations() {
+    if (mAnnotations != null)
+      trouble("already has annotations");
+    mAnnotations = (List<ScriptElement>) model().transformLabels(LabelForm.MODEL_INPUT,
+        model().getLabelBuffer(), LabelForm.SCREDIT);
+    return annotations();
   }
 
   public void useOnlySingleElement() {
