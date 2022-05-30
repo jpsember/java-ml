@@ -14,6 +14,7 @@ import js.graphics.RectElement;
 import js.graphics.ScriptElement;
 import js.graphics.ScriptUtil;
 import js.graphics.gen.Script;
+import ml.LabelledImage;
 import ml.ModelWrapper;
 import static ml.NetworkUtil.*;
 
@@ -32,6 +33,13 @@ public final class ClassifierModelWrapper extends ModelWrapper<Classifier> {
         .labelLengthBytes(1 * bytesPerValue(network().labelDataType())) //
         .imageLengthBytes(inputImageVolumeProduct() * bytesPerValue(network().imageDataType())) //
     ;
+  }
+
+  @Override
+  public void accept(LabelledImage labelledImage) {
+    writeImage(labelledImage);
+    transformLabels(LabelForm.SCREDIT, labelledImage.annotations(), LabelForm.MODEL_INPUT);
+    writeLabels(mCategoryBuffer);
   }
 
   @Override

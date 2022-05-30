@@ -26,6 +26,7 @@ import js.graphics.ImgUtil;
 import js.graphics.Inspector;
 import js.graphics.ScriptElement;
 import js.graphics.ScriptUtil;
+import ml.LabelledImage;
 import ml.ModelWrapper;
 
 /**
@@ -88,8 +89,9 @@ public final class ImageCompiler extends BaseObject {
       }
       op.filter(img, targetImage);
       mInspector.create("tfm").image(targetImage).elements(annotations);
-
-      Object imagePixels = null;
+      
+      LabelledImage image = new LabelledImage(model);
+      image.setAnnotations(annotations);
 
       switch (imageDataType) {
       case FLOAT32: {
@@ -100,26 +102,27 @@ public final class ImageCompiler extends BaseObject {
 
         mInspector.create("float").imageSize(model.inputImagePlanarSize())
             .channels(model.inputImageChannels()).image(imageFloats);
-        imagePixels = imageFloats;
+        image.setPixels(imageFloats);
       }
         break;
       case UNSIGNED_BYTE: {
         if (config.adjustBrightness())
           notSupported("adjust_brightness is not supported for data type", imageDataType);
         checkArgument(model.inputImageChannels() == 3, "not supported yet for channels != 3");
-        imagePixels = ImgUtil.bgrPixels(targetImage);
+        image.setPixels(ImgUtil.bgrPixels(targetImage));
       }
         break;
       default:
         throw notSupported("ImageDataType:", imageDataType);
       }
-      model.accept(imagePixels, annotations);
+      
+      model.accept(image);
 
       if (mInspector.used()) {
         alert("inspector is used");
         // Parse the labels we generated, and write as the annotations to an inspection image
         mInspector.create("parsed").image(targetImage);
-        // Script.Builder script = Script.newBuilder();
+        todo("can we use LabelledImage to simplify this?");
         List<ScriptElement> elements = (List<ScriptElement>) model.transformLabels(LabelForm.MODEL_INPUT,
             model.getLabelBuffer(), LabelForm.SCREDIT);
         mInspector.elements(elements);

@@ -204,6 +204,12 @@ public abstract class ModelWrapper<T extends AbstractData> extends BaseObject {
   /**
    * Process an image and its annotations, converting to form suitable for
    * training
+   */
+  public abstract void accept(LabelledImage labelledImage);
+
+  /**
+   * Process an image and its annotations, converting to form suitable for
+   * training
    * 
    * @param imagePixelsArray
    *          a primitive array of a datatype compatible with the network's
@@ -261,6 +267,21 @@ public abstract class ModelWrapper<T extends AbstractData> extends BaseObject {
   // ------------------------------------------------------------------
   // Writing training images and labels
   // ------------------------------------------------------------------
+
+  public final void writeImage(LabelledImage image) {
+    switch (network().imageDataType()) {
+    default:
+      throw notSupported("image_data_type:", network().imageDataType());
+
+    case FLOAT32:
+      Files.S.write(DataUtil.floatsToBytesLittleEndian(image.pixelsF()), imageOutputStream());
+      break;
+
+    case UNSIGNED_BYTE: 
+      Files.S.write(image.pixelsB(), imageOutputStream());
+      break;
+    }
+  }
 
   public final void writeImage(Object imagePixelArray) {
     switch (network().imageDataType()) {
