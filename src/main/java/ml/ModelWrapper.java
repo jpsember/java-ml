@@ -78,7 +78,10 @@ public abstract class ModelWrapper<T extends AbstractData> extends BaseObject {
   }
 
   /**
-   * Apply a transformation to ScriptElements
+   * Apply a transformation to ScriptElements. Default implementation applies
+   * the supplied transformation to the elements. Classifier wrapper overrides
+   * this to copy the elements unchanged, as each element's geometry is not
+   * used, only its category
    */
   public void transformAnnotations(List<ScriptElement> in, List<ScriptElement> out,
       TransformWrapper transform) {
@@ -86,6 +89,9 @@ public abstract class ModelWrapper<T extends AbstractData> extends BaseObject {
       out.add(orig.applyTransform(transform.matrix()));
   }
 
+  /**
+   * Throw an exception for an unsupported operation with this type of model
+   */
   public final RuntimeException modelNotSupported(Object... messageObjects) {
     return die("Unsupported; project type:", projectType(), ";", BasePrinter.toString(messageObjects));
   }
@@ -94,6 +100,7 @@ public abstract class ModelWrapper<T extends AbstractData> extends BaseObject {
    * Examine script and extract appropriate elements from it by appending to
    * target
    */
+  @Deprecated // Not sure this is used...
   public void extractShapes(Script script, List<ScriptElement> target) {
     throw modelNotSupported();
   }

@@ -22,6 +22,7 @@ import js.graphics.gen.Script;
 import js.json.JSMap;
 import ml.ModelWrapper;
 import ml.NetworkAnalyzer;
+import gen.Classifier;
 import gen.ImageSetInfo;
 import gen.LabelForm;
 import gen.Layer;
@@ -109,6 +110,11 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
     mGridToImageScale = yolo.blockSize().toFPoint();
     mImageToGridScale = new FPoint(1f / mGridToImageScale.x, 1f / mGridToImageScale.y);
     constructOutputLayer();
+  }
+
+  @Override
+  public float[] getLabelBuffer() {
+    return mOutputLayer;
   }
 
   @Override
@@ -276,6 +282,28 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
     script.items(boxList);
   }
 
+  
+  
+  
+
+  @Override
+  public List<ScriptElement> transformModelInputToScredit(Object input) {
+    todo("refactor to pass in script element list as argument");
+    Yolo yolo = modelConfig();
+    float[] labels = (float[])input;
+    List<ScriptElement> output = arrayList();
+    todo("finish implementing this");
+//    for (byte catByte : categoryBytes) {
+//      int category = catByte;
+//      checkArgument(category >= 0 && category < cl.categoryCount());
+//      ScriptElement elem = new RectElement(ScriptUtil.setCategory(null, category),
+//          new IRect(inputImagePlanarSize()));
+//      output.add(elem);
+//    }
+    return output;
+  }
+  
+  
   private PlotInferenceResultsConfig mParserConfig = PlotInferenceResultsConfig.DEFAULT_INSTANCE;
 
   // ------------------------------------------------------------------
