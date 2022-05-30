@@ -118,6 +118,10 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
 
   @Override
   public void accept(Object imagePixelsArray, List<ScriptElement> scriptElementList) {
+    if (alert("using only single element") && scriptElementList.size() > 1) {
+      scriptElementList = arrayList(first(scriptElementList));
+    }
+
     writeImage(imagePixelsArray);
     transformLabels(LabelForm.SCREDIT, scriptElementList, LabelForm.MODEL_INPUT);
     writeLabels(mOutputLayer);
@@ -281,59 +285,44 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
     script.items(boxList);
   }
 
-  
-  
-  
-
   @Override
   public List<ScriptElement> transformModelInputToScredit(Object input) {
     todo("refactor to pass in script element list as argument");
     Yolo yolo = modelConfig();
-    float[] f = (float[])input;
-   // List<ScriptElement> output = arrayList();
+    float[] f = (float[]) input;
+    // List<ScriptElement> output = arrayList();
     todo("finish implementing this");
 
     int confidencePct = 60; // TODO: somehow make this a parameter
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
 
     log("Constructing YOLO result for image; confidence threshold %", confidencePct);
 
     List<ScriptElement> boxList = arrayList();
     final int anchorBoxCount = numAnchorBoxes();
     final int fieldsPerBox = YoloUtil.valuesPerAnchorBox(yolo);
-    final float logitMinForResult = NetworkUtil.logit(confidencePct / 100f);
+    final float objectnessMinForResult = confidencePct / 100f;
     final int categoryCount = yolo.categoryCount();
 
-    float highestObjectnessLogitSeen = 0f;
+    float highestObjectnessSeen = 0f;
     int fieldSetIndex = 0;
     for (int cellY = 0; cellY < mGridSize.y; cellY++) {
       for (int cellX = 0; cellX < mGridSize.x; cellX++) {
         for (int anchorBox = 0; anchorBox < anchorBoxCount; anchorBox++, fieldSetIndex += fieldsPerBox) {
 
-          
-          float objectnessLogit = f[fieldSetIndex + F_CONFIDENCE];
-          if (objectnessLogit != 1f) continue;
-          pr("cell x:",cellX,"y:",cellY);
-          
-          pr("...objectness:",objectnessLogit);
+          float objectness = f[fieldSetIndex + F_CONFIDENCE];
+          if (objectness != 1f)
+            continue;
+          pr("cell x:", cellX, "y:", cellY);
+
+          pr("...objectness:", objectness);
           // Note, this check will cause us to skip a lot of computation, which
           // suggests we probably don't want to embed the sigmoid/exp postprocessing steps into the model;
           // but then again, the model probably has very optimized, parallel versions of those functions
-          if (objectnessLogit < logitMinForResult)
+          if (objectness < objectnessMinForResult)
             continue;
 
-          highestObjectnessLogitSeen = Math.max(highestObjectnessLogitSeen, objectnessLogit);
-          float objectnessConfidence = NetworkUtil.logistic(objectnessLogit);
+          highestObjectnessSeen = Math.max(highestObjectnessSeen, objectness);
+          float objectnessConfidence = objectness;
 
           IPoint anchorBoxPixels = yolo.anchorBoxesPixels().get(anchorBox);
           float anchorBoxWidth = anchorBoxPixels.x;
@@ -362,10 +351,10 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
           // is no point as we are predicting the *sigmoid* of the relative to the cell, so 0 naturally
           // predicts its center.
           //
-          float bx = NetworkUtil.logistic(f[k + 0]);
-          float by = NetworkUtil.logistic(f[k + 1]);
-          float ws = NetworkUtil.exp(f[k + 2]);
-          float hs = NetworkUtil.exp(f[k + 3]);
+          float bx = f[k + 0];
+          float by = f[k + 1];
+          float ws = f[k + 2];
+          float hs = f[k + 3];
 
           float bw = anchorBoxWidth * ws;
           float bh = anchorBoxHeight * hs;
@@ -374,7 +363,7 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
           float midpointY = (by + cellY) * mGridToImageScale.y;
 
           IRect boxRect = new FRect(midpointX - bw / 2, midpointY - bh / 2, bw, bh).toIRect();
-pr("boxRect:",boxRect );
+          pr("boxRect:", boxRect);
           // I think we want to use the 'objectness' confidence, without incorporating the best category's confidence in any way
           ElementProperties.Builder prop = ElementProperties.newBuilder();
           prop.category(bestCategory);
@@ -390,25 +379,19 @@ pr("boxRect:",boxRect );
         pr("*** No boxes detected");
       else {
         pr("Valid anchor boxes:", boxList.size());
-        pr("Highest conf:", NetworkUtil.logistic(highestObjectnessLogitSeen) * 100);
+        pr("Highest conf:", highestObjectnessSeen * 100);
       }
     }
 
     if (!alert("disabled for now") && mParserConfig.maxIOverU() > 0)
       boxList = YoloUtil.performNonMaximumSuppression(boxList, mParserConfig.maxIOverU());
-   // script.items(boxList);
-    
-    
-    
-    
+    // script.items(boxList);
+
     halt();
-    
-    
-    
+
     return boxList;
   }
-  
-  
+
   private PlotInferenceResultsConfig mParserConfig = PlotInferenceResultsConfig.DEFAULT_INSTANCE;
 
   // ------------------------------------------------------------------
@@ -482,7 +465,6 @@ pr("boxRect:",boxRect );
 
   private void writeBoxToFieldsBuffer(RectElement box) {
 
-    
     float[] b = mOutputLayer;
 
     int cellIndex = mBoxGridCell.x + mGridSize.x * mBoxGridCell.y;
@@ -522,17 +504,16 @@ pr("boxRect:",boxRect );
     // and a bit of Python code, but this keeps the structure of the input and output box information the same
 
     b[f + YoloUtil.F_CLASS_PROBABILITIES + ScriptUtil.categoryOrZero(box)] = 1;
-    
-    
+
     if (alert("logging")) {
-    pr("write box to fields:",box);
-    pr("boxGridCell:",mBoxGridCell);
-    pr("anchor box:",mAnchorBox);
-    pr("box loc rel to cell:",mBoxLocationRelativeToCell);
-    pr("box size rel to anc:",mBoxSizeRelativeToAnchorBox);
-    pr("conf:",b[f + YoloUtil.F_CONFIDENCE]);
+      pr("write box to fields:", box);
+      pr("boxGridCell:", mBoxGridCell);
+      pr("anchor box:", mAnchorBox);
+      pr("box loc rel to cell:", mBoxLocationRelativeToCell);
+      pr("box size rel to anc:", mBoxSizeRelativeToAnchorBox);
+      pr("conf:", b[f + YoloUtil.F_CONFIDENCE]);
     }
-    
+
   }
 
   private void constructOutputLayer() {
