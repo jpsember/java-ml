@@ -42,9 +42,9 @@ public final class ClassifierModelWrapper extends ModelWrapper<Classifier> {
   }
 
   @Override
-  public List<ScriptElement> transformModelInputToScredit(Object input) {
+  public List<ScriptElement> transformModelInputToScredit() {
     Classifier cl = modelConfig();
-    byte[] categoryBytes = (byte[]) input;
+    byte[] categoryBytes = labelBufferBytes();
     List<ScriptElement> output = arrayList();
     for (byte catByte : categoryBytes) {
       int category = catByte;

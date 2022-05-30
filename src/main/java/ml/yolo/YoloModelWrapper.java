@@ -103,7 +103,7 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
   }
 
   @Override
-  public float[] getLabelBuffer() {
+  public Object getLabelBuffer() {
     return mOutputLayer;
   }
 
@@ -112,7 +112,7 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
     labelledImage.useOnlySingleElement();
     writeImage(labelledImage);
     transformScreditToModelInput(labelledImage.annotations());
-    writeLabels(mOutputLayer);
+    writeLabels(labelBufferFloats());
   }
 
   @Override
@@ -261,15 +261,10 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
   }
 
   @Override
-  public List<ScriptElement> transformModelInputToScredit(Object input) {
-    todo("refactor to pass in script element list as argument");
+  public List<ScriptElement> transformModelInputToScredit() {
     Yolo yolo = modelConfig();
-    float[] f = (float[]) input;
-    // List<ScriptElement> output = arrayList();
-    todo("finish implementing this");
-
+    float[] f = labelBufferFloats();
     int confidencePct = 60; // TODO: somehow make this a parameter
-
     log("Constructing YOLO result for image; confidence threshold %", confidencePct);
 
     List<ScriptElement> boxList = arrayList();
@@ -287,9 +282,7 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
           float objectness = f[fieldSetIndex + F_CONFIDENCE];
           if (objectness != 1f)
             continue;
-          pr("cell x:", cellX, "y:", cellY);
 
-          pr("...objectness:", objectness);
           // Note, this check will cause us to skip a lot of computation, which
           // suggests we probably don't want to embed the sigmoid/exp postprocessing steps into the model;
           // but then again, the model probably has very optimized, parallel versions of those functions
@@ -307,10 +300,10 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
           if (categoryCount > 1) {
             float bestConf = -1;
             int k = fieldSetIndex + F_CLASS_PROBABILITIES;
-            for (int i = 0; i < categoryCount; i++) {
-              float conf = f[k + i];
-              if (i == 0 || bestConf < conf) {
-                bestCategory = k;
+            for (int category = 0; category < categoryCount; category++) {
+              float conf = f[k + category];
+              if (category == 0 || bestConf < conf) {
+                bestCategory = category;
                 bestConf = conf;
               }
             }
@@ -338,7 +331,6 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
           float midpointY = (by + cellY) * mGridToImageScale.y;
 
           IRect boxRect = new FRect(midpointX - bw / 2, midpointY - bh / 2, bw, bh).toIRect();
-          pr("boxRect:", boxRect);
           // I think we want to use the 'objectness' confidence, without incorporating the best category's confidence in any way
           ElementProperties.Builder prop = ElementProperties.newBuilder();
           prop.category(bestCategory);
@@ -360,10 +352,6 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
 
     if (!alert("disabled for now") && mParserConfig.maxIOverU() > 0)
       boxList = YoloUtil.performNonMaximumSuppression(boxList, mParserConfig.maxIOverU());
-    // script.items(boxList);
-
-    halt();
-
     return boxList;
   }
 

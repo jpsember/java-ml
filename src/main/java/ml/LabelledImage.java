@@ -50,7 +50,7 @@ public final class LabelledImage {
   public List<ScriptElement> parseAnnotations() {
     if (mAnnotations != null)
       trouble("already has annotations");
-    mAnnotations = model().transformModelInputToScredit(model().getLabelBuffer());
+    mAnnotations = model().transformModelInputToScredit();
     return annotations();
   }
 

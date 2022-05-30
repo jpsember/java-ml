@@ -196,7 +196,11 @@ public abstract class ModelWrapper<T extends AbstractData> extends BaseObject {
     throw modelNotSupported("transformScreditToModelInput");
   }
 
-  public List<ScriptElement> transformModelInputToScredit(Object input) {
+  /**
+   * Transform labels from their form as passed to the model back to
+   * ScriptElements; for inspection / debug purposes only
+   */
+  public List<ScriptElement> transformModelInputToScredit() {
     throw modelNotSupported("transformModelInputToScredit");
   }
 
@@ -291,10 +295,27 @@ public abstract class ModelWrapper<T extends AbstractData> extends BaseObject {
     return checkNotNull(mLastLabelBytesWritten, "no lastLabelBytesWritten available");
   }
 
+  /**
+   * Get the default buffer used for storing an image's labels
+   */
   public Object getLabelBuffer() {
     throw modelNotSupported("getLabelBuffer");
   }
 
+  /**
+   * Get the buffer used for storing an image's labels, as an array of floats
+   */
+  public final float[] labelBufferFloats() {
+    return (float[]) getLabelBuffer();
+  }
+
+  /**
+   * Get the buffer used for storing an image's labels, as an array of bytes
+   */
+  public final byte[] labelBufferBytes() {
+    return (byte[]) getLabelBuffer();
+  }
+  
   // ------------------------------------------------------------------
 
   private NeuralNetwork mNetwork;
