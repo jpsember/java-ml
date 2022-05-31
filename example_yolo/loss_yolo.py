@@ -43,6 +43,11 @@ class YoloLoss(nn.Module):
     #  The -1 here makes it inferred from the other dimensions
     output = output.view(batch_size, self.num_anchors, -1, grid_cell_total)
 
+    show("output",output)
+    show("target",target)
+    halt()
+
+
     todo("have ability to periodically send tensors to Java to store/report/inspect")
 
     # output shape: torch.Size([32, 1, 7, 169])
@@ -166,8 +171,13 @@ class YoloLoss(nn.Module):
     tconf      = torch.zeros(batch_size, self.num_anchors, grid_cell_total, requires_grad=False)
     tcls       = torch.zeros(batch_size, self.num_anchors, grid_cell_total, requires_grad=False)
 
+    image_label_size = len(ground_truth[0])
 
     for b in range(batch_size):
+
+      # I think the ground truth was designed to be a sparse matrix, to only perform calculations on
+      # grid cells / anchors that actually represent boxes
+      #
 
       # # This looks suspect!
       # if len(ground_truth[b]) == 0:
@@ -177,25 +187,16 @@ class YoloLoss(nn.Module):
       x = (self.num_anchors * grid_cell_total)
       cur_pred_boxes = pred_boxes[b * x:(b + 1) * x]
 
-      if False:  #self.anchor_step == 4:   ....something to do with alternate form of anchors?
-        anchors = self.anchors.clone()
-        anchors[:, :2] = 0
-      else:
-        anchors = torch.cat([torch.zeros_like(self.anchors), self.anchors], 1)
-      show("anchors",anchors)
-      halt()
+      # stiches zeroes to the reference anchors, i.e. [0,0,  ax, ay]
+      anchors = torch.cat([torch.zeros_like(self.anchors), self.anchors], 1)
 
-      gt = torch.zeros(len(ground_truth[b]), 4)
-      show("gt",gt)
 
-      show("ground_truth[b]",ground_truth[b])
+      gt = torch.zeros(image_label_size, 4)
+
       for i, anno in enumerate(ground_truth[b]):
         pr("i:",i,"b:",b,"anno:",anno)
         show("anno",anno)
 
-        #   File "/Users/home/github_projects/ml/example_yolo/loss_yolo.py", line 143, in build_targets
-        #     gt[i, 0] = (anno[0] + anno[2] / 2) / self.reduction
-        #    IndexError: invalid index of a 0-dim tensor. Use `tensor.item()` in Python or `tensor.item<T>()` in C++ to convert a 0-dim tensor to a number
         gt[i, 0] = (anno[0] + anno[2] / 2) / self.reduction
         gt[i, 1] = (anno[1] + anno[3] / 2) / self.reduction
         gt[i, 2] = anno[2] / self.reduction
