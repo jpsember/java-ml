@@ -159,17 +159,6 @@ class JsTrain:
     return os.path.join(self.train_data_path,"sig.txt")
 
 
-  # If signature file exists and its content equals the value we read when training began,
-  # delete it to signal that this training session has ended
-  #
-  def discard_signature(self):
-    p = self.signature_path()
-    current_content = txt_read(p, "")
-    if current_content == self.signature:
-      pr("discarding sig file within python code (delete when issue #32 seems to be fixed):",p)
-      remove_if_exists(p)
-
-
   def stop_signal_received(self):
     x = os.path.join(self.train_data_path,"stop.txt")
     return os.path.isfile(x)
@@ -352,7 +341,12 @@ class JsTrain:
     if not self.abort_flag:
       pr("...quitting training session, reason:", reason)
       self.abort_flag = True
-      self.discard_signature()  # so streaming service stops as well
+      # If signature file exists and its content equals the value we read when training began,
+      # delete it to signal that this training session has ended
+      p = self.signature_path()
+      current_content = txt_read(p, "")
+      if current_content == self.signature:
+        remove_if_exists(p)
 
 
   def with_test(self):
