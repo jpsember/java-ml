@@ -1,3 +1,5 @@
+import torch
+
 from gen.yolo import Yolo
 from pycore.pytorch_util import *
 from pycore.js_model import JsModel
@@ -32,7 +34,7 @@ class YoloLoss(nn.Module):
   # current: current output from the model being trained
   # target:  training labels we want it to converge to
   #
-  def forward(self, current, target):
+  def old_forward(self, current, target):
     y = self.yolo
     batch_size = current.data.size(0)
     gsize = grid_size(y)
@@ -237,6 +239,199 @@ class YoloLoss(nn.Module):
 
 
 
+  def forward(self, current, target):
+    y = self.yolo
+    batch_size = current.data.size(0)
+    gsize = grid_size(y)
+    height = gsize.y
+    width = gsize.x
+    grid_cell_total = width * height
+
+
+    #  The -1 here makes it inferred from the other dimensions
+    current = current.view(batch_size, self.num_anchors, -1, grid_cell_total)
+    # Reshape the target to match the current's shape
+    target = target.view(current.shape)
+
+
+
+
+
+
+
+
+
+    # Why are there five dimensions in the reshaped node?
+    #
+    # [<?> <?> <?> <anchor box> <width, height>]
+    #
+    _tmp = pt_to_ftensor(y.image_size)
+    show("image_size_as_array",_tmp)
+    #_tmp = np.asarray(y.image_size, dtype=np.float32)
+    _tmp = _tmp.reshape([1,1,1, 1, 2])
+    show("reshaped",_tmp)
+    _image_size = _tmp
+
+    _tmp = pt_to_ftensor(y.block_size)
+    _tmp = _tmp.reshape([1,1,1, 1, 2])
+    _tmp = _tmp / _image_size
+    _block_to_image = _tmp
+    show("block_to_image",_block_to_image)
+
+
+    # _tmp = self.anchors
+    # show("anchors",_tmp)
+    # halt()
+    # # We need to flatten the anchor box list, which is a list of lists
+    # #
+    # anchor_w = self.anchors[:, 0].contiguous().view(self.num_anchors, 1)
+    # anchor_h = self.anchors[:, 1].contiguous().view(self.num_anchors, 1)
+
+
+    show("anchors",self.anchors)
+    _tmp = self.anchors.reshape([1,1,1,self.num_anchors,2])
+    show("anchors reshaped:",_tmp)
+    #
+    # from itertools import chain
+    # _tmp = list(chain.from_iterable(yolo.anchor_boxes_pixels))
+    # _tmp = np.asarray(_tmp, dtype=np.float32)
+    #
+    # _tmp = np.reshape(_tmp, [1,1,1, yolo.num_anchor_boxes, 2])
+    # This call screws up if the reshape call is omitted or done afterward:
+    # _tmp = _tmp / _image_size
+    # anchor_wh_img = _tmp
+    # show("anchor_wh_img",anchor_wh_img)
+    # halt()
+
+
+    # Determine ground truth location, size, category
+
+    # y_true = self.variable_manager.get_placeholder("labels")
+
+    # The last dimension of the label holds: [x, y, w, h, conf, prob0, prob1, ...]
+
+    _tmp = target[:,:,F_BOX_X:F_BOX_Y+1,:]
+    true_xy_cell = _tmp
+    show("true_xy_cell",true_xy_cell)
+
+    show("target",target)
+
+    show("target flattened",target.view(-1))
+    die("I'm producing labels where the grid cell comes BEFORE the box coords")
+    halt()
+
+    # true_box_wh will be the width and height of the box, relative to the anchor box
+    #
+    _tmp = y_true[..., 2:4]
+    _tmp = gb.inspect(_tmp, "true_box_wh_130", False)
+    true_box_wh = _tmp
+
+    true_confidence = y_true[..., 4]
+    true_confidence = gb.inspect(true_confidence, "true_conf", False)
+
+    class_prob_end = 5 + self._num_categories
+
+    true_class_probabilities = y_true[..., 5:class_prob_end]  # probably can just do 5:
+
+
+
+    # We could have stored the true class number as an index, instead of a one-hot vector;
+    # but the symmetry of the structure of the true vs inferred data keeps things simple.
+
+    # Determine number of ground truth boxes.  Clamp to minimum of 1 to avoid divide by zero.
+    # We include any 'neighbor' boxes as well (if there are any).
+    #
+    _tmp = tf.maximum(1., tf.math.count_nonzero(true_confidence, dtype=np.float32))
+    num_true_boxes = _tmp
+    just_confidence_logits = node[..., 4]
+
+
+    # Determine predicted box's x,y
+    #
+    # We need to map (-inf...+inf) to (0...1); hence apply sigmoid function
+    #
+    _tmp = node[..., :2]
+    _tmp = clamped_sigmoid(_tmp)
+    pred_xy_cell = _tmp
+
+    # Determine each predicted box's w,h
+    #
+    # We need to map (-inf...+inf) to (0..+inf); hence apply the exp function
+    #
+    _tmp = node[..., 2:4]
+    _tmp = clamped_exp(_tmp)
+    pred_wh_anchor = _tmp
+
+
+    # Construct versions of the true and predicted locations and sizes in image units
+    #
+    true_xy_img = true_xy_cell * _block_to_image
+    pred_xy_img = pred_xy_cell * _block_to_image
+
+
+    _tmp = true_box_wh * anchor_wh_img
+    true_wh_img = _tmp
+
+    _tmp = pred_wh_anchor * anchor_wh_img
+    pred_wh_img = _tmp
+
+
+    # Determine each predicted box's confidence score.
+    # We need to map (-inf...+inf) to (0..1); hence apply sigmoid function
+    #
+    _tmp = clamped_sigmoid(just_confidence_logits)
+    predicted_confidence = _tmp
+
+    # Determine each predicted box's set of conditional class probabilities.
+    # These occupy the remaining elements in the last dimension (5,6,...)
+    #
+    predicted_box_class_logits = node[..., 5:class_prob_end]
+
+    # Add a dimension to true_confidence so it has equivalent dimensionality as true_box_xy, true_box_wh
+    # (this doesn't change its volume, only its dimensions)
+    #
+    # This produces a mask value which we apply to the xy and wh loss.
+    # For neighbor box labels, whose confidence < 1, this has the effect of reducing the penalty
+    # for those boxes
+    #
+    _tmp = tf.expand_dims(true_confidence, axis=-1)
+    _coord_mask = _tmp
+
+    _tmp = tf.square(true_xy_img - pred_xy_img)
+    _tmp = _tmp * _coord_mask
+    _tmp = tf.reduce_sum(input_tensor=_tmp) / num_true_boxes
+    loss_xy = _tmp
+
+    # Maybe don't take the roots of the dimensions?
+    #
+    _tmp = tf.square(tf.sqrt(true_wh_img) - tf.sqrt(pred_wh_img))
+
+    _tmp = _tmp * _coord_mask
+    _tmp = tf.reduce_sum(input_tensor=_tmp) / num_true_boxes
+    loss_wh = _tmp
+
+
+    iou_scores = self.calculate_iou(true_xy_img, true_wh_img, pred_xy_img, pred_wh_img)
+    _tmp = self.construct_confidence_loss(true_confidence, iou_scores, predicted_confidence)
+    loss_confidence = _tmp
+
+    #
+    # The loss_confidence tensor has rank 0 : it's a scalar.  Its shape appears as "()" when printed.
+
+    _tmp = self.construct_class_loss(true_confidence, true_class_probabilities, predicted_box_class_logits)
+    loss_class = _tmp
+
+    _coord_scaled = yolo.lambda_coord * (loss_xy + loss_wh)
+
+    _tmp = _coord_scaled + loss_confidence + loss_class
+
+    _tmp = tf.reduce_mean(input_tensor=_tmp)
+    return _tmp
+
+
+
+
+
 
 
 def bbox_ious(boxes1, boxes2):
@@ -254,3 +449,29 @@ def bbox_ious(boxes1, boxes2):
   unions = (areas1 + areas2.t()) - intersections
 
   return intersections / unions
+
+
+
+
+def pt_to_ftensor(pt:IPoint):
+  return torch.FloatTensor(pt.tuple())
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

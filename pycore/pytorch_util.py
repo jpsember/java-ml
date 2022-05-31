@@ -38,8 +38,14 @@ def vol_volume(vol:Vol) -> int:
 
 
 def show(label:str, obj):
+  dash = "------------------------\n"
+  pr("\n\n")
+  pr(dash)
   if isinstance(obj, torch.Tensor):
     t:torch.Tensor = obj
-    pr("Tensor", label, t.size(), t.dtype, t)
+    pr(label,"      size:",list(t.size()),"   type:",t.dtype)
+    pr(t)
   else:
     pr(label,"type:",type(obj),"value:",obj)
+  pr(dash)
+  pr("\n\n")

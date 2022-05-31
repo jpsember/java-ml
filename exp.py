@@ -32,4 +32,8 @@ def g():
   db("t",t)
   db("exp",t.exp())
 
+
+  s = torch.asarray([1,2,3])
+  db("s",s)
+
   x = t.view()
