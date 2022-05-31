@@ -80,12 +80,8 @@ public final class ImageCompiler extends BaseObject {
       AugmentationConfig config = config().augmentationConfig();
       AffineTransformOp op = new AffineTransformOp(entry.transform().matrix().toAffineTransform(),
           AffineTransformOp.TYPE_BILINEAR);
-      {
-        List<ScriptElement> transformed = arrayList();
-        model().transformAnnotations(annotations, transformed, entry.transform());
-        // We don't want to mistakenly use the untransformed elements from this point on...
-        annotations = transformed;
-      }
+
+      annotations = ScriptUtil.transform(annotations, entry.transform().matrix());
       op.filter(img, targetImage);
       mInspector.create("tfm").image(targetImage).elements(annotations);
 

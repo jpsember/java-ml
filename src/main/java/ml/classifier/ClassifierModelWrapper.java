@@ -6,7 +6,6 @@ import java.util.List;
 
 import gen.Classifier;
 import gen.ImageSetInfo;
-import gen.TransformWrapper;
 import js.geometry.IRect;
 import js.graphics.RectElement;
 import js.graphics.ScriptElement;
@@ -15,14 +14,6 @@ import ml.ModelWrapper;
 import static ml.NetworkUtil.*;
 
 public final class ClassifierModelWrapper extends ModelWrapper<Classifier> {
-
-  @Override
-  public void transformAnnotations(List<ScriptElement> in, List<ScriptElement> out,
-      TransformWrapper transform) {
-    todo("overriding this is an unnecessary optimization");
-    // Annotations hold ony the category, so pass through unchanged
-    out.addAll(in);
-  }
 
   @Override
   public void storeImageSetInfo(ImageSetInfo.Builder imageSetInfo) {

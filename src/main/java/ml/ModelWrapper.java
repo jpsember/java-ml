@@ -20,7 +20,6 @@ import gen.ImageSetInfo;
 import gen.Layer;
 import gen.NetworkProjectType;
 import gen.NeuralNetwork;
-import gen.TransformWrapper;
 import gen.Vol;
 import gen.Yolo;
 
@@ -78,18 +77,6 @@ public abstract class ModelWrapper<T extends AbstractData> extends BaseObject {
    * buffer, in case the input and output buffers have different sizes or types
    */
   public abstract Object constructLabelBuffer();
-
-  /**
-   * Apply a transformation to ScriptElements. Default implementation applies
-   * the supplied transformation to the elements. Classifier wrapper overrides
-   * this to copy the elements unchanged, as each element's geometry is not
-   * used, only its category
-   */
-  public void transformAnnotations(List<ScriptElement> in, List<ScriptElement> out,
-      TransformWrapper transform) {
-    for (ScriptElement orig : in)
-      out.add(orig.applyTransform(transform.matrix()));
-  }
 
   /**
    * Throw an exception for an unsupported operation with this type of model
