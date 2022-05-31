@@ -93,7 +93,6 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
     Yolo yolo = modelConfig();
     mAnchorSizeRelImage = YoloUtil.anchorBoxesRelativeToImageSize(yolo);
     mAnchorSize = YoloUtil.anchorBoxSizes(yolo);
-    mBlockSize = yolo.blockSize();
     mGridSize = YoloUtil.gridSize(yolo);
     mGridToImageScale = yolo.blockSize().toFPoint();
     mImageToGridScale = new FPoint(1f / mGridToImageScale.x, 1f / mGridToImageScale.y);
@@ -140,8 +139,8 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
       }
     }
 
-    List<RectElement> neighbors = generateNeighborVersions(boxes);
-    boxes.addAll(neighbors);
+    // Disabled the 'neighbors' heuristic; see commit 51dc87b to recover it
+
     boxes.sort((a, b) -> -Integer.compare(ScriptUtil.confidence(a), ScriptUtil.confidence(b)));
 
     log("sorted boxes, including neighbors:", INDENT, boxes);
@@ -265,73 +264,6 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
   private PlotInferenceResultsConfig mParserConfig = PlotInferenceResultsConfig.DEFAULT_INSTANCE;
 
   // ------------------------------------------------------------------
-
-  private List<RectElement> generateNeighborVersions(List<RectElement> boxes) {
-    List<RectElement> neighborList = arrayList();
-    Yolo yolo = modelConfig();
-
-    if (yolo.neighborFactor() == 0 || alert("neighbors disabled"))
-      return neighborList;
-
-    log("generate neighbors, factor", yolo.neighborFactor(), "for box count", boxes.size());
-
-    for (RectElement original : boxes) {
-
-      // We are computing these twice; once here, and once later on when we process the original box
-      if (!convertBoxToCell(original.bounds()))
-        continue;
-
-      IRect obox = original.bounds();
-      IPoint cp = obox.center();
-
-      for (int nbInd = 0; nbInd < sNeighborCellOffsets.length; nbInd += 2) {
-        IPoint ngridCell = mBoxGridCell.sumWith(sNeighborCellOffsets[nbInd], sNeighborCellOffsets[nbInd + 1]);
-
-        if (!cellWithinGrid(ngridCell))
-          continue;
-
-        // Determine bounds of neighboring cell, in pixels.  Inset by a pixel or two to avoid extreme logit values
-        int inset = 1;
-        IRect ncellBounds = new IRect(ngridCell.x * mBlockSize.x + inset, ngridCell.y * mBlockSize.y + inset,
-            mBlockSize.x - 2 * inset, mBlockSize.y - 2 * inset);
-
-        IPoint ncp = cp.clampTo(ncellBounds);
-
-        // Determine bounding box of the neighbor version.  We add half the offset to try to contain
-        // the part that got shifted to the side, without adding too much to the opposite side
-
-        IPoint neighborOffset = IPoint.difference(ncp, cp);
-        int neighborWidth = obox.width + Math.abs(neighborOffset.x) / 2;
-        int neighborHeight = obox.height + Math.abs(neighborOffset.y) / 2;
-        IRect nbox = new IRect(ncp.x - neighborWidth / 2, ncp.y - neighborHeight / 2, neighborWidth,
-            neighborHeight);
-
-        // Determine the confidence estimate from the IOU of the neighbor over the original
-
-        float iOverU = MyMath.intersectionOverUnion(//
-            obox.x, obox.y, obox.width, obox.height, //
-            nbox.x, nbox.y, nbox.width, nbox.height//
-        );
-        if (verbose()) {
-          log("original:", obox);
-          log("neighbor:", nbox);
-          log("iOverU  :", iOverU);
-        }
-
-        if (iOverU < yolo.neighborFactor())
-          continue;
-
-        // Scale the stored confidence down further, to penalize it for having incorrect coordinates
-        ElementProperties.Builder prop = original.properties().toBuilder();
-        RectElement neighbor = new RectElement(prop.confidence(MyMath.parameterToPercentage(iOverU * iOverU)),
-            nbox);
-        neighborList.add(neighbor);
-      }
-    }
-    return neighborList;
-  }
-
-  private static int sNeighborCellOffsets[] = { -1, 0, 0, -1, 1, 0, 0, 1 };
 
   private void writeBoxToFieldsBuffer(RectElement box, float[] b) {
 
@@ -492,8 +424,10 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
     }
     mAnchorBox = bestAnchorBoxIndex;
     mIOverU = bestIOverU;
-    log("  anchor box:", mAnchorBox);
-    log("    I over U:", mIOverU);
+    if (verbose()) {
+      log("  anchor box:", mAnchorBox);
+      log("    I over U:", mIOverU);
+    }
   }
 
   private static RectElement labelledBox(IRect box, int category, float confidence, int rotationDegrees) {
@@ -506,7 +440,6 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
 
   private IPoint mGridSize;
   private FPoint mGridToImageScale;
-  private IPoint mBlockSize;
   private FPoint mImageToGridScale;
 
   private IPoint mBoxGridCell;
