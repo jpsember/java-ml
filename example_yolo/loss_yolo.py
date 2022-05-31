@@ -290,12 +290,10 @@ class YoloLoss(nn.Module):
     true_confidence = target[..., F_CONFIDENCE]
     show("true_confidence", true_confidence)
 
-    class_prob_end = F_CLASS_PROBABILITIES + self._num_categories
+    class_prob_end = F_CLASS_PROBABILITIES + y.category_count
 
     true_class_probabilities = target[..., F_CLASS_PROBABILITIES:class_prob_end]  # probably can just do 'x:']
     show("true_class_probabilities", true_class_probabilities)
-    halt()
-
 
     # We could have stored the true class number as an index, instead of a one-hot vector;
     # but the symmetry of the structure of the true vs inferred data keeps things simple.
@@ -303,8 +301,13 @@ class YoloLoss(nn.Module):
     # Determine number of ground truth boxes.  Clamp to minimum of 1 to avoid divide by zero.
     # We include any 'neighbor' boxes as well (if there are any).
     #
-    _tmp = tf.maximum(1., tf.math.count_nonzero(true_confidence, dtype=np.float32))
-    num_true_boxes = _tmp
+
+    # Get the number of ground truth boxes in the batch, as a float, and to avoid divide by zero, assume at least one
+    #
+    num_true_boxes = float(max(1, true_confidence.count_nonzero()))
+    pr("num_true_boxes:",num_true_boxes)
+    halt()
+
     just_confidence_logits = node[..., 4]
 
 
