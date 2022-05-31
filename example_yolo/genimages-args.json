@@ -10,7 +10,7 @@
   "noise_factor" : 0,
 
  "augmentation_config" : {
-  "scale_max" : 20.0,
+  "scale_max" : 3.0,
  },
 
 }
