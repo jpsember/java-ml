@@ -25,9 +25,11 @@ def db(label:str, obj):
   pr(t.numpy())
   pr(dash);
 
+
 def g():
   pr("\n\n\n\n\n\n\n\n\n\n")
   t = torch.FloatTensor([[1.2,-1.2,3.0],[0.2,0.3,-0.3]])
   db("t",t)
   db("exp",t.exp())
 
+  x = t.view()

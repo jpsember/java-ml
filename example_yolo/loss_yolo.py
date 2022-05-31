@@ -38,6 +38,9 @@ class YoloLoss(nn.Module):
     grid_cell_total = width * height
 
     # Get x,y,w,h,conf,cls
+
+
+    #  The -1 here makes it inferred from the other dimensions
     output = output.view(batch_size, self.num_anchors, -1, grid_cell_total)
 
     todo("have ability to periodically send tensors to Java to store/report/inspect")
@@ -45,26 +48,30 @@ class YoloLoss(nn.Module):
     # output shape: torch.Size([32, 1, 7, 169])
     #          32 = batch size
     #           1 = a single anchor box per grid cell
-    #           7 = fields per anchor box
+    #           7 = fields per anchor box               (inferred from other dimensions)
     #         169 = grid cells
 
-    # Construct a tensor containing just the coordinates of the box  (F_BOX_XYWH)
+    # Construct a tensor with room for just the box coords  (F_BOX_XYWH),
+    # but with all other dimensions unchanged
     #
-    coord = torch.zeros_like(output[:, :, :4, :])
+    coord = torch.zeros_like(output[:, :, F_BOX_XYWH:F_BOX_XYWH+4, :])
 
     # Convert the predicted x,y (-inf...+inf) to 0...1 via sigmoid() function
-    coord[:, :, :2, :] = output[:, :, :2, :].sigmoid()
+    coord[:, :, F_BOX_X:F_BOX_Y+1, :] = output[:, :, F_BOX_X:F_BOX_Y+1, :].sigmoid()
 
-    # Convert predicted w,h (-inf...+inf) to ...?  **NOTE: Java code applies e^n here (exp function)
-    coord[:, :, 2:4, :] = output[:, :, 2:4, :].exp()
+    # Convert predicted w,h (-inf...+inf) using exp function (not sure why)
+    coord[:, :, F_BOX_W:F_BOX_H+1, :] = output[:, :, F_BOX_W:F_BOX_H+1, :].exp()
 
     # Convert confidence (-inf...+inf) to probability 0...1 via sigmoid()
     #
-    conf = output[:, :, 4, :].sigmoid()
+    conf = output[:, :, F_CONFIDENCE, :].sigmoid()
 
     # For now, maybe we don't need to examine category probabilities?
     #
-    cls = output[:, :, 5:, :].contiguous().view(batch_size * self.num_anchors,
+    # *** what does contiguous() do here?
+    #     I think it allows us to reorder things?
+    #
+    cls = output[:, :, F_CLASS_PROBABILITIES:, :].contiguous().view(batch_size * self.num_anchors,
                                                 y.category_count,
                                                 grid_cell_total).transpose(1, 2).contiguous().view(-1,
                                                                                                   y.category_count)
