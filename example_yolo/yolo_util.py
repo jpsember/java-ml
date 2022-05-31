@@ -9,7 +9,7 @@ F_BOX_X = F_BOX_XYWH
 F_BOX_Y = F_BOX_XYWH + 1
 F_BOX_W = F_BOX_XYWH + 2
 F_BOX_H = F_BOX_XYWH + 3
-F_CONFIDENCE = F_BOX_XYWH + 4
+F_CONFIDENCE = F_BOX_XYWH + 4   # this is also known as the 'objectness'
 F_CLASS_PROBABILITIES = F_CONFIDENCE + 1
 
 # Tensor dimensions

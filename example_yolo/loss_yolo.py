@@ -280,22 +280,21 @@ class YoloLoss(nn.Module):
     # Determine ground truth location, size, category
 
     true_xy_cell = target[..., F_BOX_X:F_BOX_Y+1]
-    show("true_xy_cell",true_xy_cell)
-    halt()
+    show("true_xy_cell", true_xy_cell)
 
     # true_box_wh will be the width and height of the box, relative to the anchor box
     #
-    _tmp = y_true[..., 2:4]
-    _tmp = gb.inspect(_tmp, "true_box_wh_130", False)
-    true_box_wh = _tmp
+    true_box_wh = target[..., F_BOX_W:F_BOX_H+1]
+    show("true_box_wh", true_box_wh)
 
-    true_confidence = y_true[..., 4]
-    true_confidence = gb.inspect(true_confidence, "true_conf", False)
+    true_confidence = target[..., F_CONFIDENCE]
+    show("true_confidence", true_confidence)
 
-    class_prob_end = 5 + self._num_categories
+    class_prob_end = F_CLASS_PROBABILITIES + self._num_categories
 
-    true_class_probabilities = y_true[..., 5:class_prob_end]  # probably can just do 5:
-
+    true_class_probabilities = target[..., F_CLASS_PROBABILITIES:class_prob_end]  # probably can just do 'x:']
+    show("true_class_probabilities", true_class_probabilities)
+    halt()
 
 
     # We could have stored the true class number as an index, instead of a one-hot vector;
