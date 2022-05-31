@@ -40,6 +40,8 @@ class YoloLoss(nn.Module):
     # Get x,y,w,h,conf,cls
     output = output.view(batch_size, self.num_anchors, -1, grid_cell_total)
 
+    todo("have ability to periodically send tensors to Java to store/report/inspect")
+
     # output shape: torch.Size([32, 1, 7, 169])
     #          32 = batch size
     #           1 = a single anchor box per grid cell
@@ -54,7 +56,7 @@ class YoloLoss(nn.Module):
     coord[:, :, :2, :] = output[:, :, :2, :].sigmoid()
 
     # Convert predicted w,h (-inf...+inf) to ...?  **NOTE: Java code applies e^n here (exp function)
-    coord[:, :, 2:4, :] = output[:, :, 2:4, :]
+    coord[:, :, 2:4, :] = output[:, :, 2:4, :].exp()
 
     # Convert confidence (-inf...+inf) to probability 0...1 via sigmoid()
     #
@@ -89,8 +91,7 @@ class YoloLoss(nn.Module):
     pred_boxes = pred_boxes.cpu()
 
     # Get target values
-    show("target",target)
-    #halt("I think it expects target to have a different shape")
+    show("target", target)
     coord_mask, conf_mask, cls_mask, tcoord, tconf, tcls = self.build_targets(pred_boxes, target, height, width)
     coord_mask = coord_mask.expand_as(tcoord)
     tcls = tcls[cls_mask].view(-1).long()
