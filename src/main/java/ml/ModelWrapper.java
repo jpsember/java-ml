@@ -13,7 +13,6 @@ import js.data.DataUtil;
 import js.file.Files;
 import js.geometry.IPoint;
 import js.graphics.ScriptElement;
-import js.graphics.gen.Script;
 import js.json.JSMap;
 
 import gen.Classifier;
@@ -24,9 +23,6 @@ import gen.NeuralNetwork;
 import gen.TransformWrapper;
 import gen.Vol;
 import gen.Yolo;
-
-import ml.classifier.ClassifierModelWrapper;
-import ml.yolo.YoloModelWrapper;
 
 /**
  * An intelligent wrapper around datagen model class (Yolo, etc.) Parses
@@ -45,11 +41,11 @@ public abstract class ModelWrapper<T extends AbstractData> extends BaseObject {
     switch (network.projectType()) {
 
     case YOLO:
-      handler = new YoloModelWrapper();
+      handler = new ml.yolo.YoloModelWrapper();
       break;
 
     case CLASSIFIER:
-      handler = new ClassifierModelWrapper();
+      handler = new ml.classifier.ClassifierModelWrapper();
       break;
 
     default:
@@ -67,6 +63,7 @@ public abstract class ModelWrapper<T extends AbstractData> extends BaseObject {
     mInputImageVolumeProduct = VolumeUtil.product(mInputImageVolume);
     mModelConfig = (T) parseModelConfig(network.projectType(), network.modelConfig());
     init();
+    mOutputLayer = constructLabelBuffer();
   }
 
   /**
@@ -74,6 +71,13 @@ public abstract class ModelWrapper<T extends AbstractData> extends BaseObject {
    */
   public void init() {
   }
+
+  /**
+   * Get the default buffer used for storing an image's labels. At present there
+   * is a single such buffer; but in the future, we may want to have a second
+   * buffer, in case the input and output buffers have different sizes or types
+   */
+  public abstract Object constructLabelBuffer();
 
   /**
    * Apply a transformation to ScriptElements. Default implementation applies
@@ -205,14 +209,6 @@ public abstract class ModelWrapper<T extends AbstractData> extends BaseObject {
   }
 
   /**
-   * Parse model output to a Script
-   */
-  @Deprecated
-  public void parseInferenceResult(byte[] modelOutput, int confidencePct, Script.Builder script) {
-    modelNotSupported();
-  }
-
-  /**
    * Get ImageSetInfo builder, constructing if necessary
    */
   public final ImageSetInfo.Builder imageSetInfo() {
@@ -267,7 +263,6 @@ public abstract class ModelWrapper<T extends AbstractData> extends BaseObject {
    */
   public final void writeLabels(byte[] labelBytes) {
     checkArgument(labelBytes.length == imageSetInfo().labelLengthBytes());
-    mLastLabelBytesWritten = labelBytes;
     Files.S.write(labelBytes, labelOutputStream());
   }
 
@@ -288,34 +283,19 @@ public abstract class ModelWrapper<T extends AbstractData> extends BaseObject {
   }
 
   /**
-   * For inspection purposes, get the last bytes written via writeLabels()
-   */
-  @Deprecated // Add support to optionally convert to model's label format (floats)
-  public final byte[] lastLabelBytesWritten() {
-    return checkNotNull(mLastLabelBytesWritten, "no lastLabelBytesWritten available");
-  }
-
-  /**
-   * Get the default buffer used for storing an image's labels
-   */
-  public Object getLabelBuffer() {
-    throw modelNotSupported("getLabelBuffer");
-  }
-
-  /**
    * Get the buffer used for storing an image's labels, as an array of floats
    */
   public final float[] labelBufferFloats() {
-    return (float[]) getLabelBuffer();
+    return (float[]) mOutputLayer;
   }
 
   /**
    * Get the buffer used for storing an image's labels, as an array of bytes
    */
   public final byte[] labelBufferBytes() {
-    return (byte[]) getLabelBuffer();
+    return (byte[]) mOutputLayer;
   }
-  
+
   // ------------------------------------------------------------------
 
   private NeuralNetwork mNetwork;
@@ -327,6 +307,5 @@ public abstract class ModelWrapper<T extends AbstractData> extends BaseObject {
   private DataOutputStream mImageOutputStream;
   private DataOutputStream mLabelOutputStream;
   private ImageSetInfo.Builder mImageSetInfo;
-  private byte[] mLastLabelBytesWritten;
-
+  private Object mOutputLayer;
 }

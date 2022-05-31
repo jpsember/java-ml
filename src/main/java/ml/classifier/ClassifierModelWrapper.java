@@ -7,12 +7,10 @@ import java.util.List;
 import gen.Classifier;
 import gen.ImageSetInfo;
 import gen.TransformWrapper;
-import js.data.DataUtil;
 import js.geometry.IRect;
 import js.graphics.RectElement;
 import js.graphics.ScriptElement;
 import js.graphics.ScriptUtil;
-import js.graphics.gen.Script;
 import ml.LabelledImage;
 import ml.ModelWrapper;
 import static ml.NetworkUtil.*;
@@ -38,7 +36,7 @@ public final class ClassifierModelWrapper extends ModelWrapper<Classifier> {
   public void accept(LabelledImage labelledImage) {
     writeImage(labelledImage);
     transformScreditToModelInput(labelledImage.annotations());
-    writeLabels(mCategoryBuffer);
+    writeLabels(labelBufferBytes());
   }
 
   @Override
@@ -58,31 +56,20 @@ public final class ClassifierModelWrapper extends ModelWrapper<Classifier> {
 
   @Override
   public Object transformScreditToModelInput(List<ScriptElement> scriptElements) {
+    byte[] categories = labelBufferBytes();
     checkArgument(scriptElements.size() == 1);
     // The buffer is only designed for a single element, but iterate anyways
     int i = INIT_INDEX;
     for (ScriptElement elem : scriptElements) {
       i++;
       int category = elem.properties().category();
-      mCategoryBuffer[i] = (byte) category;
+      categories[i] = (byte) category;
     }
-    return mCategoryBuffer;
+    return categories;
   }
 
-  @Override
-  public void parseInferenceResult(byte[] modelOutput, int confidencePct, Script.Builder script) {
-    int[] categories = DataUtil.bytesToIntsLittleEndian(modelOutput);
-    int category = categories[0];
-    Classifier cl = modelConfig();
-    checkArgument(category >= 0 && category < cl.categoryCount());
-    ScriptElement elem = new RectElement(ScriptUtil.setCategory(null, category),
-        new IRect(inputImagePlanarSize()));
-    script.items().add(elem);
+  public Object constructLabelBuffer() {
+    return new byte[1];
   }
 
-  public byte[] getLabelBuffer() {
-    return mCategoryBuffer;
-  }
-
-  private byte[] mCategoryBuffer = new byte[1];
 }
