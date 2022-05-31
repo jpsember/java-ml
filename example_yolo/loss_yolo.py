@@ -82,9 +82,15 @@ class YoloLoss(nn.Module):
 
 
     # Create prediction boxes
-    pred_boxes = torch.FloatTensor(batch_size * self.num_anchors * grid_cell_total, 4)
-    lin_x = torch.arange(0, width).repeat(height, 1).view(height * width)
+    pred_boxes = torch.FloatTensor(batch_size * self.num_anchors * grid_cell_total, 4) # 4 is X,Y,W,H
+    lin_x = torch.arange(0, width).repeat(height, 1).view(grid_cell_total)
     lin_y = torch.arange(0, height).repeat(width, 1).t().contiguous().view(grid_cell_total)
+
+    if FALSE:
+      # lin_x is an array of [0,1,2,...,W-1,  0,1,2,...,W-1, ...etc...]
+      # lin_y is             [0,0,0, ..,0,    1,1,1,....1,   ...etc...]   ie lin_x is index mod W, lin_y is index/W
+      show("lin_x",lin_x)
+      show("lin_y",lin_y)
 
     anchor_w = self.anchors[:, 0].contiguous().view(self.num_anchors, 1)
     anchor_h = self.anchors[:, 1].contiguous().view(self.num_anchors, 1)
@@ -96,14 +102,25 @@ class YoloLoss(nn.Module):
       anchor_w = anchor_w.cuda()
       anchor_h = anchor_h.cuda()
 
-    pred_boxes[:, 0] = (coord[:, :, 0].detach() + lin_x).view(-1)
+    # I think detach() is used to manipulate a Tensor that shouldn't participate in gradient calculations
+    # and backpropagation...
+    #
+    #   "Tensor.detach()
+    #    Returns a new Tensor, detached from the current graph.
+    #
+    #    The result will never require gradient."
+    #
+    pred_boxes[:, 0] = (coord[:, :, 0].detach() + lin_x).view(-1)  # .view(-1) flattens it into an array
     pred_boxes[:, 1] = (coord[:, :, 1].detach() + lin_y).view(-1)
     pred_boxes[:, 2] = (coord[:, :, 2].detach().exp() * anchor_w).view(-1)
     pred_boxes[:, 3] = (coord[:, :, 3].detach().exp() * anchor_h).view(-1)
-    pred_boxes = pred_boxes.cpu()
+    pred_boxes = pred_boxes.cpu()   # I think this ensures it doesn't take up GPU space?
 
     # Get target values
-    show("target", target)
+    if FALSE:
+      show("target", target)   # Tensor target torch.Size([32, 1183])
+      halt()
+
     coord_mask, conf_mask, cls_mask, tcoord, tconf, tcls = self.build_targets(pred_boxes, target, height, width)
     coord_mask = coord_mask.expand_as(tcoord)
     tcls = tcls[cls_mask].view(-1).long()
@@ -130,6 +147,9 @@ class YoloLoss(nn.Module):
 
     return self.loss_tot, self.loss_coord, self.loss_conf, self.loss_cls
 
+
+
+
   def build_targets(self, pred_boxes, ground_truth, height, width):
     pr("build_targets")
     show("pred_boxes",pred_boxes)
@@ -137,30 +157,34 @@ class YoloLoss(nn.Module):
 
     y = self.yolo
     batch_size = len(ground_truth)
+    grid_cell_total = height * width
 
-    conf_mask = torch.ones(batch_size, self.num_anchors, height * width, requires_grad=False) * y.lambda_noobj
-    coord_mask = torch.zeros(batch_size, self.num_anchors, 1, height * width, requires_grad=False)
-    cls_mask = torch.zeros(batch_size, self.num_anchors, height * width, requires_grad=False).byte()
-    tcoord = torch.zeros(batch_size, self.num_anchors, 4, height * width, requires_grad=False)
-    tconf = torch.zeros(batch_size, self.num_anchors, height * width, requires_grad=False)
-    tcls = torch.zeros(batch_size, self.num_anchors, height * width, requires_grad=False)
+    conf_mask  = torch.ones(batch_size,  self.num_anchors, grid_cell_total, requires_grad=False) * y.lambda_noobj
+    coord_mask = torch.zeros(batch_size, self.num_anchors, 1, grid_cell_total, requires_grad=False)
+    cls_mask   = torch.zeros(batch_size, self.num_anchors, grid_cell_total, requires_grad=False).byte()
+    tcoord     = torch.zeros(batch_size, self.num_anchors, 4, grid_cell_total, requires_grad=False)
+    tconf      = torch.zeros(batch_size, self.num_anchors, grid_cell_total, requires_grad=False)
+    tcls       = torch.zeros(batch_size, self.num_anchors, grid_cell_total, requires_grad=False)
 
-
-    # Perhaps I am far enough along I can adapt the code I need?
 
     for b in range(batch_size):
-      # This looks suspect
-      if len(ground_truth[b]) == 0:
-        continue
+
+      # # This looks suspect!
+      # if len(ground_truth[b]) == 0:
+      #   continue
 
       # Build up tensors
-      cur_pred_boxes = pred_boxes[
-                       b * (self.num_anchors * height * width):(b + 1) * (self.num_anchors * height * width)]
+      x = (self.num_anchors * grid_cell_total)
+      cur_pred_boxes = pred_boxes[b * x:(b + 1) * x]
+
       if False:  #self.anchor_step == 4:   ....something to do with alternate form of anchors?
         anchors = self.anchors.clone()
         anchors[:, :2] = 0
       else:
         anchors = torch.cat([torch.zeros_like(self.anchors), self.anchors], 1)
+      show("anchors",anchors)
+      halt()
+
       gt = torch.zeros(len(ground_truth[b]), 4)
       show("gt",gt)
 
