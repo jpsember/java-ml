@@ -247,79 +247,40 @@ class YoloLoss(nn.Module):
     width = gsize.x
     grid_cell_total = width * height
 
-
-    #  The -1 here makes it inferred from the other dimensions
+    # The -1 here makes it inferred from the other dimensions.
+    # Each of these dimensions corresponds to (D_IMAGE, D_GRIDCELL, ..., D_BOXINFO)
+    #
     current = current.view(batch_size, grid_cell_total, self.num_anchors, -1)
+
     # Reshape the target to match the current's shape
     target = target.view(current.shape)
 
-
-
-
-
-
-
-
-
-    # Why are there five dimensions in the reshaped node?
-    #
-    # Maybe I want four: image, grid cell, anchor, box(info)?
-    #
-    # [<?> <?> <?> <anchor box> <width, height>]
-    #
     _tmp = pt_to_ftensor(y.image_size)
-    show("image_size_as_array",_tmp)
-    #_tmp = np.asarray(y.image_size, dtype=np.float32)
+    #show("image_size_as_array",_tmp)
     _tmp = _tmp.reshape([1, 1, 1, 2])  # Note that the dimension is D_TOTAL
-    show("reshaped",_tmp)
+    #show("reshaped",_tmp)
     _image_size = _tmp
 
     _tmp = pt_to_ftensor(y.block_size)
     _tmp = _tmp.reshape([1, 1, 1, 2])
     _tmp = _tmp / _image_size
     _block_to_image = _tmp
-    show("block_to_image",_block_to_image)
+    #show("block_to_image",_block_to_image)
 
 
-    # _tmp = self.anchors
-    # show("anchors",_tmp)
-    # halt()
-    # # We need to flatten the anchor box list, which is a list of lists
-    # #
-    # anchor_w = self.anchors[:, 0].contiguous().view(self.num_anchors, 1)
-    # anchor_h = self.anchors[:, 1].contiguous().view(self.num_anchors, 1)
 
-
-    show("anchors",self.anchors)
+    #show("anchors",self.anchors)
     _tmp = self.anchors.reshape([1,1,self.num_anchors,2])
-    show("anchors reshaped:",_tmp)
-    #
-    # from itertools import chain
-    # _tmp = list(chain.from_iterable(yolo.anchor_boxes_pixels))
-    # _tmp = np.asarray(_tmp, dtype=np.float32)
-    #
-    # _tmp = np.reshape(_tmp, [1,1,1, yolo.num_anchor_boxes, 2])
-    # This call screws up if the reshape call is omitted or done afterward:
-    # _tmp = _tmp / _image_size
-    # anchor_wh_img = _tmp
-    # show("anchor_wh_img",anchor_wh_img)
-    # halt()
+    #show("anchors reshaped:",_tmp)
+
+
+    #show("target flattened",target.view(-1))
 
 
     # Determine ground truth location, size, category
 
-    # y_true = self.variable_manager.get_placeholder("labels")
-
-    # The last dimension of the label holds: [x, y, w, h, conf, prob0, prob1, ...]
-
-    _tmp = target[:,:,:,F_BOX_X:F_BOX_Y+1]
-    true_xy_cell = _tmp
+    true_xy_cell = target[..., F_BOX_X:F_BOX_Y+1]
     show("true_xy_cell",true_xy_cell)
-
-    show("target",target)
-
-    show("target flattened",target.view(-1))
-    die("I'm producing labels where the grid cell comes BEFORE the box coords")
     halt()
 
     # true_box_wh will be the width and height of the box, relative to the anchor box
