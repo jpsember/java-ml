@@ -66,15 +66,20 @@ class YoloLoss(nn.Module):
     #
     conf = output[:, :, F_CONFIDENCE, :].sigmoid()
 
+
     # For now, maybe we don't need to examine category probabilities?
-    #
-    # *** what does contiguous() do here?
-    #     I think it allows us to reorder things?
     #
     cls = output[:, :, F_CLASS_PROBABILITIES:, :].contiguous().view(batch_size * self.num_anchors,
                                                 y.category_count,
                                                 grid_cell_total).transpose(1, 2).contiguous().view(-1,
                                                                                                   y.category_count)
+
+    if FALSE:   # Shows that the above contiguous/transpose stuff is to reshape and rotate the tensor
+      j = output[:,:,F_CLASS_PROBABILITIES:, :]
+      show("j",j)
+      show("cls",cls)
+      halt()
+
 
     # Create prediction boxes
     pred_boxes = torch.FloatTensor(batch_size * self.num_anchors * grid_cell_total, 4)
