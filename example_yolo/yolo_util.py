@@ -12,6 +12,14 @@ F_BOX_H = F_BOX_XYWH + 3
 F_CONFIDENCE = F_BOX_XYWH + 4
 F_CLASS_PROBABILITIES = F_CONFIDENCE + 1
 
+# Tensor dimensions
+#
+D_IMAGE = 0
+D_GRIDCELL = 1
+D_ANCHOR = 2
+D_BOXINFO = 3
+D_TOTAL = 4
+
 
 def anchor_box_count(yolo : Yolo) -> int:
   return len(yolo.anchor_boxes_pixels)

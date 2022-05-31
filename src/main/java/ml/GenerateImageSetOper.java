@@ -44,6 +44,7 @@ public class GenerateImageSetOper extends AppOper {
 
   @Override
   public void perform() {
+    die("temporarily disabled to work with known YOLO images");
     mModel = ModelWrapper.constructFor(config().network(), config().networkPath());
 
     int objectCount = -1;
@@ -56,6 +57,8 @@ public class GenerateImageSetOper extends AppOper {
       Yolo yolo = (Yolo) model().modelConfig();
       checkArgument(yolo.categoryCount() == config().categories().length(), "Yolo category count",
           yolo.categoryCount(), "disagrees with categories string length", config().categories());
+      if (alert("always gen max objects"))
+        objectCount = config().maxObjects();
     }
       break;
 

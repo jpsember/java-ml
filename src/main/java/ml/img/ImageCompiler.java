@@ -136,7 +136,8 @@ public final class ImageCompiler extends BaseObject {
       for (File f : w.files())
         ents.add(new ImageEntry(f));
       checkArgument(ents.size() > 3, "insufficient images:", ents.size());
-      MyMath.permute(ents, random());
+      if (!alert("not permuting for now, while working on Yolo"))
+        MyMath.permute(ents, random());
       mEntries = ents;
     }
     return mEntries;

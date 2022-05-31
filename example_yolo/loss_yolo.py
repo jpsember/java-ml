@@ -249,7 +249,7 @@ class YoloLoss(nn.Module):
 
 
     #  The -1 here makes it inferred from the other dimensions
-    current = current.view(batch_size, self.num_anchors, -1, grid_cell_total)
+    current = current.view(batch_size, grid_cell_total, self.num_anchors, -1)
     # Reshape the target to match the current's shape
     target = target.view(current.shape)
 
@@ -263,17 +263,19 @@ class YoloLoss(nn.Module):
 
     # Why are there five dimensions in the reshaped node?
     #
+    # Maybe I want four: image, grid cell, anchor, box(info)?
+    #
     # [<?> <?> <?> <anchor box> <width, height>]
     #
     _tmp = pt_to_ftensor(y.image_size)
     show("image_size_as_array",_tmp)
     #_tmp = np.asarray(y.image_size, dtype=np.float32)
-    _tmp = _tmp.reshape([1,1,1, 1, 2])
+    _tmp = _tmp.reshape([1, 1, 1, 2])  # Note that the dimension is D_TOTAL
     show("reshaped",_tmp)
     _image_size = _tmp
 
     _tmp = pt_to_ftensor(y.block_size)
-    _tmp = _tmp.reshape([1,1,1, 1, 2])
+    _tmp = _tmp.reshape([1, 1, 1, 2])
     _tmp = _tmp / _image_size
     _block_to_image = _tmp
     show("block_to_image",_block_to_image)
@@ -289,7 +291,7 @@ class YoloLoss(nn.Module):
 
 
     show("anchors",self.anchors)
-    _tmp = self.anchors.reshape([1,1,1,self.num_anchors,2])
+    _tmp = self.anchors.reshape([1,1,self.num_anchors,2])
     show("anchors reshaped:",_tmp)
     #
     # from itertools import chain
@@ -310,7 +312,7 @@ class YoloLoss(nn.Module):
 
     # The last dimension of the label holds: [x, y, w, h, conf, prob0, prob1, ...]
 
-    _tmp = target[:,:,F_BOX_X:F_BOX_Y+1,:]
+    _tmp = target[:,:,:,F_BOX_X:F_BOX_Y+1]
     true_xy_cell = _tmp
     show("true_xy_cell",true_xy_cell)
 
