@@ -29,21 +29,27 @@ class YoloLoss(nn.Module):
     self.anchors = t
 
 
-  def forward(self, output, target):
+  # current: current output from the model being trained
+  # target:  training labels we want it to converge to
+  #
+  def forward(self, current, target):
     y = self.yolo
-    batch_size = output.data.size(0)
+    batch_size = current.data.size(0)
     gsize = grid_size(y)
     height = gsize.y
     width = gsize.x
     grid_cell_total = width * height
 
+
+    # Reshape the target to match the current's shape?
+
     # Get x,y,w,h,conf,cls
 
 
     #  The -1 here makes it inferred from the other dimensions
-    output = output.view(batch_size, self.num_anchors, -1, grid_cell_total)
+    current = current.view(batch_size, self.num_anchors, -1, grid_cell_total)
 
-    show("output",output)
+    show("current", current)
     show("target",target)
     halt()
 
@@ -59,28 +65,28 @@ class YoloLoss(nn.Module):
     # Construct a tensor with room for just the box coords  (F_BOX_XYWH),
     # but with all other dimensions unchanged
     #
-    coord = torch.zeros_like(output[:, :, F_BOX_XYWH:F_BOX_XYWH+4, :])
+    coord = torch.zeros_like(current[:, :, F_BOX_XYWH:F_BOX_XYWH + 4, :])
 
     # Convert the predicted x,y (-inf...+inf) to 0...1 via sigmoid() function
-    coord[:, :, F_BOX_X:F_BOX_Y+1, :] = output[:, :, F_BOX_X:F_BOX_Y+1, :].sigmoid()
+    coord[:, :, F_BOX_X:F_BOX_Y+1, :] = current[:, :, F_BOX_X:F_BOX_Y + 1, :].sigmoid()
 
     # Convert predicted w,h (-inf...+inf) using exp function (not sure why)
-    coord[:, :, F_BOX_W:F_BOX_H+1, :] = output[:, :, F_BOX_W:F_BOX_H+1, :].exp()
+    coord[:, :, F_BOX_W:F_BOX_H+1, :] = current[:, :, F_BOX_W:F_BOX_H + 1, :].exp()
 
     # Convert confidence (-inf...+inf) to probability 0...1 via sigmoid()
     #
-    conf = output[:, :, F_CONFIDENCE, :].sigmoid()
+    conf = current[:, :, F_CONFIDENCE, :].sigmoid()
 
 
     # For now, maybe we don't need to examine category probabilities?
     #
-    cls = output[:, :, F_CLASS_PROBABILITIES:, :].contiguous().view(batch_size * self.num_anchors,
-                                                y.category_count,
-                                                grid_cell_total).transpose(1, 2).contiguous().view(-1,
+    cls = current[:, :, F_CLASS_PROBABILITIES:, :].contiguous().view(batch_size * self.num_anchors,
+                                                                     y.category_count,
+                                                                     grid_cell_total).transpose(1, 2).contiguous().view(-1,
                                                                                                   y.category_count)
 
     if FALSE:   # Shows that the above contiguous/transpose stuff is to reshape and rotate the tensor
-      j = output[:,:,F_CLASS_PROBABILITIES:, :]
+      j = current[:, :, F_CLASS_PROBABILITIES:, :]
       show("j",j)
       show("cls",cls)
       halt()
