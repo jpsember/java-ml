@@ -41,17 +41,17 @@ class YoloLoss(nn.Module):
     grid_cell_total = width * height
 
 
-    # Reshape the target to match the current's shape?
-
     # Get x,y,w,h,conf,cls
-
 
     #  The -1 here makes it inferred from the other dimensions
     current = current.view(batch_size, self.num_anchors, -1, grid_cell_total)
+    # Reshape the target to match the current's shape
+    target = target.view(current.shape)
 
-    show("current", current)
-    show("target",target)
-    halt()
+    if FALSE:
+      show("current", current)
+      show("target", target)
+      halt()
 
 
     todo("have ability to periodically send tensors to Java to store/report/inspect")
@@ -121,16 +121,13 @@ class YoloLoss(nn.Module):
     #
     #    The result will never require gradient."
     #
+    # Future optimization: can the pred_boxes and similar things be precomputed?
+    #
     pred_boxes[:, 0] = (coord[:, :, 0].detach() + lin_x).view(-1)  # .view(-1) flattens it into an array
     pred_boxes[:, 1] = (coord[:, :, 1].detach() + lin_y).view(-1)
     pred_boxes[:, 2] = (coord[:, :, 2].detach().exp() * anchor_w).view(-1)
     pred_boxes[:, 3] = (coord[:, :, 3].detach().exp() * anchor_h).view(-1)
     pred_boxes = pred_boxes.cpu()   # I think this ensures it doesn't take up GPU space?
-
-    # Get target values
-    if FALSE:
-      show("target", target)   # Tensor target torch.Size([32, 1183])
-      halt()
 
     coord_mask, conf_mask, cls_mask, tcoord, tconf, tcls = self.build_targets(pred_boxes, target, height, width)
     coord_mask = coord_mask.expand_as(tcoord)
