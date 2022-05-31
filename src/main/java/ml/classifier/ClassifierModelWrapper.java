@@ -11,7 +11,6 @@ import js.geometry.IRect;
 import js.graphics.RectElement;
 import js.graphics.ScriptElement;
 import js.graphics.ScriptUtil;
-import ml.LabelledImage;
 import ml.ModelWrapper;
 import static ml.NetworkUtil.*;
 
@@ -20,6 +19,7 @@ public final class ClassifierModelWrapper extends ModelWrapper<Classifier> {
   @Override
   public void transformAnnotations(List<ScriptElement> in, List<ScriptElement> out,
       TransformWrapper transform) {
+    todo("overriding this is an unnecessary optimization");
     // Annotations hold ony the category, so pass through unchanged
     out.addAll(in);
   }
@@ -30,13 +30,6 @@ public final class ClassifierModelWrapper extends ModelWrapper<Classifier> {
         .labelLengthBytes(1 * bytesPerValue(network().labelDataType())) //
         .imageLengthBytes(inputImageVolumeProduct() * bytesPerValue(network().imageDataType())) //
     ;
-  }
-
-  @Override
-  public void accept(LabelledImage labelledImage) {
-    writeImage(labelledImage);
-    transformScreditToModelInput(labelledImage.annotations());
-    writeLabels(labelBufferBytes());
   }
 
   @Override

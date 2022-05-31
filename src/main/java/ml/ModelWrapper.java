@@ -189,7 +189,11 @@ public abstract class ModelWrapper<T extends AbstractData> extends BaseObject {
    * Process an image and its annotations, converting to form suitable for
    * training
    */
-  public abstract void accept(LabelledImage labelledImage);
+  public final void accept(LabelledImage labelledImage) {
+    writeImage(labelledImage);
+    transformScreditToModelInput(labelledImage.annotations());
+    writeLabels();
+  }
 
   /**
    * Fill in information fields. Some fields may have already been filled in
@@ -239,23 +243,20 @@ public abstract class ModelWrapper<T extends AbstractData> extends BaseObject {
     }
   }
 
-  public final void writeImage(Object imagePixelArray) {
-    switch (network().imageDataType()) {
+  private void writeLabels() {
+    switch (network().labelDataType()) {
     default:
-      throw notSupported("image_data_type:", network().imageDataType());
-    case FLOAT32: {
-      float[] imageFloats = (float[]) imagePixelArray;
-      Files.S.write(DataUtil.floatsToBytesLittleEndian(imageFloats), imageOutputStream());
-    }
+      throw notSupported("label_data_type:", network().labelDataType());
+
+    case FLOAT32:
+      writeLabels(labelBufferFloats());
       break;
 
-    case UNSIGNED_BYTE: {
-      byte[] imageBytes = (byte[]) imagePixelArray;
-      Files.S.write(imageBytes, imageOutputStream());
-    }
+    case UNSIGNED_BYTE:
+      writeLabels(labelBufferBytes());
       break;
-
     }
+
   }
 
   /**

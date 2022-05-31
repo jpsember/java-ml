@@ -18,7 +18,6 @@ import js.graphics.ScriptElement;
 import js.graphics.ScriptUtil;
 import js.graphics.gen.ElementProperties;
 import js.json.JSMap;
-import ml.LabelledImage;
 import ml.ModelWrapper;
 import ml.NetworkAnalyzer;
 import gen.ImageSetInfo;
@@ -102,14 +101,6 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
   @Override
   public Object constructLabelBuffer() {
     return new float[mFieldsPerImage];
-  }
-
-  @Override
-  public void accept(LabelledImage labelledImage) {
-    //labelledImage.useOnlySingleElement();
-    writeImage(labelledImage);
-    transformScreditToModelInput(labelledImage.annotations());
-    writeLabels(labelBufferFloats());
   }
 
   @Override
@@ -261,7 +252,9 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
     return boxList;
   }
 
-  private PlotInferenceResultsConfig mParserConfig = PlotInferenceResultsConfig.DEFAULT_INSTANCE;
+  // For now, make it final
+  //
+  private final PlotInferenceResultsConfig mParserConfig = PlotInferenceResultsConfig.DEFAULT_INSTANCE;
 
   // ------------------------------------------------------------------
 
