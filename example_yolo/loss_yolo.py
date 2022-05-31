@@ -256,43 +256,36 @@ class YoloLoss(nn.Module):
     target = target.view(current.shape)
 
     _tmp = pt_to_ftensor(y.image_size)
-    #show("image_size_as_array",_tmp)
     _tmp = _tmp.reshape([1, 1, 1, 2])  # Note that the dimension is D_TOTAL
-    #show("reshaped",_tmp)
     _image_size = _tmp
 
     _tmp = pt_to_ftensor(y.block_size)
     _tmp = _tmp.reshape([1, 1, 1, 2])
     _tmp = _tmp / _image_size
     _block_to_image = _tmp
-    #show("block_to_image",_block_to_image)
 
 
-
-    #show("anchors",self.anchors)
     _tmp = self.anchors.reshape([1,1,self.num_anchors,2])
-    #show("anchors reshaped:",_tmp)
-
-
-    #show("target flattened",target.view(-1))
-
+    anchor_wh_img = _tmp
+    show("anchors", anchor_wh_img)
+    todo("this is probably NOT the anchor box normalized to image size")
 
     # Determine ground truth location, size, category
 
-    true_xy_cell = target[..., F_BOX_X:F_BOX_Y+1]
+    true_xy_cell = target[:, :, :, F_BOX_X:F_BOX_Y+1]
     show("true_xy_cell", true_xy_cell)
 
     # true_box_wh will be the width and height of the box, relative to the anchor box
     #
-    true_box_wh = target[..., F_BOX_W:F_BOX_H+1]
+    true_box_wh = target[:, :, :, F_BOX_W:F_BOX_H+1]
     show("true_box_wh", true_box_wh)
 
-    true_confidence = target[..., F_CONFIDENCE]
+    true_confidence = target[:, :, :, F_CONFIDENCE]
     show("true_confidence", true_confidence)
 
     class_prob_end = F_CLASS_PROBABILITIES + y.category_count
 
-    true_class_probabilities = target[..., F_CLASS_PROBABILITIES:class_prob_end]  # probably can just do 'x:']
+    true_class_probabilities = target[:, :, :, F_CLASS_PROBABILITIES:class_prob_end]  # probably can just do 'x:']
     show("true_class_probabilities", true_class_probabilities)
 
     # We could have stored the true class number as an index, instead of a one-hot vector;
@@ -305,52 +298,54 @@ class YoloLoss(nn.Module):
     # Get the number of ground truth boxes in the batch, as a float, and to avoid divide by zero, assume at least one
     #
     num_true_boxes = float(max(1, true_confidence.count_nonzero()))
-    pr("num_true_boxes:",num_true_boxes)
-    halt()
 
-    just_confidence_logits = node[..., 4]
-
+    just_confidence_logits = current[:, :, :, F_CONFIDENCE]
+    show("just_confidence_logits", just_confidence_logits)
 
     # Determine predicted box's x,y
     #
     # We need to map (-inf...+inf) to (0...1); hence apply sigmoid function
     #
-    _tmp = node[..., :2]
-    _tmp = clamped_sigmoid(_tmp)
-    pred_xy_cell = _tmp
+    _tmp = current[:, :, :, F_BOX_X:F_BOX_Y+1]
+    show("box x,y",_tmp)
+    pred_xy_cell = torch.sigmoid(_tmp)
+    show("pred_xy_cell", pred_xy_cell)
 
     # Determine each predicted box's w,h
     #
     # We need to map (-inf...+inf) to (0..+inf); hence apply the exp function
     #
-    _tmp = node[..., 2:4]
-    _tmp = clamped_exp(_tmp)
+    _tmp = current[:, :, :, F_BOX_W:F_BOX_H+1]
     pred_wh_anchor = _tmp
+    show("pred_wh_anchor", pred_wh_anchor)
 
 
     # Construct versions of the true and predicted locations and sizes in image units
     #
     true_xy_img = true_xy_cell * _block_to_image
     pred_xy_img = pred_xy_cell * _block_to_image
+    show("pred_xy_img", pred_xy_img)
 
 
-    _tmp = true_box_wh * anchor_wh_img
-    true_wh_img = _tmp
+    true_wh_img = true_box_wh * anchor_wh_img
+    show("true_wh_img", true_wh_img)
 
-    _tmp = pred_wh_anchor * anchor_wh_img
-    pred_wh_img = _tmp
+    pred_wh_img = pred_wh_anchor * anchor_wh_img
+    show("pred_wh_img", pred_wh_img)
 
 
     # Determine each predicted box's confidence score.
     # We need to map (-inf...+inf) to (0..1); hence apply sigmoid function
     #
-    _tmp = clamped_sigmoid(just_confidence_logits)
-    predicted_confidence = _tmp
+    predicted_confidence = torch.sigmoid(just_confidence_logits)
+    show("predicted_confidence", predicted_confidence)
 
     # Determine each predicted box's set of conditional class probabilities.
     # These occupy the remaining elements in the last dimension (5,6,...)
     #
-    predicted_box_class_logits = node[..., 5:class_prob_end]
+    predicted_box_class_logits = current[:,:,:,F_CLASS_PROBABILITIES:class_prob_end]
+    show("predicted_box_class_logits", predicted_box_class_logits)
+    halt()
 
     # Add a dimension to true_confidence so it has equivalent dimensionality as true_box_xy, true_box_wh
     # (this doesn't change its volume, only its dimensions)
