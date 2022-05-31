@@ -114,7 +114,6 @@ public final class ImageCompiler extends BaseObject {
       model.accept(image);
 
       if (mInspector.used()) {
-        alert("inspector is used");
         // Parse the labels we generated, and write as the annotations to an inspection image
         mInspector.create("parsed").image(targetImage);
         mInspector.elements(image.emptyCopy().parseAnnotations());
