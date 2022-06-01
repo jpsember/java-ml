@@ -16,6 +16,11 @@ class YoloLoss(nn.Module):
     self.network = network
     self.yolo = yolo
     self.num_anchors = anchor_box_count(yolo)
+    self.grid_size = grid_size(yolo)
+    self.grid_cell_total = self.grid_size.product()
+
+
+
 
     # Construct a tensor containing the anchor boxes, normalized to the block size
     #
@@ -167,7 +172,7 @@ class YoloLoss(nn.Module):
 
     y = self.yolo
     batch_size = len(ground_truth)
-    grid_cell_total = height * width
+    grid_cell_total = self.grid_cell_total
 
     conf_mask  = torch.ones(batch_size,  self.num_anchors, grid_cell_total, requires_grad=False) * y.lambda_noobj
     coord_mask = torch.zeros(batch_size, self.num_anchors, 1, grid_cell_total, requires_grad=False)
@@ -386,8 +391,9 @@ class YoloLoss(nn.Module):
     iou_scores = self.calculate_iou(true_xy_cell, true_box_wh, pred_xy_cell, pred_wh_anchor)
     show("iou_scores", iou_scores)
 
-    _tmp = self.construct_confidence_loss(true_confidence, iou_scores, predicted_confidence)
-    loss_confidence = _tmp
+    loss_confidence = self.construct_confidence_loss(true_confidence, iou_scores, predicted_confidence)
+    show("loss_confidence:",loss_confidence)
+    halt()
 
     #
     # The loss_confidence tensor has rank 0 : it's a scalar.  Its shape appears as "()" when printed.
@@ -450,6 +456,36 @@ class YoloLoss(nn.Module):
 
 
 
+  def construct_confidence_loss(self, true_confidence, iou_scores, predicted_confidence):
+    true_box_confidence = iou_scores * true_confidence
+
+    _zeros = torch.zeros_like(true_confidence)
+    _ones = torch.ones_like(_zeros)
+    _no_objects_expected = torch.where(torch.greater(true_confidence, 0.0), _zeros, _ones)
+
+    conf_mask = _no_objects_expected * self.yolo.lambda_noobj + true_confidence
+
+    # conf_mask is the sum of two terms, at least one of which must be zero since
+    # one is multiplied by (1 - true_box_exists), and the other by (true_box_exists),
+    # where true_box_exists is an indicator variable (either 0 or 1).
+    #
+    # Each conf_mask element, if nonzero, is a multiplier to apply to the difference in
+    # true and predicted confidences for a box.
+    #
+    # If a conf_mask element is nonzero, that means either:
+    #
+    #    i) there *is* an object there, and we expect a high predicted confidence;
+    # or,
+    #   ii) there *isn't* an object there, and we expect a low predicted confidence.
+    #
+
+    # It is clear that each element of conf_mask is either obj_scale or no_obj_scale,
+    # so the number of nonzero entries below is just the number of anchor boxes in the entire image...
+
+
+    anchor_boxes_per_image = self.num_anchors * self.grid_cell_total
+    loss_conf = torch.sum(torch.square(true_box_confidence - predicted_confidence) * conf_mask) / anchor_boxes_per_image
+    return loss_conf
 
 
 
