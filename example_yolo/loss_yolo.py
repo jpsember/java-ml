@@ -262,6 +262,7 @@ class YoloLoss(nn.Module):
     _tmp = pt_to_ftensor(y.block_size)
     _tmp = _tmp.reshape([1, 1, 1, 2])
     _tmp = _tmp / _image_size
+    warning("is block_to_image required?")
     _block_to_image = _tmp
 
 
@@ -324,6 +325,7 @@ class YoloLoss(nn.Module):
     #
     true_xy_img = true_xy_cell * _block_to_image
     pred_xy_img = pred_xy_cell * _block_to_image
+    warning("do we need the cell coordinates?")
     show("pred_xy_img", pred_xy_img)
 
 
@@ -341,11 +343,9 @@ class YoloLoss(nn.Module):
     show("predicted_confidence", predicted_confidence)
 
     # Determine each predicted box's set of conditional class probabilities.
-    # These occupy the remaining elements in the last dimension (5,6,...)
     #
     predicted_box_class_logits = current[:,:,:,F_CLASS_PROBABILITIES:class_prob_end]
     show("predicted_box_class_logits", predicted_box_class_logits)
-    halt()
 
     # Add a dimension to true_confidence so it has equivalent dimensionality as true_box_xy, true_box_wh
     # (this doesn't change its volume, only its dimensions)
@@ -354,22 +354,37 @@ class YoloLoss(nn.Module):
     # For neighbor box labels, whose confidence < 1, this has the effect of reducing the penalty
     # for those boxes
     #
-    _tmp = tf.expand_dims(true_confidence, axis=-1)
-    _coord_mask = _tmp
+    _coord_mask = true_confidence[None, :]
+    show("_coord_mask", _coord_mask)
 
-    _tmp = tf.square(true_xy_img - pred_xy_img)
+    pr("true_xy_img shape",true_xy_img.shape)
+    pr("pred_xy_img shape",pred_xy_img.shape)
+    #show("true-pred", (true_xy_img - pred_xy_img))
+
+    _tmp = (true_xy_cell - pred_xy_cell).square()
+
     _tmp = _tmp * _coord_mask
-    _tmp = tf.reduce_sum(input_tensor=_tmp) / num_true_boxes
-    loss_xy = _tmp
+    show("xy true-pred, ^2, * coord_mask", _tmp)
+    todo("why does coord_mask have shape [2,2,2,2]?")
+    pr(_coord_mask.shape)
+#    halt()
 
+    # TODO: why can't we just set the 'box' loss based on the IOU inaccuracy?  Then
+    # presumably the x,y,w,h will naturally move to the target?
+    loss_xy = _tmp.sum().item() / num_true_boxes
+    pr("num_true_boxes:", num_true_boxes)
+    pr("loss_xy:",loss_xy)
+    #
+    #_tmp = tf.reduce_sum(input_tensor=_tmp) / num_true_boxes
     # Maybe don't take the roots of the dimensions?
     #
-    _tmp = tf.square(tf.sqrt(true_wh_img) - tf.sqrt(pred_wh_img))
 
-    _tmp = _tmp * _coord_mask
-    _tmp = tf.reduce_sum(input_tensor=_tmp) / num_true_boxes
-    loss_wh = _tmp
+    _tmp = (((true_box_wh - pred_wh_anchor) * _coord_mask).square())
+    show("wh error", _tmp)
+    loss_wh = _tmp.sum().item() / num_true_boxes
+    pr("loss_wy:",loss_wh)
 
+    halt()
 
     iou_scores = self.calculate_iou(true_xy_img, true_wh_img, pred_xy_img, pred_wh_img)
     _tmp = self.construct_confidence_loss(true_confidence, iou_scores, predicted_confidence)
