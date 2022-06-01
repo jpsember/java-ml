@@ -101,8 +101,13 @@ public final class CompileImagesOper extends AppOper {
     if (config().targetDirTrain().isDirectory()) {
       DirWalk w = new DirWalk(config().targetDirTrain()).includeDirectories().withRecurse(false);
       for (File f : w.files()) {
-        if (!f.isDirectory())
+        if (!f.isDirectory()) {
+          // If it is a python logging file (.json, .tmp, .dat), delete it
+          String ext = Files.getExtension(f);
+          if (ext.equals("json") || ext.equals("tmp") || ext.equals("dat"))
+            files().deleteFile(f);
           continue;
+        }
 
         if (config().retainExistingTrainingSets() && f.getName().startsWith(STREAM_PREFIX)) {
           alert("Retaining existing training sets");

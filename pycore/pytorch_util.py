@@ -51,3 +51,4 @@ def show(label:str, obj):
     pr(label,"type:",type(obj),"value:",obj)
   pr(dash)
   pr("\n\n")
+

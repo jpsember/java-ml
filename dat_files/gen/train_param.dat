@@ -1,0 +1,44 @@
+fields {
+
+  // Streaming service attempts to maintain this many
+  // sets in the directory; this should be one more than the number that
+  // the training code needs
+  //
+  int max_train_sets = 3;
+
+  // Maximum number of times a train set is reused before being discarded
+  //
+  int recycle = 3;
+
+  int max_checkpoints = 5;
+
+  // For certain project types (e.g. classification)
+  //
+  int target_accuracy = 95;
+
+  // Stops if training loss drops to this value
+  //
+  float target_loss;
+
+
+  // https://arxiv.org/abs/1804.07612
+  //
+  // "The presented results confirm that using small batch sizes achieves
+  //  the best training stability and generalization performance, for a given
+  //  computational cost, across a wide range of experiments. In all cases
+  //  the best results have been obtained with batch sizes m = 32 or smaller,
+  //  often as small as m = 2 or m = 4."
+  //
+  int batch_size = 32;
+
+  // If nonzero, dumps the computed test labels this many times
+  //
+  int dump_test_labels_count = 0;
+
+
+  // Number of images to include in the test set (zero disables test)
+  //
+  int test_size = 20;
+}
+
+

@@ -4,6 +4,7 @@ from gen.yolo import Yolo
 from pycore.pytorch_util import *
 from pycore.js_model import JsModel
 from gen.neural_network import NeuralNetwork
+from pycore.tensor_logger import TensorLogger
 from .yolo_util import *
 
 # Derived from https://neptune.ai/blog/pytorch-loss-functions
@@ -13,6 +14,7 @@ class YoloLoss(nn.Module):
 
   def __init__(self, network: NeuralNetwork, yolo:Yolo):
     super(YoloLoss, self).__init__()
+    self.logger = TensorLogger()
     self.network = network
     self.yolo = yolo
     self.num_anchors = anchor_box_count(yolo)
@@ -30,6 +32,8 @@ class YoloLoss(nn.Module):
     for abp in yolo.anchor_boxes_pixels:
       t.append((abp.x * b_x, abp.y * b_y))
     t = torch.Tensor(t)
+    self.logger.add(t,"anchors")
+    halt()
     self.anchors = t
 
 
@@ -115,22 +119,6 @@ class YoloLoss(nn.Module):
     pred_wh_anchor = _tmp
     show(".pred_wh_anchor", pred_wh_anchor)
 
-
-    # Construct versions of the true and predicted locations and sizes in image units
-    #
-    true_xy_img = true_xy_cell * _block_to_image
-    pred_xy_img = pred_xy_cell * _block_to_image
-    warning("do we need the cell coordinates?")
-    show(".pred_xy_img", pred_xy_img)
-
-
-    true_wh_img = true_box_wh * anchor_wh_img
-    show(".true_wh_img", true_wh_img)
-
-    pred_wh_img = pred_wh_anchor * anchor_wh_img
-    show(".pred_wh_img", pred_wh_img)
-
-
     # Determine each predicted box's confidence score.
     # We need to map (-inf...+inf) to (0..1); hence apply sigmoid function
     #
@@ -149,12 +137,13 @@ class YoloLoss(nn.Module):
     # For neighbor box labels, whose confidence < 1, this has the effect of reducing the penalty
     # for those boxes
     #
-    _coord_mask = true_confidence[None, :]
-    show("._coord_mask", _coord_mask)
+    _coord_mask = true_confidence[:, None]
+    show("._coord_mask", _coord_mask)   # size: [1, 32, 169, 1]    type: torch.float32
+
 
     _tmp = (true_xy_cell - pred_xy_cell).square()
 
-    show(".true-pred ^d",_tmp)
+    show(".true-pred ^d",_tmp)          # size: [32, 169, 1, 2]    type: torch.float32
     _tmp = _tmp * _coord_mask
     show(".xy true-pred, ^2, * coord_mask", _tmp)
     todo("why does coord_mask have shape [2,2,2,2]?")

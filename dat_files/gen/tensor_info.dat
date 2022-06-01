@@ -1,0 +1,12 @@
+enum DataType;
+
+fields {
+
+  // Name of tensor (e.g. variable name)
+  //
+  string name;
+
+  DataType data_type;
+
+  *int shape;
+}

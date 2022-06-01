@@ -1,0 +1,9 @@
+enum {
+  unsigned_byte,
+  unsigned_short,
+  float32,    // To avoid problems naming it 'float'
+}
+
+
+
+
