@@ -38,6 +38,8 @@ def vol_volume(vol:Vol) -> int:
 
 
 def show(label:str, obj):
+  if label[0] == '.':
+    return
   dash = "------------------------\n"
   pr("\n\n")
   pr(dash)

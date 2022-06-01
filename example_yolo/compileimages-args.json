@@ -9,8 +9,9 @@
 
       "train_param" : {
         "batch_size" : 2,
+        "test_size" : 2,
       },
 
 
-    "retain_existing_training_sets" : true,
+    //"retain_existing_training_sets" : true,
 }

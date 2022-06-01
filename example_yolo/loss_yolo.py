@@ -37,6 +37,9 @@ class YoloLoss(nn.Module):
   def forward(self, current, target):
     y = self.yolo
     batch_size = current.data.size(0)
+    if (batch_size != 2):
+      die("unexpected batch size")
+
     gsize = grid_size(y)
     height = gsize.y
     width = gsize.x
@@ -62,26 +65,26 @@ class YoloLoss(nn.Module):
 
     _tmp = self.anchors.reshape([1,1,self.num_anchors,2])
     anchor_wh_img = _tmp
-    show("anchors", anchor_wh_img)
+    show(".anchors", anchor_wh_img)
     todo("this is probably NOT the anchor box normalized to image size")
 
     # Determine ground truth location, size, category
 
     true_xy_cell = target[:, :, :, F_BOX_X:F_BOX_Y+1]
-    show("true_xy_cell", true_xy_cell)
+    show(".true_xy_cell", true_xy_cell)
 
     # true_box_wh will be the width and height of the box, relative to the anchor box
     #
     true_box_wh = target[:, :, :, F_BOX_W:F_BOX_H+1]
-    show("true_box_wh", true_box_wh)
+    show(".true_box_wh", true_box_wh)
 
     true_confidence = target[:, :, :, F_CONFIDENCE]
-    show("true_confidence", true_confidence)
+    show(".true_confidence", true_confidence)
 
     class_prob_end = F_CLASS_PROBABILITIES + y.category_count
 
     true_class_probabilities = target[:, :, :, F_CLASS_PROBABILITIES:class_prob_end]  # probably can just do 'x:']
-    show("true_class_probabilities", true_class_probabilities)
+    show(".true_class_probabilities", true_class_probabilities)
 
     # We could have stored the true class number as an index, instead of a one-hot vector;
     # but the symmetry of the structure of the true vs inferred data keeps things simple.
@@ -95,16 +98,16 @@ class YoloLoss(nn.Module):
     num_true_boxes = float(max(1, true_confidence.count_nonzero()))
 
     just_confidence_logits = current[:, :, :, F_CONFIDENCE]
-    show("just_confidence_logits", just_confidence_logits)
+    show(".just_confidence_logits", just_confidence_logits)
 
     # Determine predicted box's x,y
     #
     # We need to map (-inf...+inf) to (0...1); hence apply sigmoid function
     #
     _tmp = current[:, :, :, F_BOX_X:F_BOX_Y+1]
-    show("box x,y",_tmp)
+    show(".box x,y",_tmp)
     pred_xy_cell = torch.sigmoid(_tmp)
-    show("pred_xy_cell", pred_xy_cell)
+    show(".pred_xy_cell", pred_xy_cell)
 
     # Determine each predicted box's w,h
     #
@@ -112,7 +115,7 @@ class YoloLoss(nn.Module):
     #
     _tmp = current[:, :, :, F_BOX_W:F_BOX_H+1]
     pred_wh_anchor = _tmp
-    show("pred_wh_anchor", pred_wh_anchor)
+    show(".pred_wh_anchor", pred_wh_anchor)
 
 
     # Construct versions of the true and predicted locations and sizes in image units
@@ -120,26 +123,26 @@ class YoloLoss(nn.Module):
     true_xy_img = true_xy_cell * _block_to_image
     pred_xy_img = pred_xy_cell * _block_to_image
     warning("do we need the cell coordinates?")
-    show("pred_xy_img", pred_xy_img)
+    show(".pred_xy_img", pred_xy_img)
 
 
     true_wh_img = true_box_wh * anchor_wh_img
-    show("true_wh_img", true_wh_img)
+    show(".true_wh_img", true_wh_img)
 
     pred_wh_img = pred_wh_anchor * anchor_wh_img
-    show("pred_wh_img", pred_wh_img)
+    show(".pred_wh_img", pred_wh_img)
 
 
     # Determine each predicted box's confidence score.
     # We need to map (-inf...+inf) to (0..1); hence apply sigmoid function
     #
     predicted_confidence = torch.sigmoid(just_confidence_logits)
-    show("predicted_confidence", predicted_confidence)
+    show(".predicted_confidence", predicted_confidence)
 
     # Determine each predicted box's set of conditional class probabilities.
     #
     predicted_box_class_logits = current[:,:,:,F_CLASS_PROBABILITIES:class_prob_end]
-    show("predicted_box_class_logits", predicted_box_class_logits)
+    show(".predicted_box_class_logits", predicted_box_class_logits)
 
     # Add a dimension to true_confidence so it has equivalent dimensionality as true_box_xy, true_box_wh
     # (this doesn't change its volume, only its dimensions)
@@ -149,42 +152,31 @@ class YoloLoss(nn.Module):
     # for those boxes
     #
     _coord_mask = true_confidence[None, :]
-    show("_coord_mask", _coord_mask)
-
-    pr("true_xy_img shape",true_xy_img.shape)
-    pr("pred_xy_img shape",pred_xy_img.shape)
-    #show("true-pred", (true_xy_img - pred_xy_img))
+    show("._coord_mask", _coord_mask)
 
     _tmp = (true_xy_cell - pred_xy_cell).square()
 
+    show(".true-pred ^d",_tmp)
     _tmp = _tmp * _coord_mask
-    show("xy true-pred, ^2, * coord_mask", _tmp)
+    show(".xy true-pred, ^2, * coord_mask", _tmp)
     todo("why does coord_mask have shape [2,2,2,2]?")
-    pr(_coord_mask.shape)
 
     # TODO: why can't we just set the 'box' loss based on the IOU inaccuracy?  Then
     # presumably the x,y,w,h will naturally move to the target?
     loss_xy = _tmp.sum().item() / num_true_boxes
-    pr("num_true_boxes:", num_true_boxes)
-    pr("loss_xy:",loss_xy)
-    #
-    #_tmp = tf.reduce_sum(input_tensor=_tmp) / num_true_boxes
-    # Maybe don't take the roots of the dimensions?
-    #
 
     _tmp = (((true_box_wh - pred_wh_anchor) * _coord_mask).square())
-    show("wh error", _tmp)
+    show(".wh error", _tmp)
     loss_wh = _tmp.sum().item() / num_true_boxes
-    pr("loss_wy:",loss_wh)
 
     iou_scores = self.calculate_iou(true_xy_cell, true_box_wh, pred_xy_cell, pred_wh_anchor)
-    show("iou_scores", iou_scores)
+    show(".iou_scores", iou_scores)
 
     loss_confidence = self.construct_confidence_loss(true_confidence, iou_scores, predicted_confidence)
-    show("loss_confidence:",loss_confidence)
+    show(".loss_confidence:",loss_confidence)
 
     _coord_scaled = self.yolo.lambda_coord * (loss_xy + loss_wh)
-    show("_coord_scaled", _coord_scaled)
+    show("._coord_scaled", _coord_scaled)
 
     _tmp = _coord_scaled + loss_confidence
 
@@ -193,8 +185,6 @@ class YoloLoss(nn.Module):
       _tmp = _tmp + loss_class
 
     _tmp = _tmp.mean()
-    show("mean", _tmp)
-    halt()
     return _tmp
 
 
@@ -208,16 +198,16 @@ class YoloLoss(nn.Module):
     true_offset = true_wh / 2.
     true_box_min = true_xy - true_offset
     true_box_max = true_xy + true_offset
-    show("true_box_min", true_box_min)
-    show("true_box_max", true_box_max)
+    show(".true_box_min", true_box_min)
+    show(".true_box_max", true_box_max)
 
     # Calculate the min/max extents of the predicted boxes
     #
     pred_offset = pred_wh / 2.
     pred_box_min = pred_xy - pred_offset
     pred_box_max = pred_xy + pred_offset
-    show("pred_box_min", pred_box_min)
-    show("pred_box_max", pred_box_max)
+    show(".pred_box_min", pred_box_min)
+    show(".pred_box_max", pred_box_max)
 
     # Determine the area of their intersection (which may be zero)
     #
