@@ -1,3 +1,5 @@
+from numpy import ndarray
+
 from pycore.base import *
 import numpy as np
 import torch
@@ -35,8 +37,12 @@ class TensorLogger:
     p = self.get_path(".json")
     p_temp = self.temp_version(p)
     txt_write(p_temp, info.to_string(False))
-    todo("write data as well")
+    x = tensor.detach().numpy()
+    b = self.get_path(".dat")
+    b_temp = self.temp_version(b)
+    x.tofile(b_temp)
     os.rename(p_temp, p)
+    os.rename(b_temp, b)
 
 
   def clean(self, name:str):
@@ -44,7 +50,7 @@ class TensorLogger:
 
 
   def temp_version(self, name:str):
-    result = name + "_temp"
+    result = name + ".tmp"
     if os.path.exists(result):
       die("path already exists:", result)
     return result
