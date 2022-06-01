@@ -393,19 +393,19 @@ class YoloLoss(nn.Module):
 
     loss_confidence = self.construct_confidence_loss(true_confidence, iou_scores, predicted_confidence)
     show("loss_confidence:",loss_confidence)
+
+    _coord_scaled = self.yolo.lambda_coord * (loss_xy + loss_wh)
+    show("_coord_scaled", _coord_scaled)
+
+    _tmp = _coord_scaled + loss_confidence
+
+    if not warning("disabled class_loss"):
+      loss_class = self.construct_class_loss(true_confidence, true_class_probabilities, predicted_box_class_logits)
+      _tmp = _tmp + loss_class
+
+    _tmp = _tmp.mean()
+    show("mean", _tmp)
     halt()
-
-    #
-    # The loss_confidence tensor has rank 0 : it's a scalar.  Its shape appears as "()" when printed.
-
-    _tmp = self.construct_class_loss(true_confidence, true_class_probabilities, predicted_box_class_logits)
-    loss_class = _tmp
-
-    _coord_scaled = yolo.lambda_coord * (loss_xy + loss_wh)
-
-    _tmp = _coord_scaled + loss_confidence + loss_class
-
-    _tmp = tf.reduce_mean(input_tensor=_tmp)
     return _tmp
 
 
@@ -489,6 +489,40 @@ class YoloLoss(nn.Module):
 
 
 
+
+  def construct_class_loss(self, true_confidence, true_class_probabilities, predicted_logits):
+    #
+    # arg_max:  Returns the index with the largest value across dimensions of a tensor
+    #
+    # Gets index of highest true conditional class probability; i.e. converts from one-hot to index.
+    #
+    true_box_class = torch.argmax(true_class_probabilities, dim=-1)   # -1 means the last dimension
+    show("true_class_prob",true_class_probabilities)
+    show("with argmax",true_box_class)
+
+
+    # I suspect this is to apply a nonuniform weighting to individual classes.
+    # At present, all classes (categories) have unit weight, so it has no effect...?
+    #
+    # Or: it takes a tensor representing a class index (true_box_class) and constructs a 'one-hot' slice from it...?
+    #
+    class_wt = torch.ones(self.yolo.category_count, dtype=torch.float32)
+    show("class_wt",class_wt)
+    show("true_box_class",true_box_class)
+
+    halt("need to figure out 'gather'")
+
+    _tmp = torch.gather(class_wt, true_box_class)
+    show("gather",_tmp)
+    halt()
+
+    class_mask = true_confidence * _tmp
+    nb_class_box = tf.maximum(1., tf.reduce_sum(input_tensor=tf.cast(class_mask > 0.0, dtype=tf.float32)))
+
+    _tmp = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=true_box_class, logits=predicted_logits)
+    _tmp = tf.reduce_sum(input_tensor=_tmp * class_mask) / nb_class_box
+
+    return _tmp
 
 
 

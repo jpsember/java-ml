@@ -28,12 +28,14 @@ def db(label:str, obj):
 
 def g():
   pr("\n\n\n\n\n\n\n\n\n\n")
-  t = torch.FloatTensor([[1.2,-1.2,3.0],[0.2,0.3,-0.3]])
+  t = torch.IntTensor([[[1],[0]],[[0],[1]]])
   db("t",t)
-  db("exp",t.exp())
 
 
-  s = torch.asarray([1,2,3])
-  db("s",s)
+  #db("exp",t.exp())
 
-  x = t.view()
+
+  #s = torch.asarray([1,2,3])
+  #db("s",s)
+
+  #x = t.view()
