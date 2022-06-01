@@ -367,7 +367,6 @@ class YoloLoss(nn.Module):
     show("xy true-pred, ^2, * coord_mask", _tmp)
     todo("why does coord_mask have shape [2,2,2,2]?")
     pr(_coord_mask.shape)
-#    halt()
 
     # TODO: why can't we just set the 'box' loss based on the IOU inaccuracy?  Then
     # presumably the x,y,w,h will naturally move to the target?
@@ -384,9 +383,9 @@ class YoloLoss(nn.Module):
     loss_wh = _tmp.sum().item() / num_true_boxes
     pr("loss_wy:",loss_wh)
 
-    halt()
+    iou_scores = self.calculate_iou(true_xy_cell, true_box_wh, pred_xy_cell, pred_wh_anchor)
+    show("iou_scores", iou_scores)
 
-    iou_scores = self.calculate_iou(true_xy_img, true_wh_img, pred_xy_img, pred_wh_img)
     _tmp = self.construct_confidence_loss(true_confidence, iou_scores, predicted_confidence)
     loss_confidence = _tmp
 
@@ -402,6 +401,65 @@ class YoloLoss(nn.Module):
 
     _tmp = tf.reduce_mean(input_tensor=_tmp)
     return _tmp
+
+
+
+
+
+
+
+
+  def calculate_iou(self, true_xy, true_wh, pred_xy, pred_wh):
+
+    # The _xy fields are the box midpoints, and we need to know the edge coordinates
+
+    # Calculate the min/max extents of the true boxes
+    #
+    true_offset = true_wh / 2.
+    true_box_min = true_xy - true_offset
+    true_box_max = true_xy + true_offset
+    show("true_box_min", true_box_min)
+    show("true_box_max", true_box_max)
+
+    # Calculate the min/max extents of the predicted boxes
+    #
+    pred_offset = pred_wh / 2.
+    pred_box_min = pred_xy - pred_offset
+    pred_box_max = pred_xy + pred_offset
+    show("pred_box_min", pred_box_min)
+    show("pred_box_max", pred_box_max)
+
+    # Determine the area of their intersection (which may be zero)
+    #
+    intersect_box_min = torch.maximum(true_box_min, pred_box_min)
+    intersect_box_max = torch.minimum(true_box_max, pred_box_max)
+
+    intersect_box_size = torch.clamp(intersect_box_max - intersect_box_min, min=0.0)
+    intersect_box_area = intersect_box_size[..., 0] * intersect_box_size[..., 1]
+
+    true_box_area = true_wh[..., 0] * true_wh[..., 1]
+    predicted_box_area = pred_wh[..., 0] * pred_wh[..., 1]
+
+    union_areas = predicted_box_area + true_box_area - intersect_box_area
+
+    # For cells that have no ground truth box, the area will be zero; so to avoid a possible divide by zero
+    # (which may be harmless, but will be confusing), add an epsilon to the denominator
+    #
+    return torch.div(intersect_box_area, torch.clamp(union_areas, min=1e-8))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
