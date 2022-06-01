@@ -33,7 +33,6 @@ class YoloLoss(nn.Module):
       t.append((abp.x * b_x, abp.y * b_y))
     t = torch.Tensor(t)
     self.logger.add(t,"anchors")
-    halt()
     self.anchors = t
 
 
@@ -74,6 +73,7 @@ class YoloLoss(nn.Module):
 
     true_xy_cell = target[:, :, :, F_BOX_X:F_BOX_Y+1]
     show(".true_xy_cell", true_xy_cell)
+    self.logger.add(true_xy_cell, "true_xy_cell")
 
     # true_box_wh will be the width and height of the box, relative to the anchor box
     #

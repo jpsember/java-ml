@@ -8,6 +8,7 @@ import java.util.SortedMap;
 
 import gen.CompileImagesConfig;
 import gen.NeuralNetwork;
+import gen.TensorInfo;
 import gen.TrainParam;
 import js.app.AppOper;
 import js.base.DateTimeTools;
@@ -144,6 +145,7 @@ public final class CompileImagesOper extends AppOper {
       if (countTrainSets() >= trainParam().maxTrainSets()) {
         if (stopIfInactive())
           break;
+        updateLogging();
         DateTimeTools.sleepForRealMs(100);
         continue;
       }
@@ -178,6 +180,29 @@ public final class CompileImagesOper extends AppOper {
       }
 
       updateCheckpoints();
+    }
+  }
+
+  private void updateLogging() {
+    File logDir = config().targetDirTrain();
+    DirWalk w = new DirWalk(logDir).withRecurse(false).withExtensions("json");
+    for (File infoFile : w.files()) {
+      File tensorFile = Files.setExtension(infoFile, "dat");
+      // If no extension file exists, it may not have been renamed
+      if (!tensorFile.exists())
+        DateTimeTools.sleepForRealMs(100);
+      if (!tensorFile.exists()) {
+        pr("...logger, no corresponding tensor file found:", tensorFile.getName());
+      } else {
+        pr("parsing:",Files.infoMap(infoFile));
+        TensorInfo ti = Files.parseAbstractData(TensorInfo.DEFAULT_INSTANCE, infoFile);
+        pr("...parsed:", INDENT, ti);
+        todo("be more selective about logging");
+        todo("display tensor data");
+      }
+
+      files().deletePeacefully(infoFile);
+      files().deletePeacefully(tensorFile);
     }
   }
 
