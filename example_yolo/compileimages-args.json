@@ -8,8 +8,8 @@
            },
 
       "train_param" : {
-        "batch_size" : 2,
-        "test_size" : 2,
+        //"batch_size" : 2,
+        //"test_size" : 2,
       },
 
 

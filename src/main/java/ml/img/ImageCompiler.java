@@ -25,6 +25,7 @@ import js.graphics.ImgUtil;
 import js.graphics.Inspector;
 import js.graphics.ScriptElement;
 import js.graphics.ScriptUtil;
+import ml.GenerateImageSetOper;
 import ml.LabelledImage;
 import ml.ModelWrapper;
 
@@ -136,8 +137,12 @@ public final class ImageCompiler extends BaseObject {
       for (File f : w.files())
         ents.add(new ImageEntry(f));
       checkArgument(ents.size() > 3, "insufficient images:", ents.size());
-      if (!alert("not permuting for now, while working on Yolo"))
-        MyMath.permute(ents, random());
+      if (GenerateImageSetOper.YOLO_DEV) {
+        mEntries = ents;
+        alert("not permuting for now, while working on Yolo");
+        return mEntries;
+      }
+      MyMath.permute(ents, random());
       mEntries = ents;
     }
     return mEntries;

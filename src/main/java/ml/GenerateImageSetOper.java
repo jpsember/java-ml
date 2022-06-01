@@ -32,6 +32,8 @@ import js.graphics.gen.Script;
 
 public class GenerateImageSetOper extends AppOper {
 
+  public static final boolean YOLO_DEV = false && alert("YOLO_DEV in effect");
+  
   @Override
   public String userCommand() {
     return "genimages";
@@ -57,7 +59,7 @@ public class GenerateImageSetOper extends AppOper {
       Yolo yolo = (Yolo) model().modelConfig();
       checkArgument(yolo.categoryCount() == config().categories().length(), "Yolo category count",
           yolo.categoryCount(), "disagrees with categories string length", config().categories());
-      if (alert("always gen max objects"))
+      if (YOLO_DEV && alert("always gen max objects"))
         objectCount = config().maxObjects();
     }
       break;

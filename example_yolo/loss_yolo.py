@@ -37,8 +37,6 @@ class YoloLoss(nn.Module):
   def forward(self, current, target):
     y = self.yolo
     batch_size = current.data.size(0)
-    if (batch_size != 2):
-      die("unexpected batch size")
 
     gsize = grid_size(y)
     height = gsize.y
