@@ -90,7 +90,6 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
   @Override
   public void init() {
     Yolo yolo = modelConfig();
-    mAnchorSizeRelImage = YoloUtil.anchorBoxesRelativeToImageSize(yolo);
     mAnchorSize = YoloUtil.anchorBoxSizes(yolo);
     mGridSize = YoloUtil.gridSize(yolo);
     mGridToImageScale = yolo.blockSize().toFPoint();
@@ -298,7 +297,7 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
 
     b[f + YoloUtil.F_CLASS_PROBABILITIES + ScriptUtil.categoryOrZero(box)] = 1;
 
-    if (verbose() || alert("for now")) {
+    if (verbose()) {
       pr("write box to fields:", box);
       pr("boxGridCell:", mBoxGridCell);
       pr("anchor box:", mAnchorBox);
@@ -347,7 +346,6 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
    * 
    */
   private boolean convertBoxToCell(IRect box) {
-    Yolo yolo = modelConfig();
     mBoxCenterInCellSpace = null;
     mBoxSizeRelativeToAnchorBox = null;
     mBoxGridCell = null;
@@ -366,8 +364,8 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
     }
 
     mBoxSizeRelativeToAnchorBox = new FPoint(//
-        (box.width / (float) yolo.imageSize().x) / mAnchorSizeRelImage[mAnchorBox * 2 + 0], //
-        (box.height / (float) yolo.imageSize().y) / mAnchorSizeRelImage[mAnchorBox * 2 + 1]);
+        box.width / mAnchorSize[mAnchorBox * 2 + 0], //
+        box.height / mAnchorSize[mAnchorBox * 2 + 1]);
 
     mBoxGridCell = gridCell;
 
@@ -383,7 +381,7 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
 
   private int numAnchorBoxes() {
     // TODO: we can optimize things by precomputing this and other constants, and storing in instance fields
-    return mAnchorSizeRelImage.length / 2;
+    return mAnchorSize.length / 2;
   }
 
   /**
@@ -428,15 +426,13 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
         .confidence(MyMath.parameterToPercentage(confidence)).rotation(rotationDegrees), box);
   }
 
-  private float[] mAnchorSizeRelImage;
   private float[] mAnchorSize;
 
   private IPoint mGridSize;
   private FPoint mGridToImageScale;
   private FPoint mImageToGridScale;
-
   private IPoint mBoxGridCell;
-  
+
   // The center of the box in cell space, i.e. (0.0, 0.0) is top left, (1.0, 1.0) is bottom right
   private FPoint mBoxCenterInCellSpace;
   private FPoint mBoxSizeRelativeToAnchorBox;
