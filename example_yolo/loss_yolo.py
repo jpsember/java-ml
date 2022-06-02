@@ -7,8 +7,6 @@ from gen.neural_network import NeuralNetwork
 from pycore.tensor_logger import TensorLogger
 from .yolo_util import *
 
-# Derived from https://neptune.ai/blog/pytorch-loss-functions
-
 
 class YoloLoss(nn.Module):
 
@@ -32,7 +30,7 @@ class YoloLoss(nn.Module):
     for box_pixels in yolo.anchor_boxes_pixels:
       c.append((box_pixels.x * b_x, box_pixels.y * b_y))
     anchors = torch.Tensor(c)
-    self.logger.add(anchors, "anchor_boxes (normalized to grid cell)")
+    #self.logger.add(anchors, "anchor_boxes (normalized to grid cell)")
     return anchors
 
 
@@ -48,12 +46,12 @@ class YoloLoss(nn.Module):
     target = target.view(current.shape)
 
     true_xy = target[:, :, :, F_BOX_X:F_BOX_Y+1]
-    #self.log_tensor("true_xy")
+    self.log_tensor(".true_xy")
 
     # true_box_wh will be the width and height of the box, relative to the anchor box
     #
     true_wh = target[:, :, :, F_BOX_W:F_BOX_H+1]
-    #self.log_tensor("true_wh")
+    self.log_tensor(".true_wh")
 
     true_confidence = target[:, :, :, F_CONFIDENCE]
     # Add a dimension to true_confidence so it has equivalent dimensionality as true_xy, true_wh, etc
@@ -85,7 +83,7 @@ class YoloLoss(nn.Module):
     #
     # We need to map (-inf...+inf) to (0..+inf); hence apply the exp function
     #
-    pred_wh = current[:, :, :, F_BOX_W:F_BOX_H+1] * coord_mask
+    pred_wh = torch.exp(current[:, :, :, F_BOX_W:F_BOX_H+1]) * coord_mask
     self.log_tensor(".pred_wh")
 
     # Determine each predicted box's confidence score.
@@ -117,7 +115,7 @@ class YoloLoss(nn.Module):
     loss_wh = _tmp.sum().item() / num_true_boxes
 
     iou_scores = self.calculate_iou(true_xy, true_wh, pred_xy, pred_wh)
-    show(".iou_scores", iou_scores)
+    self.log_tensor("iou_scores")
 
     loss_confidence = self.construct_confidence_loss(true_confidence, iou_scores, predicted_confidence)
     show(".loss_confidence:",loss_confidence)
@@ -169,16 +167,25 @@ class YoloLoss(nn.Module):
     true_offset = true_wh / 2.
     true_box_min = true_xy - true_offset
     true_box_max = true_xy + true_offset
-    show(".true_box_min", true_box_min)
-    show(".true_box_max", true_box_max)
+    self.log_tensor("true_offset")
+    self.log_tensor("true_box_min")
+    self.log_tensor("true_box_max")
+    halt()
 
     # Calculate the min/max extents of the predicted boxes
     #
     pred_offset = pred_wh / 2.
+    self.log_tensor("pred_wh")
     pred_box_min = pred_xy - pred_offset
     pred_box_max = pred_xy + pred_offset
     show(".pred_box_min", pred_box_min)
     show(".pred_box_max", pred_box_max)
+
+    self.log_tensor("pred_box_min")
+    self.log_tensor("pred_box_max")
+
+
+
 
     # Determine the area of their intersection (which may be zero)
     #

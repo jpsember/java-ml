@@ -294,9 +294,10 @@ public final class CompileImagesOper extends AppOper {
 
   private static final FloatFormat[] FLOAT_FORMATS = { //
       buildFmt(0.1f, "%7.4f", 0.0001f, blankField(7)), //
-      buildFmt(1, "%6.3f", .001f, blankField(6)), //
-      buildFmt(10, "%5.2f", 0.01f, blankField(5)), //
-      buildFmt(100, "%3.0f", 1f, blankField(3)), //
+     // buildFmt(1, "%6.3f", .001f, blankField(6)), //
+     // buildFmt(10, "%5.2f", 0.01f, blankField(5)), //
+     // buildFmt(100, "%3.0f", 1f, blankField(3)), //
+      buildFmt(100, "%6.2f", 1f, blankField(6)), //
       buildFmt(1000, "%4.0f", 1f, blankField(4)), //
       buildFmt(Float.MAX_VALUE, "%7.0f", 1f, blankField(7)), //
   };

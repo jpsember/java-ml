@@ -7,30 +7,30 @@
 
     "layers" :[
 
-          {"type" :"conv", "filters": 2 },
+          {"type" :"conv", "filters": 16 },
           {"type" :"leaky_relu"},
           {"type" :"maxpool"},
 
-          {"type" :"conv", "filters": 3 },
+          {"type" :"conv", "filters": 32 },
           {"type" :"leaky_relu"},
           {"type" :"maxpool"},
 
-          {"type" :"conv", "filters": 4 },
+          {"type" :"conv", "filters": 64 },
           {"type" :"leaky_relu"},
           {"type" :"maxpool"},
 
-          {"type" :"conv", "filters": 5 },
+          {"type" :"conv", "filters": 128 },
           {"type" :"leaky_relu"},
           {"type" :"maxpool"},
 
-          {"type" :"conv", "filters": 6 },
+          {"type" :"conv", "filters": 128 },
           {"type" :"leaky_relu"},
           {"type" :"maxpool"},
 
           // Reduce the depth of the volume, since it will be fully-connected
           // to the YOLO output layer
           //
-          {"type" :"conv", "filters": 2 },
+          {"type" :"conv", "filters": 32 },
           {"type" :"leaky_relu"},
 
           {"type":"yolo"},
