@@ -51,10 +51,6 @@ public final class CompileImagesOper extends AppOper {
 
   @Override
   public void perform() {
-
-    if (false && alert("verifying formatting"))
-      verifyFormatting();
-
     if (config().prepare()) {
       prepareTrainService();
       return;
@@ -246,14 +242,18 @@ public final class CompileImagesOper extends AppOper {
   }
 
   private String formatTensor(TensorInfo ti, float[] t) {
+    if (false && alert("verifying formatting"))
+      verifyFormatting();
+
     FloatFormat fmt = getFloatFormatString(t);
-    todo("display values");
-    todo("allow zoom in etc");
     StringBuilder sb = new StringBuilder();
     sb.append(ti.name());
     sb.append('\n');
     int[] shape = ti.shape();
 
+    // View the tensor as two dimensional, by collapsing dimensions 2...n together into one.
+    // More elaborate manipulations, cropping, etc., should be done within the Python code
+    //
     if (shape.length <= 1 || shape[0] == 0) {
       int[] altShape = new int[2];
       altShape[0] = 1;

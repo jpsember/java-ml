@@ -327,9 +327,6 @@ class JsTrain:
     test_labels_path = os.path.join(d, "labels.bin")
 
     test_image_count = min(self.train_info.image_count, self.train_config.test_size)
-    #pr("test_image_count:",test_image_count)
-    #pr("train_info:",self.train_info)
-    #halt()
 
     with torch.no_grad():
       tensor_images, tensor_labels = self.read_images(test_images_path, test_labels_path, 0, test_image_count)

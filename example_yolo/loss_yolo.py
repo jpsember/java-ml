@@ -20,21 +20,20 @@ class YoloLoss(nn.Module):
     self.num_anchors = anchor_box_count(yolo)
     self.grid_size = grid_size(yolo)
     self.grid_cell_total = self.grid_size.product()
+    self.anchors = self.construct_anchors_tensor()
 
 
-    # Construct a tensor containing the anchor boxes, normalized to the block size
-    #
-    # Default values, from  https://github.com/uvipen/Yolo-v2-pytorch/blob/master/src/yolo_net.py
-    #   anchors=[(1.3221, 1.73145), (3.19275, 4.00944), (5.05587, 8.09892), (9.47112, 4.84053), (11.2364, 10.0071)])
-    t = []
-    bs = yolo.block_size
-    b_x, b_y = 1.0 / bs.x, 1.0 / bs.y
-    for abp in yolo.anchor_boxes_pixels:
-      t.append((abp.x * b_x, abp.y * b_y))
-    t = torch.Tensor(t)
-    self.logger.add(t,"anchors")
-    self.anchors = t
-
+  # Construct a tensor containing the anchor boxes, normalized to grid cell space
+  #
+  def construct_anchors_tensor(self):
+    yolo = self.yolo
+    c = []
+    b_x, b_y = 1.0 / yolo.block_size.x, 1.0 / yolo.block_size.y
+    for box_pixels in yolo.anchor_boxes_pixels:
+      c.append((box_pixels.x * b_x, box_pixels.y * b_y))
+    anchors = torch.Tensor(c)
+    self.logger.add(anchors, "anchor_boxes (normalized to grid cell)")
+    return anchors
 
 
   def forward(self, current, target):
@@ -53,27 +52,11 @@ class YoloLoss(nn.Module):
     # Reshape the target to match the current's shape
     target = target.view(current.shape)
 
-    _tmp = pt_to_ftensor(y.image_size)
-    _tmp = _tmp.reshape([1, 1, 1, 2])  # Note that the dimension is D_TOTAL
-    _image_size = _tmp
-
-    _tmp = pt_to_ftensor(y.block_size)
-    _tmp = _tmp.reshape([1, 1, 1, 2])
-    _tmp = _tmp / _image_size
-    warning("is block_to_image required?")
-    _block_to_image = _tmp
-
-    _tmp = self.anchors.reshape([1,1,self.num_anchors,2])
-    anchor_wh_img = _tmp
-    show(".anchors", anchor_wh_img)
-    todo("this is probably NOT the anchor box normalized to image size")
 
     # Determine ground truth location, size, category
 
     true_xy_cell = target[:, :, :, F_BOX_X:F_BOX_Y+1]
-
-
-    self.log_tensor("true_xy_cell")
+    #self.log_tensor("true_xy_cell")
 
     # true_box_wh will be the width and height of the box, relative to the anchor box
     #
@@ -81,12 +64,12 @@ class YoloLoss(nn.Module):
     self.log_tensor("true_box_wh")
 
     true_confidence = target[:, :, :, F_CONFIDENCE]
-    self.log_tensor("true_confidence")
+    #self.log_tensor("true_confidence")
 
     class_prob_end = F_CLASS_PROBABILITIES + y.category_count
 
     true_class_probabilities = target[:, :, :, F_CLASS_PROBABILITIES:class_prob_end]  # probably can just do 'x:']
-    self.log_tensor("true_class_probabilities")
+    #self.log_tensor("true_class_probabilities")
 
     # We could have stored the true class number as an index, instead of a one-hot vector;
     # but the symmetry of the structure of the true vs inferred data keeps things simple.
@@ -117,7 +100,7 @@ class YoloLoss(nn.Module):
     #
     _tmp = current[:, :, :, F_BOX_W:F_BOX_H+1]
     pred_wh_anchor = _tmp
-    show(".pred_wh_anchor", pred_wh_anchor)
+    self.log_tensor("pred_wh_anchor")
 
     # Determine each predicted box's confidence score.
     # We need to map (-inf...+inf) to (0..1); hence apply sigmoid function
