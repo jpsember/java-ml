@@ -3,6 +3,7 @@ import numpy as np
 import torch
 from torch import nn
 from gen.vol import *
+from pycore.ipoint import IPoint
 
 
 def read_bytes(path: str, offset: int, record_size: int, record_count: int, convert_to_float:bool) -> np.ndarray:
@@ -52,3 +53,30 @@ def show(label:str, obj):
   pr(dash)
   pr("\n\n")
 
+
+
+def pt_to_ftensor(pt:IPoint):
+  return torch.FloatTensor(pt.tuple())
+
+
+def get_var(var, name: str, depth: int = 1):
+  if var is not None:
+    return var
+  import inspect
+  frame = inspect.currentframe()
+  for _ in range(1 + depth):
+    frame = frame.f_back
+  var = frame.f_locals[name]
+  del frame
+  return var
+
+
+def show_shape(tensor_or_name, tensor=None):
+  nm = tensor_or_name
+  if tensor is None:
+    if isinstance(tensor_or_name, torch.Tensor):
+      tensor = tensor_or_name
+      nm = "(unknown)"
+    else:
+      tensor = get_var(None, tensor_or_name, 1)
+  pr(f"{nm:>20} s{list(tensor.shape)}")

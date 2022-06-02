@@ -112,7 +112,6 @@ class YoloLoss(nn.Module):
 
     #  This is showing a crazy size:  true-pred size: torch.Size([32, 169, 169, 2])
     show_shape("xy true-pred",x)
-    halt()
 
     # TODO: why can't we just set the 'box' loss based on the IOU inaccuracy?  Then
     # presumably the x,y,w,h will naturally move to the target?
@@ -271,28 +270,3 @@ class YoloLoss(nn.Module):
     return _tmp
 
 
-
-def pt_to_ftensor(pt:IPoint):
-  return torch.FloatTensor(pt.tuple())
-
-
-def get_var(var, name: str, depth: int = 1):
-  if var is not None:
-    return var
-  import inspect
-  frame = inspect.currentframe()
-  for _ in range(1 + depth):
-    frame = frame.f_back
-  var = frame.f_locals[name]
-  del frame
-  return var
-
-def show_shape(tensor_or_name, tensor=None):
-  nm = tensor_or_name
-  if tensor is None:
-    if isinstance(tensor_or_name, torch.Tensor):
-      tensor = tensor_or_name
-      nm = "(unknown)"
-    else:
-      tensor = get_var(None, tensor_or_name, 1)
-  pr(f"{nm:>20} s{list(tensor.shape)}")
