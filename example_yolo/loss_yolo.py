@@ -40,40 +40,28 @@ class YoloLoss(nn.Module):
     y = self.yolo
     batch_size = current.data.size(0)
 
-    height = self.grid_size.y
-    width = self.grid_size.x
-    grid_cell_total = width * height
-
-    # The -1 here makes it inferred from the other dimensions.
     # Each of these dimensions corresponds to (D_IMAGE, D_GRIDCELL, ..., D_BOXINFO)
     #
-    current = current.view(batch_size, grid_cell_total, self.num_anchors, -1)
+    current = current.view(batch_size, self.grid_cell_total, self.num_anchors, -1)  # -1 : infer remaining
 
     # Reshape the target to match the current's shape
     target = target.view(current.shape)
 
-
-    # Determine ground truth location, size, category
-
-    true_xy_cell = target[:, :, :, F_BOX_X:F_BOX_Y+1]
-    #self.log_tensor("true_xy_cell")
+    true_xy = target[:, :, :, F_BOX_X:F_BOX_Y+1]
+    #self.log_tensor("true_xy")
 
     # true_box_wh will be the width and height of the box, relative to the anchor box
     #
-    true_box_wh = target[:, :, :, F_BOX_W:F_BOX_H+1]
-    #self.log_tensor("true_box_wh")
+    true_wh = target[:, :, :, F_BOX_W:F_BOX_H+1]
+    #self.log_tensor("true_wh")
 
     true_confidence = target[:, :, :, F_CONFIDENCE]
 
     class_prob_end = F_CLASS_PROBABILITIES + y.category_count
-    true_class_probabilities = target[:, :, :, F_CLASS_PROBABILITIES:class_prob_end]  # probably can just do 'x:']
+    true_class_probabilities = target[:, :, :, F_CLASS_PROBABILITIES:class_prob_end]
 
     # We could have stored the true class number as an index, instead of a one-hot vector;
     # but the symmetry of the structure of the true vs inferred data keeps things simple.
-
-    # Determine number of ground truth boxes.  Clamp to minimum of 1 to avoid divide by zero.
-    # We include any 'neighbor' boxes as well (if there are any).
-    #
 
     # Get the number of ground truth boxes in the batch, as a float, and to avoid divide by zero, assume at least one
     #
@@ -85,65 +73,56 @@ class YoloLoss(nn.Module):
     #
     # We need to map (-inf...+inf) to (0...1); hence apply sigmoid function
     #
-    _tmp = current[:, :, :, F_BOX_X:F_BOX_Y+1]
-    pred_xy_cell = torch.sigmoid(_tmp)
-    self.log_tensor("pred_xy_cell")
+    pred_xy = torch.sigmoid(current[:, :, :, F_BOX_X:F_BOX_Y+1])
+    self.log_tensor("pred_xy")
 
     # Determine each predicted box's w,h
     #
     # We need to map (-inf...+inf) to (0..+inf); hence apply the exp function
     #
-    _tmp = current[:, :, :, F_BOX_W:F_BOX_H+1]
-    pred_wh_anchor = _tmp
-    self.log_tensor("pred_wh_anchor")
+    pred_wh = current[:, :, :, F_BOX_W:F_BOX_H+1]
+    self.log_tensor("pred_wh")
 
     # Determine each predicted box's confidence score.
     # We need to map (-inf...+inf) to (0..1); hence apply sigmoid function
     #
     predicted_confidence = torch.sigmoid(just_confidence_logits)
-    show(".predicted_confidence", predicted_confidence)
 
     # Determine each predicted box's set of conditional class probabilities.
     #
     predicted_box_class_logits = current[:,:,:,F_CLASS_PROBABILITIES:class_prob_end]
-    show(".predicted_box_class_logits", predicted_box_class_logits)
 
-    # Add a dimension to true_confidence so it has equivalent dimensionality as true_box_xy, true_box_wh
-    # (this doesn't change its volume, only its dimensions)
+    # Add a dimension to true_confidence so it has equivalent dimensionality as true_xy, true_wh, etc
+    # (this doesn't change its volume, only its dimensions) <-- explain?
     #
     # This produces a mask value which we apply to the xy and wh loss.
-    # For neighbor box labels, whose confidence < 1, this has the effect of reducing the penalty
-    # for those boxes
-    #
-    _coord_mask = true_confidence[:, None]
-    show("._coord_mask", _coord_mask)   # size: [1, 32, 169, 1]    type: torch.float32
 
-    pr("true_xy_cell:",true_xy_cell.shape)
-    pr("pred_xy_cell:",pred_xy_cell.shape)
+    coord_mask = true_confidence[..., None]
+    show_shape("coord_mask")
+    show_shape("true_confidence")
+    show_shape("true_xy")
+    show_shape("pred_xy")
 
-    _tmp = (true_xy_cell - pred_xy_cell).square()
-    pr("squared diff:", _tmp.shape)
+    x = (true_xy - pred_xy).square()
+    show_shape("true-pred squared",x)
+    x = x * coord_mask
 
-    show(".true-pred ^d",_tmp)          # size: [32, 169, 1, 2]    type: torch.float32
-    _tmp = _tmp * _coord_mask
-    pr("by coord mask:",_tmp.shape)
-
-    show(".xy true-pred, ^2, * coord_mask", _tmp)
     todo("why does coord_mask have shape [2,2,2,2]?")
-    self.log_tensor("xy true-pred", _tmp)
+    self.log_tensor("xy true-pred", x)
 
     #  This is showing a crazy size:  true-pred size: torch.Size([32, 169, 169, 2])
-    pr("true-pred size:",_tmp.shape)
+    show_shape("xy true-pred",x)
+    halt()
 
     # TODO: why can't we just set the 'box' loss based on the IOU inaccuracy?  Then
     # presumably the x,y,w,h will naturally move to the target?
-    loss_xy = _tmp.sum().item() / num_true_boxes
+    loss_xy = x.sum().item() / num_true_boxes
 
-    _tmp = (((true_box_wh - pred_wh_anchor) * _coord_mask).square())
+    _tmp = (((true_wh - pred_wh) * coord_mask).square())
     show(".wh error", _tmp)
     loss_wh = _tmp.sum().item() / num_true_boxes
 
-    iou_scores = self.calculate_iou(true_xy_cell, true_box_wh, pred_xy_cell, pred_wh_anchor)
+    iou_scores = self.calculate_iou(true_xy, true_wh, pred_xy, pred_wh)
     show(".iou_scores", iou_scores)
 
     loss_confidence = self.construct_confidence_loss(true_confidence, iou_scores, predicted_confidence)
@@ -162,18 +141,13 @@ class YoloLoss(nn.Module):
     return _tmp
 
 
+
   # Send a tensor for logging.  Assumes it has the dimension D_IMAGE, D_GRIDSIZE, etc
   #
   def log_tensor(self, name, t=None):
     # If tensor not provided, assume name refers to a local variable in the caller's scope
     #
-    if t is None:
-      import inspect
-      frame = inspect.currentframe()
-      try:
-        t = frame.f_back.f_locals[name]
-      finally:
-        del frame
+    t = get_var(t, name)
 
     # Construct a slice of the tensor for inspection
     z = t.detach()
@@ -301,3 +275,24 @@ class YoloLoss(nn.Module):
 def pt_to_ftensor(pt:IPoint):
   return torch.FloatTensor(pt.tuple())
 
+
+def get_var(var, name: str, depth: int = 1):
+  if var is not None:
+    return var
+  import inspect
+  frame = inspect.currentframe()
+  for _ in range(1 + depth):
+    frame = frame.f_back
+  var = frame.f_locals[name]
+  del frame
+  return var
+
+def show_shape(tensor_or_name, tensor=None):
+  nm = tensor_or_name
+  if tensor is None:
+    if isinstance(tensor_or_name, torch.Tensor):
+      tensor = tensor_or_name
+      nm = "(unknown)"
+    else:
+      tensor = get_var(None, tensor_or_name, 1)
+  pr(f"{nm:>20} s{list(tensor.shape)}")
