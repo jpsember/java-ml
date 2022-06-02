@@ -52,18 +52,8 @@ public final class CompileImagesOper extends AppOper {
   @Override
   public void perform() {
 
-    if (alert("verify")) {
-      float[] x = new float[1];
-      float[] vals = { 0.0001f, 0.00001f, 0.000001f, 0.001f, 0.01f, 0.1f, 1.0f, 10.0f, 100.0f, 1000f,
-          10000f };
-      for (float z2 : vals) {
-        float z = -z2;
-        x[0] = z;
-        FloatFormat fmt = getFloatFormatString(x);
-        pr("z:", z, quote(fmt(fmt, z)), quote(fmt(fmt, z2)));
-      }
-      die();
-    }
+    if (false && alert("verifying formatting"))
+      verifyFormatting();
 
     if (config().prepare()) {
       prepareTrainService();
@@ -256,24 +246,54 @@ public final class CompileImagesOper extends AppOper {
   }
 
   private String formatTensor(TensorInfo ti, float[] t) {
-
-    todo("determine largest magnitude value for formatting");
+    FloatFormat fmt = getFloatFormatString(t);
     todo("display values");
     todo("allow zoom in etc");
     StringBuilder sb = new StringBuilder();
     sb.append(ti.name());
+    sb.append('\n');
+    int[] shape = ti.shape();
+
+    if (shape.length <= 1 || shape[0] == 0) {
+      int[] altShape = new int[2];
+      altShape[0] = 1;
+      altShape[1] = t.length;
+      shape = altShape;
+    }
+
+    int rows = shape[0];
+    int cols = shape[1];
+    for (int i = 2; i < shape.length; i++) {
+      cols *= shape[i];
+    }
+    checkArgument(rows * cols == t.length);
+    int q = 0;
+    for (int y = 0; y < rows; y++) {
+      sb.append("[ ");
+      for (int x = 0; x < cols; x++, q++) {
+        if (x > 0)
+          sb.append(' ');
+        sb.append(fmt(fmt, t[q]));
+      }
+      sb.append(" ]\n");
+    }
     return sb.toString();
   }
 
-  private static final FloatFormat f(float maxVal, String fmt, float minVal, String zero) {
+  private static final FloatFormat buildFmt(float maxVal, String fmt, float minVal, String zero) {
     FloatFormat.Builder b = FloatFormat.newBuilder();
     b.maxValue(maxVal).formatStr(fmt).minValue(minVal).zeroStr(zero);
     return b.build();
   }
 
-  private static final FloatFormat[] FLOAT_FORMATS = { f(0.1f, "%7.4f", 0.0001f, "      _"), //
-      f(1, "%6.3f", .001f, "     _"), f(10, "%5.2f", 0.01f, "    _"), f(100, "%3.0f", 1f, "  _"),
-      f(1000, "%4.0f", 1f, "   _"), f(Float.MAX_VALUE, "%7.0f", 1f, "      _"), };
+  private static final FloatFormat[] FLOAT_FORMATS = { //
+      buildFmt(0.1f, "%7.4f", 0.0001f, "      _"), //
+      buildFmt(1, "%6.3f", .001f, "     _"), //
+      buildFmt(10, "%5.2f", 0.01f, "    _"), //
+      buildFmt(100, "%3.0f", 1f, "  _"), //
+      buildFmt(1000, "%4.0f", 1f, "   _"), //
+      buildFmt(Float.MAX_VALUE, "%7.0f", 1f, "      _"), //
+  };
 
   private static FloatFormat getFloatFormatString(float[] floats) {
     checkArgument(floats.length > 0);
@@ -294,6 +314,17 @@ public final class CompileImagesOper extends AppOper {
     if (Math.abs(value) < format.minValue())
       return format.zeroStr();
     return String.format(format.formatStr(), value);
+  }
+
+  private static void verifyFormatting() {
+    float[] x = new float[1];
+    float[] vals = { 0.0001f, 0.00001f, 0.000001f, 0.001f, 0.01f, 0.1f, 1.0f, 10.0f, 100.0f, 1000f, 10000f };
+    for (float z2 : vals) {
+      float z = -z2;
+      x[0] = z;
+      FloatFormat fmt = getFloatFormatString(x);
+      pr("z:", z, quote(fmt(fmt, z)), quote(fmt(fmt, z2)));
+    }
   }
 
   // ------------------------------------------------------------------

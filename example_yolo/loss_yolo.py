@@ -72,8 +72,16 @@ class YoloLoss(nn.Module):
     # Determine ground truth location, size, category
 
     true_xy_cell = target[:, :, :, F_BOX_X:F_BOX_Y+1]
-    show(".true_xy_cell", true_xy_cell)
-    self.logger.add(true_xy_cell, "true_xy_cell")
+
+    # Construct a slice of the tensor for inspection
+    z = true_xy_cell.detach()
+    z = z[0,:]
+    z = z.view(height,width,-1)
+    # Zoom in on the center grid cells
+    #     ROWS COLS
+    z = z[4:7, 5:8,:]
+
+    self.logger.add(z, "true_xy_cell")
 
     # true_box_wh will be the width and height of the box, relative to the anchor box
     #
