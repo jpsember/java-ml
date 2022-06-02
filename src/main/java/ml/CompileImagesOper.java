@@ -272,7 +272,7 @@ public final class CompileImagesOper extends AppOper {
       sb.append("[ ");
       for (int x = 0; x < cols; x++, q++) {
         if (x > 0)
-          sb.append(' ');
+          sb.append(" │ ");  // Note: this is a unicode char taller than the vertical brace
         sb.append(fmt(fmt, t[q]));
       }
       sb.append(" ]\n");
@@ -286,13 +286,19 @@ public final class CompileImagesOper extends AppOper {
     return b.build();
   }
 
+  private static String blankField(int width) {
+    if (false)
+      return spaces(width - 1) + "◌";
+    return spaces(width ) ;
+  }
+
   private static final FloatFormat[] FLOAT_FORMATS = { //
-      buildFmt(0.1f, "%7.4f", 0.0001f, "      _"), //
-      buildFmt(1, "%6.3f", .001f, "     _"), //
-      buildFmt(10, "%5.2f", 0.01f, "    _"), //
-      buildFmt(100, "%3.0f", 1f, "  _"), //
-      buildFmt(1000, "%4.0f", 1f, "   _"), //
-      buildFmt(Float.MAX_VALUE, "%7.0f", 1f, "      _"), //
+      buildFmt(0.1f, "%7.4f", 0.0001f, blankField(7)), //
+      buildFmt(1, "%6.3f", .001f, blankField(6)), //
+      buildFmt(10, "%5.2f", 0.01f, blankField(5)), //
+      buildFmt(100, "%3.0f", 1f, blankField(3)), //
+      buildFmt(1000, "%4.0f", 1f, blankField(4)), //
+      buildFmt(Float.MAX_VALUE, "%7.0f", 1f, blankField(7)), //
   };
 
   private static FloatFormat getFloatFormatString(float[] floats) {

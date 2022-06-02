@@ -14,9 +14,6 @@ import inspect
 BYTES_PER_FLOAT = 4
 BYTES_PER_INT = 4
 
-# Alias for FALSE to avoid 'unreachable code' warnings in PyCharm
-#
-FALSE = False
 
 class _StackTrace:
   """

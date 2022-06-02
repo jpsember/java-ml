@@ -56,6 +56,11 @@ class YoloLoss(nn.Module):
     #self.log_tensor("true_wh")
 
     true_confidence = target[:, :, :, F_CONFIDENCE]
+    # Add a dimension to true_confidence so it has equivalent dimensionality as true_xy, true_wh, etc
+    # (this doesn't change its volume, only its dimensions) <-- explain?
+    #
+    # This produces a mask value which we apply to the xy and wh loss.
+    coord_mask = true_confidence[..., None]
 
     class_prob_end = F_CLASS_PROBABILITIES + y.category_count
     true_class_probabilities = target[:, :, :, F_CLASS_PROBABILITIES:class_prob_end]
@@ -73,14 +78,14 @@ class YoloLoss(nn.Module):
     #
     # We need to map (-inf...+inf) to (0...1); hence apply sigmoid function
     #
-    pred_xy = torch.sigmoid(current[:, :, :, F_BOX_X:F_BOX_Y+1])
+    pred_xy = torch.sigmoid(current[:, :, :, F_BOX_X:F_BOX_Y+1]) * coord_mask
     self.log_tensor("pred_xy")
 
     # Determine each predicted box's w,h
     #
     # We need to map (-inf...+inf) to (0..+inf); hence apply the exp function
     #
-    pred_wh = current[:, :, :, F_BOX_W:F_BOX_H+1]
+    pred_wh = current[:, :, :, F_BOX_W:F_BOX_H+1] * coord_mask
     self.log_tensor("pred_wh")
 
     # Determine each predicted box's confidence score.
@@ -92,22 +97,15 @@ class YoloLoss(nn.Module):
     #
     predicted_box_class_logits = current[:,:,:,F_CLASS_PROBABILITIES:class_prob_end]
 
-    # Add a dimension to true_confidence so it has equivalent dimensionality as true_xy, true_wh, etc
-    # (this doesn't change its volume, only its dimensions) <-- explain?
-    #
-    # This produces a mask value which we apply to the xy and wh loss.
-
-    coord_mask = true_confidence[..., None]
-    show_shape("coord_mask")
-    show_shape("true_confidence")
-    show_shape("true_xy")
-    show_shape("pred_xy")
+    if False:
+      show_shape("coord_mask")
+      show_shape("true_confidence")
+      show_shape("true_xy")
+      show_shape("pred_xy")
 
     x = (true_xy - pred_xy).square()
     show_shape("true-pred squared",x)
-    x = x * coord_mask
 
-    todo("why does coord_mask have shape [2,2,2,2]?")
     self.log_tensor("xy true-pred", x)
 
     #  This is showing a crazy size:  true-pred size: torch.Size([32, 169, 169, 2])
@@ -117,7 +115,7 @@ class YoloLoss(nn.Module):
     # presumably the x,y,w,h will naturally move to the target?
     loss_xy = x.sum().item() / num_true_boxes
 
-    _tmp = (((true_wh - pred_wh) * coord_mask).square())
+    _tmp = ((true_wh - pred_wh).square())
     show(".wh error", _tmp)
     loss_wh = _tmp.sum().item() / num_true_boxes
 
