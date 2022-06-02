@@ -61,15 +61,12 @@ class YoloLoss(nn.Module):
     # true_box_wh will be the width and height of the box, relative to the anchor box
     #
     true_box_wh = target[:, :, :, F_BOX_W:F_BOX_H+1]
-    self.log_tensor("true_box_wh")
+    #self.log_tensor("true_box_wh")
 
     true_confidence = target[:, :, :, F_CONFIDENCE]
-    #self.log_tensor("true_confidence")
 
     class_prob_end = F_CLASS_PROBABILITIES + y.category_count
-
     true_class_probabilities = target[:, :, :, F_CLASS_PROBABILITIES:class_prob_end]  # probably can just do 'x:']
-    #self.log_tensor("true_class_probabilities")
 
     # We could have stored the true class number as an index, instead of a one-hot vector;
     # but the symmetry of the structure of the true vs inferred data keeps things simple.
@@ -83,16 +80,14 @@ class YoloLoss(nn.Module):
     num_true_boxes = float(max(1, true_confidence.count_nonzero()))
 
     just_confidence_logits = current[:, :, :, F_CONFIDENCE]
-    show(".just_confidence_logits", just_confidence_logits)
 
     # Determine predicted box's x,y
     #
     # We need to map (-inf...+inf) to (0...1); hence apply sigmoid function
     #
     _tmp = current[:, :, :, F_BOX_X:F_BOX_Y+1]
-    show(".box x,y",_tmp)
     pred_xy_cell = torch.sigmoid(_tmp)
-    show(".pred_xy_cell", pred_xy_cell)
+    self.log_tensor("pred_xy_cell")
 
     # Determine each predicted box's w,h
     #
@@ -123,13 +118,22 @@ class YoloLoss(nn.Module):
     _coord_mask = true_confidence[:, None]
     show("._coord_mask", _coord_mask)   # size: [1, 32, 169, 1]    type: torch.float32
 
+    pr("true_xy_cell:",true_xy_cell.shape)
+    pr("pred_xy_cell:",pred_xy_cell.shape)
 
     _tmp = (true_xy_cell - pred_xy_cell).square()
+    pr("squared diff:", _tmp.shape)
 
     show(".true-pred ^d",_tmp)          # size: [32, 169, 1, 2]    type: torch.float32
     _tmp = _tmp * _coord_mask
+    pr("by coord mask:",_tmp.shape)
+
     show(".xy true-pred, ^2, * coord_mask", _tmp)
     todo("why does coord_mask have shape [2,2,2,2]?")
+    self.log_tensor("xy true-pred", _tmp)
+
+    #  This is showing a crazy size:  true-pred size: torch.Size([32, 169, 169, 2])
+    pr("true-pred size:",_tmp.shape)
 
     # TODO: why can't we just set the 'box' loss based on the IOU inaccuracy?  Then
     # presumably the x,y,w,h will naturally move to the target?

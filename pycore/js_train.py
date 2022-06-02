@@ -64,6 +64,13 @@ class JsTrain:
     self.checkpoint_interval_ms = None  # interval between checkpoints; increases nonlinearly up to a max value
     self.checkpoint_last_time_ms = None # time last checkpoint was written
 
+    self.timeout_length = None
+    self.start_time = time_ms()
+
+
+  def add_timeout(self, max_seconds=60):
+    self.timeout_length = max_seconds
+
 
   def show_test_labels(self):
     result = (self.dump_test_labels_counter > 0)
@@ -276,7 +283,6 @@ class JsTrain:
 
 
   def train(self):
-
     train_set_dir = self.select_data_set()
     if not train_set_dir:       # Are we still waiting for the stream service?
       return
@@ -397,9 +403,18 @@ class JsTrain:
       if ms_until_save <= 0:
         self.save_checkpoint()
 
+      if self.update_timeout():
+        done_msg = "Timeout expired"
+
       if done_msg:
         self.save_checkpoint()
         self.quit_session(done_msg)
+
+
+  def update_timeout(self)->bool:
+    if self.timeout_length is None:
+      return False
+    return time_ms() >= self.start_time + self.timeout_length * 1000
 
 
   def most_recent_checkpoint(self):
