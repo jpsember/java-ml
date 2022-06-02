@@ -29,7 +29,6 @@ class TensorLogger:
       die("unsupported data type:", dt)
     ti.shape = list(tensor.shape)
     self.write(ti, tensor)
-    pr("added:",ti)
 
 
   def write(self, info:TensorInfo, tensor:torch.Tensor):

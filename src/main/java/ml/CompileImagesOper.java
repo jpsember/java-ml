@@ -194,9 +194,18 @@ public final class CompileImagesOper extends AppOper {
       if (!tensorFile.exists()) {
         pr("...logger, no corresponding tensor file found:", tensorFile.getName());
       } else {
-        pr("parsing:",Files.infoMap(infoFile));
         TensorInfo ti = Files.parseAbstractData(TensorInfo.DEFAULT_INSTANCE, infoFile);
-        pr("...parsed:", INDENT, ti);
+        switch (ti.dataType()) {
+        case FLOAT32: {
+          float[] t = Files.readFloatsLittleEndian(tensorFile, "tensorFile");
+          String s = formatTensor(ti, t);
+          pr(s);
+        }
+          break;
+        default:
+          throw notSupported("Unsupported datatype:", ti);
+        }
+
         todo("be more selective about logging");
         todo("display tensor data");
       }
@@ -204,6 +213,15 @@ public final class CompileImagesOper extends AppOper {
       files().deletePeacefully(infoFile);
       files().deletePeacefully(tensorFile);
     }
+  }
+
+  private String formatTensor(TensorInfo ti, float[] t) {
+    todo("determine largest magnitude value for formatting");
+    todo("display values");
+    todo("allow zoom in etc");
+    StringBuilder sb = new StringBuilder();
+    sb.append(ti.name());
+    return sb.toString();
   }
 
   /**
