@@ -136,14 +136,12 @@ public final class YoloUtil {
     return Math.round(NetworkUtil.tanh(f) * RectElement.BOX_ROT_MAX);
   }
 
-  @Deprecated
-  public static float[] anchorBoxSizes(Yolo yolo) {
-    float[] result = new float[yolo.anchorBoxesPixels().size() * 2];
-    int cursor = 0;
-    for (IPoint box : yolo.anchorBoxesPixels()) {
-      result[cursor + 0] = box.x;
-      result[cursor + 1] = box.y;
-      cursor += 2;
+  public static FPoint[] anchorBoxes(Yolo yolo) {
+    FPoint[] result = new FPoint[yolo.anchorBoxesPixels().size()];
+    int i = INIT_INDEX;
+    for (IPoint b : yolo.anchorBoxesPixels()) {
+      i++;
+      result[i] = b.toFPoint();
     }
     return result;
   }

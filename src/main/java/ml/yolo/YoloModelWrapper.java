@@ -90,7 +90,7 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
   @Override
   public void init() {
     Yolo yolo = modelConfig();
-    mAnchorSize = YoloUtil.anchorBoxSizes(yolo);
+    mAnchorBoxes = YoloUtil.anchorBoxes(yolo);
     mGridSize = YoloUtil.gridSize(yolo);
     mGridToImageScale = yolo.blockSize().toFPoint();
     mImageToGridScale = new FPoint(1f / mGridToImageScale.x, 1f / mGridToImageScale.y);
@@ -363,9 +363,8 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
       return false;
     }
 
-    mBoxSizeRelativeToAnchorBox = new FPoint(//
-        box.width / mAnchorSize[mAnchorBox * 2 + 0], //
-        box.height / mAnchorSize[mAnchorBox * 2 + 1]);
+    FPoint anchorBox = mAnchorBoxes[mAnchorBox];
+    mBoxSizeRelativeToAnchorBox = new FPoint(box.width / anchorBox.x, box.height / anchorBox.y);
 
     mBoxGridCell = gridCell;
 
@@ -373,15 +372,15 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
         midPoint.x * mImageToGridScale.x - gridCell.x, //
         midPoint.y * mImageToGridScale.y - gridCell.y);
 
+    if (verbose()) {
     log("  grid cell:", mBoxGridCell);
     log("  loc(cell):", mBoxCenterInCellSpace);
-    log("  size(img):", mBoxSizeRelativeToAnchorBox);
+    log("  size(img):", mBoxSizeRelativeToAnchorBox);}
     return true;
   }
 
   private int numAnchorBoxes() {
-    // TODO: we can optimize things by precomputing this and other constants, and storing in instance fields
-    return mAnchorSize.length / 2;
+    return mAnchorBoxes.length;
   }
 
   /**
@@ -394,18 +393,18 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
     float bestIOverU = 0;
     int bestAnchorBoxIndex = 0;
 
-    for (int i = 0; i < numAnchorBoxes(); i++) {
-      float anchorSizeX = mAnchorSize[i * 2 + 0];
-      float anchorSizeY = mAnchorSize[i * 2 + 1];
+    int i = INIT_INDEX;
+    for (FPoint anchorBox : mAnchorBoxes) {
+      i++;
 
       // We want the intersection / union.
       // I think this is the same whether we align the two boxes at their centerpoints 
       // OR at their bottom left corners.
 
-      float minWidth = Math.min(boxSizeX, anchorSizeX);
-      float minHeight = Math.min(boxSizeY, anchorSizeY);
+      float minWidth = Math.min(boxSizeX, anchorBox.x);
+      float minHeight = Math.min(boxSizeY, anchorBox.y);
       float intersection = minWidth * minHeight;
-      float union = boxArea + anchorSizeX * anchorSizeY - intersection;
+      float union = boxArea + anchorBox.product() - intersection;
       float currentIOverU = intersection / union;
 
       if (currentIOverU > bestIOverU) {
@@ -426,8 +425,7 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
         .confidence(MyMath.parameterToPercentage(confidence)).rotation(rotationDegrees), box);
   }
 
-  private float[] mAnchorSize;
-
+  private FPoint[] mAnchorBoxes;
   private IPoint mGridSize;
   private FPoint mGridToImageScale;
   private FPoint mImageToGridScale;
