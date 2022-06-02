@@ -12,6 +12,7 @@ import gen.TensorInfo;
 import gen.TrainParam;
 import js.app.AppOper;
 import js.base.DateTimeTools;
+import js.base.Pair;
 import js.file.DirWalk;
 import js.file.Files;
 import js.graphics.Inspector;
@@ -50,6 +51,20 @@ public final class CompileImagesOper extends AppOper {
 
   @Override
   public void perform() {
+
+    if (alert("verify")) {
+      float[] x = new float[1];
+      float[] vals = { 0.0001f, 0.00001f, 0.000001f,0.001f, 0.01f, 0.1f, 1.0f, 10.0f, 100.0f, 1000f, 10000f };
+      for (float z2 : vals) {
+        float z = -z2;
+        x[0] = z;
+        Pair<String, Float> fmt=
+        getFloatFormatString(x);
+        pr("z:", z, quote(String.format(fmt.first, z)), quote(String.format(fmt.first,z2)));
+      }
+      die();
+    }
+
     if (config().prepare()) {
       prepareTrainService();
       return;
@@ -183,47 +198,6 @@ public final class CompileImagesOper extends AppOper {
     }
   }
 
-  private void updateLogging() {
-    File logDir = config().targetDirTrain();
-    DirWalk w = new DirWalk(logDir).withRecurse(false).withExtensions("json");
-    for (File infoFile : w.files()) {
-      File tensorFile = Files.setExtension(infoFile, "dat");
-      // If no extension file exists, it may not have been renamed
-      if (!tensorFile.exists())
-        DateTimeTools.sleepForRealMs(100);
-      if (!tensorFile.exists()) {
-        pr("...logger, no corresponding tensor file found:", tensorFile.getName());
-      } else {
-        TensorInfo ti = Files.parseAbstractData(TensorInfo.DEFAULT_INSTANCE, infoFile);
-        switch (ti.dataType()) {
-        case FLOAT32: {
-          float[] t = Files.readFloatsLittleEndian(tensorFile, "tensorFile");
-          String s = formatTensor(ti, t);
-          pr(s);
-        }
-          break;
-        default:
-          throw notSupported("Unsupported datatype:", ti);
-        }
-
-        todo("be more selective about logging");
-        todo("display tensor data");
-      }
-
-      files().deletePeacefully(infoFile);
-      files().deletePeacefully(tensorFile);
-    }
-  }
-
-  private String formatTensor(TensorInfo ti, float[] t) {
-    todo("determine largest magnitude value for formatting");
-    todo("display values");
-    todo("allow zoom in etc");
-    StringBuilder sb = new StringBuilder();
-    sb.append(ti.name());
-    return sb.toString();
-  }
-
   /**
    * Count the number of subdirectories with prefix "set_"
    */
@@ -246,6 +220,101 @@ public final class CompileImagesOper extends AppOper {
       return true;
     }
     return false;
+  }
+
+  // ------------------------------------------------------------------
+  // Tensor logging
+  // ------------------------------------------------------------------
+
+  private void updateLogging() {
+    File logDir = config().targetDirTrain();
+    DirWalk w = new DirWalk(logDir).withRecurse(false).withExtensions("json");
+    for (File infoFile : w.files()) {
+      File tensorFile = Files.setExtension(infoFile, "dat");
+      // If no extension file exists, it may not have been renamed
+      if (!tensorFile.exists())
+        DateTimeTools.sleepForRealMs(100);
+      if (!tensorFile.exists()) {
+        pr("...logger, no corresponding tensor file found:", tensorFile.getName());
+      } else {
+        TensorInfo ti = Files.parseAbstractData(TensorInfo.DEFAULT_INSTANCE, infoFile);
+        switch (ti.dataType()) {
+        case FLOAT32: {
+          float[] t = Files.readFloatsLittleEndian(tensorFile, "tensorFile");
+          String s = formatTensor(ti, t);
+          pr(s);
+        }
+          break;
+        default:
+          throw notSupported("Unsupported datatype:", ti);
+        }
+      }
+
+      files().deletePeacefully(infoFile);
+      files().deletePeacefully(tensorFile);
+    }
+  }
+
+  private String formatTensor(TensorInfo ti, float[] t) {
+
+    todo("determine largest magnitude value for formatting");
+    todo("display values");
+    todo("allow zoom in etc");
+    StringBuilder sb = new StringBuilder();
+    sb.append(ti.name());
+    return sb.toString();
+  }
+
+  private static float[] smax = {0.1f,1,10,100,1000,Float.MAX_VALUE};
+  private static String[] sfmt = {
+      "%7.4f", // -0.0999
+      "%6.3f", // -0.999
+      "%5.2f", // -9.99
+      "%5.1f", // -99.9
+      "%6.1f", // -999.9
+      "%7.0f", // -999999
+  };
+  
+  private static Pair<String,Float> getFloatFormatString(float[] floats) {
+//    String fmt;
+//    Float maxValue;
+    checkArgument(floats.length > 0);
+    float magMax = Math.abs(floats[0]);
+    for (float f : floats) {
+      float mag = Math.abs(f);
+      if (mag > magMax)
+        magMax = mag;
+    }
+    
+    int i = 0;
+    while (i + 1 < smax.length && magMax >= smax[i])
+      i++;
+    return new Pair<>(sfmt[i],smax[i]);
+//    
+//    maxValue = 0.1f;
+//    do {
+//    if (magMax < maxValue) {
+//      fmt = "%7.4f"; // -0.0999
+//      break;
+//    }
+//    maxValue = 1;
+//    if (magMax < 1) {
+//      maxValue = 1f;
+//      fmt = "%6.3f"; // -0.999
+//      break;
+//    }
+//    maxValue = 10;
+//    if (magMax < 10) {
+//      fmt = "%5.2f"; // -9.99
+//    else if (magMax < 100)
+//      fmt = "%5.1f"; // -99.9
+//    else if (magMax < 1000)
+//      fmt = "%6.1f"; // -999.9
+//    else
+//      fmt = "%7.0f"; // -999999
+//    }
+//    
+//    return fmt;
   }
 
   // ------------------------------------------------------------------

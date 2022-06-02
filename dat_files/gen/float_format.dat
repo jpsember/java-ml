@@ -1,0 +1,5 @@
+fields {
+  string format_str;
+  float max_value;
+  string zero_str;
+}
