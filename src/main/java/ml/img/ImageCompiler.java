@@ -25,7 +25,6 @@ import js.graphics.ImgUtil;
 import js.graphics.Inspector;
 import js.graphics.ScriptElement;
 import js.graphics.ScriptUtil;
-import js.graphics.gen.ScriptElementList;
 import ml.GenerateImageSetOper;
 import ml.LabelledImage;
 import ml.ModelWrapper;
@@ -74,11 +73,9 @@ public final class ImageCompiler extends BaseObject {
         checkImageSizeAndType(entry.imageFile(), img, model.inputImagePlanarSize(),
             model.inputImageChannels());
       }
-      todo("should we just pass an array of ScriptElements instead of this data class?");
-      ScriptElementList elements = entry.scriptElementList();
-      mInspector.create("orig").image(img).elements(elements);
+      List<ScriptElement> annotations = entry.scriptElements();
+      mInspector.create("orig").image(img).elements(annotations);
       entry.setTransform(buildAugmentTransform());
-      List<ScriptElement> annotations = elements.elements();
 
       BufferedImage targetImage = ImgUtil.build(model.inputImagePlanarSize(), img.getType());
       AugmentationConfig config = config().augmentationConfig();

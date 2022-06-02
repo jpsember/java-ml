@@ -3,11 +3,12 @@ package ml.img;
 import static js.base.Tools.*;
 
 import java.io.File;
+import java.util.List;
 
 import gen.TransformWrapper;
+import js.graphics.ScriptElement;
 import js.graphics.ScriptUtil;
 import js.graphics.gen.Script;
-import js.graphics.gen.ScriptElementList;
 
 /**
  * Encapsulates information about a single image for use by ImageCompiler
@@ -23,16 +24,16 @@ class ImageEntry {
     return mImageFile;
   }
 
-  public ScriptElementList scriptElementList() {
-    if (mScriptElements == null) {
-      mScriptElements = ScriptElementList.DEFAULT_INSTANCE;
+  public List<ScriptElement> scriptElements() {
+    if (mElements == null) {
+      mElements = arrayList();
       File scriptFile = ScriptUtil.scriptPathForImage(imageFile());
       if (scriptFile.exists()) {
         Script script = ScriptUtil.from(scriptFile);
-        mScriptElements = ScriptUtil.extractScriptElementList(script);
+        mElements.addAll(script.items());
       }
     }
-    return mScriptElements;
+    return mElements;
   }
 
   public void setTransform(TransformWrapper t) {
@@ -51,7 +52,6 @@ class ImageEntry {
   }
 
   private final File mImageFile;
-  private ScriptElementList mScriptElements;
   private TransformWrapper mTransform = TransformWrapper.DEFAULT_INSTANCE;
-
+  private List<ScriptElement> mElements;
 }
