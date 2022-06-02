@@ -14,4 +14,15 @@
 
 
     //"retain_existing_training_sets" : true,
+
+
+      "constant_elements" : [
+         {
+            "p" : {"category":1},
+       "bounds" : [193,192,35,39]
+         },
+
+       ],
+
+
 }

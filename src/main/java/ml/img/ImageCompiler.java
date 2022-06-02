@@ -25,6 +25,7 @@ import js.graphics.ImgUtil;
 import js.graphics.Inspector;
 import js.graphics.ScriptElement;
 import js.graphics.ScriptUtil;
+import js.graphics.gen.ScriptElementList;
 import ml.GenerateImageSetOper;
 import ml.LabelledImage;
 import ml.ModelWrapper;
@@ -73,9 +74,11 @@ public final class ImageCompiler extends BaseObject {
         checkImageSizeAndType(entry.imageFile(), img, model.inputImagePlanarSize(),
             model.inputImageChannels());
       }
-      mInspector.create("orig").image(img).elements(entry.scriptElementList());
+      todo("should we just pass an array of ScriptElements instead of this data class?");
+      ScriptElementList elements = entry.scriptElementList();
+      mInspector.create("orig").image(img).elements(elements);
       entry.setTransform(buildAugmentTransform());
-      List<ScriptElement> annotations = entry.scriptElementList().elements();
+      List<ScriptElement> annotations = elements.elements();
 
       BufferedImage targetImage = ImgUtil.build(model.inputImagePlanarSize(), img.getType());
       AugmentationConfig config = config().augmentationConfig();
@@ -83,6 +86,10 @@ public final class ImageCompiler extends BaseObject {
           AffineTransformOp.TYPE_BILINEAR);
 
       annotations = ScriptUtil.transform(annotations, entry.transform().matrix());
+      if (!config().constantElements().isEmpty()) {
+        annotations = config().constantElements();
+      }
+
       op.filter(img, targetImage);
       mInspector.create("tfm").image(targetImage).elements(annotations);
 

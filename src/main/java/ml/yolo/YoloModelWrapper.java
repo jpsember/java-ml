@@ -298,7 +298,7 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
 
     b[f + YoloUtil.F_CLASS_PROBABILITIES + ScriptUtil.categoryOrZero(box)] = 1;
 
-    if (verbose()) {
+    if (verbose() || alert("for now")) {
       pr("write box to fields:", box);
       pr("boxGridCell:", mBoxGridCell);
       pr("anchor box:", mAnchorBox);
