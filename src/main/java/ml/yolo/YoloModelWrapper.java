@@ -278,8 +278,8 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
 
     // The x and y coordinates can range from 0...1.
     //
-    b[f + YoloUtil.F_BOX_XYWH + 0] = mBoxLocationRelativeToCell.x;
-    b[f + YoloUtil.F_BOX_XYWH + 1] = mBoxLocationRelativeToCell.y;
+    b[f + YoloUtil.F_BOX_XYWH + 0] = mBoxCenterInCellSpace.x;
+    b[f + YoloUtil.F_BOX_XYWH + 1] = mBoxCenterInCellSpace.y;
 
     // The width and height can range from 0...+inf.
     //
@@ -302,7 +302,7 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
       pr("write box to fields:", box);
       pr("boxGridCell:", mBoxGridCell);
       pr("anchor box:", mAnchorBox);
-      pr("box loc rel to cell:", mBoxLocationRelativeToCell);
+      pr("box loc rel to cell:", mBoxCenterInCellSpace);
       pr("box size rel to anc:", mBoxSizeRelativeToAnchorBox);
       pr("conf:", b[f + YoloUtil.F_CONFIDENCE]);
     }
@@ -348,7 +348,7 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
    */
   private boolean convertBoxToCell(IRect box) {
     Yolo yolo = modelConfig();
-    mBoxLocationRelativeToCell = null;
+    mBoxCenterInCellSpace = null;
     mBoxSizeRelativeToAnchorBox = null;
     mBoxGridCell = null;
 
@@ -371,12 +371,12 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
 
     mBoxGridCell = gridCell;
 
-    mBoxLocationRelativeToCell = new FPoint(//
+    mBoxCenterInCellSpace = new FPoint(//
         midPoint.x * mImageToGridScale.x - gridCell.x, //
         midPoint.y * mImageToGridScale.y - gridCell.y);
 
     log("  grid cell:", mBoxGridCell);
-    log("  loc(cell):", mBoxLocationRelativeToCell);
+    log("  loc(cell):", mBoxCenterInCellSpace);
     log("  size(img):", mBoxSizeRelativeToAnchorBox);
     return true;
   }
@@ -436,7 +436,9 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
   private FPoint mImageToGridScale;
 
   private IPoint mBoxGridCell;
-  private FPoint mBoxLocationRelativeToCell;
+  
+  // The center of the box in cell space, i.e. (0.0, 0.0) is top left, (1.0, 1.0) is bottom right
+  private FPoint mBoxCenterInCellSpace;
   private FPoint mBoxSizeRelativeToAnchorBox;
   private int mAnchorBox;
   private float mIOverU;
