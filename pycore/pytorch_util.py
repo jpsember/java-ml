@@ -62,6 +62,12 @@ def pt_to_ftensor(pt:IPoint):
 def get_var(var, name: str, depth: int = 1):
   if var is not None:
     return var
+
+  # If name includes a suffix :xxx, omit it
+  #
+  suffix = name.find(':')
+  if suffix >= 0:
+    name = name[:suffix]
   import inspect
   frame = inspect.currentframe()
   for _ in range(1 + depth):

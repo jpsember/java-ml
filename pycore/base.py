@@ -263,6 +263,8 @@ def halt(*args):
   loc = get_caller_location(2)
   s = "...at " + loc + ":" + _log_msg("   halting program early (development only)", *args)
   print(s)
+  # Sleep for a bit to allow the output to appear...
+  time.sleep(0.2)
   quit()
 
 

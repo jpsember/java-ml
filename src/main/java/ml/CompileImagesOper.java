@@ -242,10 +242,24 @@ public final class CompileImagesOper extends AppOper {
   }
 
   private String formatTensor(TensorInfo ti, float[] t) {
-    if (false && alert("verifying formatting"))
-      verifyFormatting();
 
-    FloatFormat fmt = getFloatFormatString(t);
+    String effName = ti.name();
+    String suffix = "";
+    {
+      int i = effName.indexOf(':');
+      if (i >= 0) {
+        suffix = effName.substring(i + 1);
+        effName = effName.substring(0, i);
+      }
+    }
+
+    FloatFormat fmt = null;
+    if (nonEmpty(suffix)) {
+      fmt = FLOAT_FORMATS[Integer.parseInt(suffix)];
+    } else {
+      fmt = getFloatFormatString(t);
+    }
+
     StringBuilder sb = new StringBuilder();
     sb.append(ti.name());
     sb.append('\n');
@@ -272,7 +286,7 @@ public final class CompileImagesOper extends AppOper {
       sb.append("[ ");
       for (int x = 0; x < cols; x++, q++) {
         if (x > 0)
-          sb.append(" │ ");  // Note: this is a unicode char taller than the vertical brace
+          sb.append(" │ "); // Note: this is a unicode char taller than the vertical brace
         sb.append(fmt(fmt, t[q]));
       }
       sb.append(" ]\n");
@@ -289,15 +303,14 @@ public final class CompileImagesOper extends AppOper {
   private static String blankField(int width) {
     if (false)
       return spaces(width - 1) + "◌";
-    return spaces(width ) ;
+    return spaces(width);
   }
 
   private static final FloatFormat[] FLOAT_FORMATS = { //
       buildFmt(0.1f, "%7.4f", 0.0001f, blankField(7)), //
-     // buildFmt(1, "%6.3f", .001f, blankField(6)), //
-     // buildFmt(10, "%5.2f", 0.01f, blankField(5)), //
-     // buildFmt(100, "%3.0f", 1f, blankField(3)), //
-      buildFmt(100, "%6.2f", 1f, blankField(6)), //
+      buildFmt(1, "%6.3f", .001f, blankField(6)), //
+      buildFmt(10, "%5.2f", 0.01f, blankField(5)), //
+      buildFmt(100, "%3.0f", 1f, blankField(3)), //
       buildFmt(1000, "%4.0f", 1f, blankField(4)), //
       buildFmt(Float.MAX_VALUE, "%7.0f", 1f, blankField(7)), //
   };
@@ -321,17 +334,6 @@ public final class CompileImagesOper extends AppOper {
     if (Math.abs(value) < format.minValue())
       return format.zeroStr();
     return String.format(format.formatStr(), value);
-  }
-
-  private static void verifyFormatting() {
-    float[] x = new float[1];
-    float[] vals = { 0.0001f, 0.00001f, 0.000001f, 0.001f, 0.01f, 0.1f, 1.0f, 10.0f, 100.0f, 1000f, 10000f };
-    for (float z2 : vals) {
-      float z = -z2;
-      x[0] = z;
-      FloatFormat fmt = getFloatFormatString(x);
-      pr("z:", z, quote(fmt(fmt, z)), quote(fmt(fmt, z2)));
-    }
   }
 
   // ------------------------------------------------------------------

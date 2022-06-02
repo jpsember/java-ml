@@ -167,43 +167,46 @@ class YoloLoss(nn.Module):
     true_offset = true_wh / 2.
     true_box_min = true_xy - true_offset
     true_box_max = true_xy + true_offset
-    self.log_tensor("true_offset")
-    self.log_tensor("true_box_min")
-    self.log_tensor("true_box_max")
-    halt()
+    self.log_tensor("true_box_min:1")
+    self.log_tensor("true_box_max:1")
+    true_area = true_wh[..., 0] * true_wh[..., 1]
+    self.log_tensor("true_area:1")
 
     # Calculate the min/max extents of the predicted boxes
     #
     pred_offset = pred_wh / 2.
-    self.log_tensor("pred_wh")
+    self.log_tensor("pred_wh:1")
     pred_box_min = pred_xy - pred_offset
     pred_box_max = pred_xy + pred_offset
-    show(".pred_box_min", pred_box_min)
-    show(".pred_box_max", pred_box_max)
-
-    self.log_tensor("pred_box_min")
-    self.log_tensor("pred_box_max")
+    self.log_tensor("pred_box_min:1")
+    self.log_tensor("pred_box_max:1")
+    pred_area = pred_wh[..., 0] * pred_wh[..., 1]
+    self.log_tensor("pred_area:1")
 
 
 
 
     # Determine the area of their intersection (which may be zero)
     #
-    intersect_box_min = torch.maximum(true_box_min, pred_box_min)
-    intersect_box_max = torch.minimum(true_box_max, pred_box_max)
+    isect_min = torch.maximum(true_box_min, pred_box_min)
+    isect_max = torch.minimum(true_box_max, pred_box_max)
+    self.log_tensor("isect_min:1")
+    self.log_tensor("isect_max:1")
 
-    intersect_box_size = torch.clamp(intersect_box_max - intersect_box_min, min=0.0)
-    intersect_box_area = intersect_box_size[..., 0] * intersect_box_size[..., 1]
+    isect_size = torch.clamp(isect_max - isect_min, min=0.0)
+    self.log_tensor("isect_size:1")
+    isect_area = isect_size[..., 0] * isect_size[..., 1]
+    self.log_tensor("isect_area:1")
 
-    true_box_area = true_wh[..., 0] * true_wh[..., 1]
-    predicted_box_area = pred_wh[..., 0] * pred_wh[..., 1]
-
-    union_areas = predicted_box_area + true_box_area - intersect_box_area
+    union_area = pred_area + true_area - isect_area
+    self.log_tensor("union_area:1")
 
     # For cells that have no ground truth box, the area will be zero; so to avoid a possible divide by zero
     # (which may be harmless, but will be confusing), add an epsilon to the denominator
     #
-    return torch.div(intersect_box_area, torch.clamp(union_areas, min=1e-8))
+    iou = torch.div(isect_area, torch.clamp(union_area, min=1e-8))
+    self.log_tensor("iou:1")
+    return iou
 
 
 
