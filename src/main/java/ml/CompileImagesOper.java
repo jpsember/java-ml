@@ -7,12 +7,12 @@ import java.util.List;
 import java.util.SortedMap;
 
 import gen.CompileImagesConfig;
+import gen.FloatFormat;
 import gen.NeuralNetwork;
 import gen.TensorInfo;
 import gen.TrainParam;
 import js.app.AppOper;
 import js.base.DateTimeTools;
-import js.base.Pair;
 import js.file.DirWalk;
 import js.file.Files;
 import js.graphics.Inspector;
@@ -54,13 +54,13 @@ public final class CompileImagesOper extends AppOper {
 
     if (alert("verify")) {
       float[] x = new float[1];
-      float[] vals = { 0.0001f, 0.00001f, 0.000001f,0.001f, 0.01f, 0.1f, 1.0f, 10.0f, 100.0f, 1000f, 10000f };
+      float[] vals = { 0.0001f, 0.00001f, 0.000001f, 0.001f, 0.01f, 0.1f, 1.0f, 10.0f, 100.0f, 1000f,
+          10000f };
       for (float z2 : vals) {
         float z = -z2;
         x[0] = z;
-        Pair<String, Float> fmt=
-        getFloatFormatString(x);
-        pr("z:", z, quote(String.format(fmt.first, z)), quote(String.format(fmt.first,z2)));
+        FloatFormat fmt = getFloatFormatString(x);
+        pr("z:", z, quote(fmt(fmt, z)), quote(fmt(fmt, z2)));
       }
       die();
     }
@@ -265,19 +265,17 @@ public final class CompileImagesOper extends AppOper {
     return sb.toString();
   }
 
-  private static float[] smax = {0.1f,1,10,100,1000,Float.MAX_VALUE};
-  private static String[] sfmt = {
-      "%7.4f", // -0.0999
-      "%6.3f", // -0.999
-      "%5.2f", // -9.99
-      "%5.1f", // -99.9
-      "%6.1f", // -999.9
-      "%7.0f", // -999999
-  };
-  
-  private static Pair<String,Float> getFloatFormatString(float[] floats) {
-//    String fmt;
-//    Float maxValue;
+  private static final FloatFormat f(float maxVal, String fmt, float minVal, String zero) {
+    FloatFormat.Builder b = FloatFormat.newBuilder();
+    b.maxValue(maxVal).formatStr(fmt).minValue(minVal).zeroStr(zero);
+    return b.build();
+  }
+
+  private static final FloatFormat[] FLOAT_FORMATS = { f(0.1f, "%7.4f", 0.0001f, "      _"), //
+      f(1, "%6.3f", .001f, "     _"), f(10, "%5.2f", 0.01f, "    _"), f(100, "%3.0f", 1f, "  _"),
+      f(1000, "%4.0f", 1f, "   _"), f(Float.MAX_VALUE, "%7.0f", 1f, "      _"), };
+
+  private static FloatFormat getFloatFormatString(float[] floats) {
     checkArgument(floats.length > 0);
     float magMax = Math.abs(floats[0]);
     for (float f : floats) {
@@ -285,36 +283,17 @@ public final class CompileImagesOper extends AppOper {
       if (mag > magMax)
         magMax = mag;
     }
-    
-    int i = 0;
-    while (i + 1 < smax.length && magMax >= smax[i])
-      i++;
-    return new Pair<>(sfmt[i],smax[i]);
-//    
-//    maxValue = 0.1f;
-//    do {
-//    if (magMax < maxValue) {
-//      fmt = "%7.4f"; // -0.0999
-//      break;
-//    }
-//    maxValue = 1;
-//    if (magMax < 1) {
-//      maxValue = 1f;
-//      fmt = "%6.3f"; // -0.999
-//      break;
-//    }
-//    maxValue = 10;
-//    if (magMax < 10) {
-//      fmt = "%5.2f"; // -9.99
-//    else if (magMax < 100)
-//      fmt = "%5.1f"; // -99.9
-//    else if (magMax < 1000)
-//      fmt = "%6.1f"; // -999.9
-//    else
-//      fmt = "%7.0f"; // -999999
-//    }
-//    
-//    return fmt;
+    for (FloatFormat fmt : FLOAT_FORMATS) {
+      if (magMax < fmt.maxValue())
+        return fmt;
+    }
+    return FLOAT_FORMATS[FLOAT_FORMATS.length - 1];
+  }
+
+  private static String fmt(FloatFormat format, float value) {
+    if (Math.abs(value) < format.minValue())
+      return format.zeroStr();
+    return String.format(format.formatStr(), value);
   }
 
   // ------------------------------------------------------------------
