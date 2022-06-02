@@ -73,20 +73,20 @@ class YoloLoss(nn.Module):
     true_xy_cell = target[:, :, :, F_BOX_X:F_BOX_Y+1]
 
 
-    self.log_tensor("true_xy_cell", true_xy_cell)
+    self.log_tensor("true_xy_cell")
 
     # true_box_wh will be the width and height of the box, relative to the anchor box
     #
     true_box_wh = target[:, :, :, F_BOX_W:F_BOX_H+1]
-    self.log_tensor("true_box_wh", true_box_wh)
+    self.log_tensor("true_box_wh")
 
     true_confidence = target[:, :, :, F_CONFIDENCE]
-    self.log_tensor("true_confidence", true_confidence)
+    self.log_tensor("true_confidence")
 
     class_prob_end = F_CLASS_PROBABILITIES + y.category_count
 
     true_class_probabilities = target[:, :, :, F_CLASS_PROBABILITIES:class_prob_end]  # probably can just do 'x:']
-    self.log_tensor("true_class_probabilities", true_class_probabilities)
+    self.log_tensor("true_class_probabilities")
 
     # We could have stored the true class number as an index, instead of a one-hot vector;
     # but the symmetry of the structure of the true vs inferred data keeps things simple.
@@ -177,7 +177,17 @@ class YoloLoss(nn.Module):
 
   # Send a tensor for logging.  Assumes it has the dimension D_IMAGE, D_GRIDSIZE, etc
   #
-  def log_tensor(self, name, t):
+  def log_tensor(self, name, t=None):
+    # If tensor not provided, assume name refers to a local variable in the caller's scope
+    #
+    if t is None:
+      import inspect
+      frame = inspect.currentframe()
+      try:
+        t = frame.f_back.f_locals[name]
+      finally:
+        del frame
+
     # Construct a slice of the tensor for inspection
     z = t.detach()
     z = z[0,:]
