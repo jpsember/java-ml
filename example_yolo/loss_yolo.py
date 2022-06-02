@@ -79,14 +79,14 @@ class YoloLoss(nn.Module):
     # We need to map (-inf...+inf) to (0...1); hence apply sigmoid function
     #
     pred_xy = torch.sigmoid(current[:, :, :, F_BOX_X:F_BOX_Y+1]) * coord_mask
-    self.log_tensor("pred_xy")
+    self.log_tensor(".pred_xy")
 
     # Determine each predicted box's w,h
     #
     # We need to map (-inf...+inf) to (0..+inf); hence apply the exp function
     #
     pred_wh = current[:, :, :, F_BOX_W:F_BOX_H+1] * coord_mask
-    self.log_tensor("pred_wh")
+    self.log_tensor(".pred_wh")
 
     # Determine each predicted box's confidence score.
     # We need to map (-inf...+inf) to (0..1); hence apply sigmoid function
@@ -104,12 +104,9 @@ class YoloLoss(nn.Module):
       show_shape("pred_xy")
 
     x = (true_xy - pred_xy).square()
-    show_shape("true-pred squared",x)
+    #show_shape("true-pred squared",x)
 
-    self.log_tensor("xy true-pred", x)
-
-    #  This is showing a crazy size:  true-pred size: torch.Size([32, 169, 169, 2])
-    show_shape("xy true-pred",x)
+    self.log_tensor(".xy true-pred", x)
 
     # TODO: why can't we just set the 'box' loss based on the IOU inaccuracy?  Then
     # presumably the x,y,w,h will naturally move to the target?
@@ -142,6 +139,9 @@ class YoloLoss(nn.Module):
   # Send a tensor for logging.  Assumes it has the dimension D_IMAGE, D_GRIDSIZE, etc
   #
   def log_tensor(self, name, t=None):
+    if name.startswith("."):
+      return
+
     # If tensor not provided, assume name refers to a local variable in the caller's scope
     #
     t = get_var(t, name)
