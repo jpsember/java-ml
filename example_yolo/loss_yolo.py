@@ -110,12 +110,12 @@ class YoloLoss(nn.Module):
     # presumably the x,y,w,h will naturally move to the target?
     loss_xy = x.sum().item() / num_true_boxes
 
-    _tmp = ((true_wh - pred_wh).square())
-    show(".wh error", _tmp)
-    loss_wh = _tmp.sum().item() / num_true_boxes
+    loss = ((true_wh - pred_wh).square())
+    show(".wh error", loss)
+    loss_wh = loss.sum().item() / num_true_boxes
 
     iou_scores = self.calculate_iou(true_xy, true_wh, pred_xy, pred_wh)
-    self.log_tensor("iou_scores")
+    self.log_tensor(".iou_scores")
 
     loss_confidence = self.construct_confidence_loss(true_confidence, iou_scores, predicted_confidence)
     show(".loss_confidence:",loss_confidence)
@@ -123,14 +123,24 @@ class YoloLoss(nn.Module):
     _coord_scaled = self.yolo.lambda_coord * (loss_xy + loss_wh)
     show("._coord_scaled", _coord_scaled)
 
-    _tmp = _coord_scaled + loss_confidence
+
+    loss = _coord_scaled + loss_confidence
 
     if not warning("disabled class_loss"):
       loss_class = self.construct_class_loss(true_confidence, true_class_probabilities, predicted_box_class_logits)
-      _tmp = _tmp + loss_class
+      loss = loss + loss_class
 
-    _tmp = _tmp.mean()
-    return _tmp
+    loss = loss.mean()
+
+    if warning("just using iou_scores as loss"):
+      #show_shape(".coord_mask")
+      t_iou = iou_scores.view(coord_mask.shape)
+      #show_shape("t_iou")
+      loss = (1.0 - t_iou) * coord_mask
+      loss = loss.sum() / num_true_boxes
+      self.log_tensor(".loss:1")
+
+    return loss
 
 
 
@@ -167,45 +177,42 @@ class YoloLoss(nn.Module):
     true_offset = true_wh / 2.
     true_box_min = true_xy - true_offset
     true_box_max = true_xy + true_offset
-    self.log_tensor("true_box_min:1")
-    self.log_tensor("true_box_max:1")
+    self.log_tensor(".true_box_min:1")
+    self.log_tensor(".true_box_max:1")
     true_area = true_wh[..., 0] * true_wh[..., 1]
-    self.log_tensor("true_area:1")
+    self.log_tensor(".true_area:1")
 
     # Calculate the min/max extents of the predicted boxes
     #
     pred_offset = pred_wh / 2.
-    self.log_tensor("pred_wh:1")
+    self.log_tensor(".pred_wh:1")
     pred_box_min = pred_xy - pred_offset
     pred_box_max = pred_xy + pred_offset
-    self.log_tensor("pred_box_min:1")
-    self.log_tensor("pred_box_max:1")
+    self.log_tensor(".pred_box_min:1")
+    self.log_tensor(".pred_box_max:1")
     pred_area = pred_wh[..., 0] * pred_wh[..., 1]
-    self.log_tensor("pred_area:1")
-
-
-
+    self.log_tensor(".pred_area:1")
 
     # Determine the area of their intersection (which may be zero)
     #
     isect_min = torch.maximum(true_box_min, pred_box_min)
     isect_max = torch.minimum(true_box_max, pred_box_max)
-    self.log_tensor("isect_min:1")
-    self.log_tensor("isect_max:1")
+    self.log_tensor(".isect_min:1")
+    self.log_tensor(".isect_max:1")
 
     isect_size = torch.clamp(isect_max - isect_min, min=0.0)
-    self.log_tensor("isect_size:1")
+    self.log_tensor(".isect_size:1")
     isect_area = isect_size[..., 0] * isect_size[..., 1]
-    self.log_tensor("isect_area:1")
+    self.log_tensor(".isect_area:1")
 
     union_area = pred_area + true_area - isect_area
-    self.log_tensor("union_area:1")
+    self.log_tensor(".union_area:1")
 
     # For cells that have no ground truth box, the area will be zero; so to avoid a possible divide by zero
     # (which may be harmless, but will be confusing), add an epsilon to the denominator
     #
     iou = torch.div(isect_area, torch.clamp(union_area, min=1e-8))
-    self.log_tensor("iou:1")
+    self.log_tensor(".iou:1")
     return iou
 
 
