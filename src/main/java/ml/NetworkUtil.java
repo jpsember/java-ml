@@ -22,7 +22,7 @@ public final class NetworkUtil {
     NeuralNetwork network = DataUtil.resolveField(null, NeuralNetwork.DEFAULT_INSTANCE, networkOrNull,
         networkPathOrNull);
 
-    if (network == null && networkPathOrNull != null) {
+    if (network == null && Files.nonEmpty(networkPathOrNull)) {
       networkPathOrNull = Files.subprojectVariant(networkPathOrNull);
       network = DataUtil.resolveField(null, NeuralNetwork.DEFAULT_INSTANCE, networkOrNull, networkPathOrNull);
     }

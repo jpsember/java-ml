@@ -1,7 +1,7 @@
 {
       "network_path" : "network.json",
         "categories" : "A",
-       "image_total" :  64,
+       "image_total" :  32,   // Make this the same as the batch size, so a single batch covers it
 
   "noise_factor" : 0,
   "color_limit" : 1,
