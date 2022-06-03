@@ -110,16 +110,20 @@ class YoloLoss(nn.Module):
     #
     # There is a paper discussing this:  https://arxiv.org/abs/1902.09630
     #
-    loss_xy = x.sum().item() / num_true_boxes
+
+    # Why do we need to divide the loss by the number of boxes?  Shouldn't each box bump the loss up?
+    # So images with more objects have more weight.
+    #
+    loss_xy = x.sum().item()
 
     loss = ((true_wh - pred_wh).square())
     show(".wh error", loss)
-    loss_wh = loss.sum().item() / num_true_boxes
+    loss_wh = loss.sum().item()
 
     iou_scores = self.calculate_iou(true_xy, true_wh, pred_xy, pred_wh)
     self.log_tensor(".iou_scores")
 
-    loss_confidence = self.construct_confidence_loss(true_confidence, iou_scores, predicted_confidence)
+    loss_confidence = self.construct_confidence_loss(true_confidence, predicted_confidence)
     show(".loss_confidence:",loss_confidence)
 
     _coord_scaled = self.yolo.lambda_coord * (loss_xy + loss_wh)
@@ -134,12 +138,12 @@ class YoloLoss(nn.Module):
 
     loss = loss.mean()
 
-    if warning("just using iou_scores as loss"):
+    if False and warning("just using iou_scores as loss"):
       #show_shape(".coord_mask")
       t_iou = iou_scores.view(coord_mask.shape)
       #show_shape("t_iou")
       loss = (1.0 - t_iou) * coord_mask
-      loss = loss.sum() / num_true_boxes
+      loss = loss.sum()
       self.log_tensor(".loss:1")
 
     return loss
@@ -221,15 +225,17 @@ class YoloLoss(nn.Module):
 
 
 
-  def construct_confidence_loss(self, true_confidence, iou_scores, predicted_confidence):
-    warning("why is true_confidence multiplied by iou?")
-    true_box_confidence = iou_scores * true_confidence
+  def construct_confidence_loss(self, true_confidence, predicted_confidence):
 
-    zeros = torch.zeros_like(true_confidence)
-    ones = torch.ones_like(zeros)
-    _no_objects_expected = torch.where(torch.greater(true_confidence, 0.0), zeros, ones)
+    # The noobj weight should be distributed among all the boxes (anchors * grid cells),
+    # otherwise the weight is dependent upon the grid size
+    #
+    boxes_in_grid = self.num_anchors * self.grid_cell_total
+    noobj_weight = self.yolo.lambda_noobj / boxes_in_grid
 
-    conf_mask = _no_objects_expected * self.yolo.lambda_noobj + true_confidence
+    no_obj_mask = 1.0 - true_confidence
+    conf_mask = no_obj_mask * noobj_weight + true_confidence
+    self.log_tensor("conf_mask")
 
     # conf_mask is the sum of two terms, at least one of which must be zero since
     # one is multiplied by (1 - true_box_exists), and the other by (true_box_exists),
@@ -248,8 +254,13 @@ class YoloLoss(nn.Module):
     # It is clear that each element of conf_mask is either obj_scale or no_obj_scale,
     # so the number of nonzero entries below is just the number of anchor boxes in the entire image...
 
-    anchor_boxes_per_image = self.num_anchors * self.grid_cell_total
-    loss_conf = torch.sum(torch.square(true_box_confidence - predicted_confidence) * conf_mask) / anchor_boxes_per_image
+    self.log_tensor("true_confidence")
+    self.log_tensor("predicted_confidence")
+    squared_diff = torch.square(true_confidence - predicted_confidence)
+    self.log_tensor("squared_diff")
+    masked_diff = squared_diff * conf_mask
+    self.log_tensor("masked_diff")
+    loss_conf = torch.sum(masked_diff)
     return loss_conf
 
 
