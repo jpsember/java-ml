@@ -14,21 +14,9 @@
            },
 
       "train_param" : {
-        //"batch_size" : 2,
-        //"test_size" : 2,
+             "test_size" : 0,      // Get rid of test, to keep logging simple
+        "min_batch_time" : 1000,   // To keep logging readable
       },
-
-
-    //"retain_existing_training_sets" : true,
-
-
-      "_OMIT_constant_elements" : [
-         {
-            "p" : {"category":1},
-       "bounds" : [183,160,35,42]
-         },
-
-       ],
 
 
 }

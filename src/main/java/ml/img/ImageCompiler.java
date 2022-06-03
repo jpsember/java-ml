@@ -83,9 +83,6 @@ public final class ImageCompiler extends BaseObject {
           AffineTransformOp.TYPE_BILINEAR);
 
       annotations = ScriptUtil.transform(annotations, entry.transform().matrix());
-      if (!config().constantElements().isEmpty()) {
-        annotations = config().constantElements();
-      }
 
       op.filter(img, targetImage);
       mInspector.create("tfm").image(targetImage).elements(annotations);

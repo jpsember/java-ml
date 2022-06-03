@@ -39,6 +39,11 @@ fields {
   // Number of images to include in the test set (zero disables test)
   //
   int test_size = 20;
+
+  // If nonzero, imposes a minimum duration between training (or test) batches;
+  // to slow down the output
+  //
+  long min_batch_time = 0;
 }
 
 

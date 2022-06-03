@@ -1,5 +1,3 @@
-extern js.graphics.ScriptElement;
-
 fields {
 
   ? NeuralNetwork network;
@@ -33,8 +31,4 @@ fields {
 
   TrainParam train_param;
 
-
-  // If nonempty, replaces all annotations with this list of elements
-  //
-  * ScriptElement constant_elements;
 }

@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import time
 
 from pycore.pytorch_util import *
 import os
@@ -70,6 +71,7 @@ class JsTrain:
 
     self.timeout_length = None
     self.start_time = time_ms()
+    self.prev_batch_time = None
 
 
   def add_timeout(self, max_seconds=60):
@@ -93,6 +95,7 @@ class JsTrain:
     if self.train_images % self.batch_size != 0:
       warning("training image count", self.train_images,"is not a multiple of the batch size:", self.batch_size)
     self.batch_total = self.train_images // self.batch_size
+    #halt("train_images:",self.train_images,"batch_size:",self.batch_size,"batch total:",self.batch_total)
 
 
   def proj_path(self, rel_path : str):
@@ -385,11 +388,13 @@ class JsTrain:
       self.train()
       if self.abort_flag:
         break
+      self.perform_delay()
       s = f"Epoch {self.epoch_number:4}   {self.stat_train_loss.info()}"
       if self.stat_train_loss.value_sm <= self.train_config.target_loss:
         done_msg = "Train loss reached target"
       if self.with_test():
         self.test()
+        self.perform_delay()
         if self.test_target_reached():
           done_msg = "Test accuracy reached target"
         s += "   " + self.test_report()
@@ -477,6 +482,18 @@ class JsTrain:
   def log(self, *args):
     if self.verbose:
       pr("(verbose:)", *args)
+
+
+  def perform_delay(self):
+    t = self.train_config.min_batch_time
+    if t <= 0:
+      return
+    warning("Imposing minimum batch time:", t)
+    c = time_ms()
+    p = none_to(self.prev_batch_time, c)
+    self.prev_batch_time = c
+    if c - p < t:
+      time.sleep(t / 1000.0)
 
 
 # Determine if train_set is not None and not the default instance
