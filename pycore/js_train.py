@@ -48,9 +48,13 @@ class JsTrain:
     self.batch_size = None
     self.batch_total = None
 
-    t = self.proj_path("compileimages-args.json")
-    config:CompileImagesConfig = read_object(CompileImagesConfig.default_instance, t)
-    self.checkpoint_dir = config.target_dir_checkpoint
+    if True:
+      self.checkpoint_dir = "checkpoints"
+    else:
+      # Since adding subproject variants, we can't assume this is the configuration filename
+      t = self.proj_path("compileimages-args.json")
+      config:CompileImagesConfig = read_object(CompileImagesConfig.default_instance, t)
+      self.checkpoint_dir = config.target_dir_checkpoint
 
     train_set_count = self.train_config.max_train_sets - 1  # Service tries to provide one more than needed
     check_state(train_set_count > 1)
