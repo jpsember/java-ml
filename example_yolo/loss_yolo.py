@@ -51,9 +51,10 @@ class YoloLoss(nn.Module):
     # true_box_wh will be the width and height of the box, relative to the anchor box
     #
     true_wh = target[:, :, :, F_BOX_W:F_BOX_H+1]
-    self.log_tensor("true_wh")
+    self.log_tensor(".true_wh")
 
     true_confidence = target[:, :, :, F_CONFIDENCE]
+
     # Add a dimension to true_confidence so it has equivalent dimensionality as true_xy, true_wh, etc
     # (this doesn't change its volume, only its dimensions) <-- explain?
     #
@@ -102,8 +103,6 @@ class YoloLoss(nn.Module):
       show_shape("pred_xy")
 
     x = (true_xy - pred_xy).square()
-    #show_shape("true-pred squared",x)
-
     self.log_tensor(".xy true-pred", x)
 
     # TODO: why can't we just set the 'box' loss based on the IOU inaccuracy?  Then
@@ -223,11 +222,12 @@ class YoloLoss(nn.Module):
 
 
   def construct_confidence_loss(self, true_confidence, iou_scores, predicted_confidence):
+    warning("why is true_confidence multiplied by iou?")
     true_box_confidence = iou_scores * true_confidence
 
-    _zeros = torch.zeros_like(true_confidence)
-    _ones = torch.ones_like(_zeros)
-    _no_objects_expected = torch.where(torch.greater(true_confidence, 0.0), _zeros, _ones)
+    zeros = torch.zeros_like(true_confidence)
+    ones = torch.ones_like(zeros)
+    _no_objects_expected = torch.where(torch.greater(true_confidence, 0.0), zeros, ones)
 
     conf_mask = _no_objects_expected * self.yolo.lambda_noobj + true_confidence
 
@@ -247,7 +247,6 @@ class YoloLoss(nn.Module):
 
     # It is clear that each element of conf_mask is either obj_scale or no_obj_scale,
     # so the number of nonzero entries below is just the number of anchor boxes in the entire image...
-
 
     anchor_boxes_per_image = self.num_anchors * self.grid_cell_total
     loss_conf = torch.sum(torch.square(true_box_confidence - predicted_confidence) * conf_mask) / anchor_boxes_per_image
