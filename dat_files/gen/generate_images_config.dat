@@ -22,4 +22,12 @@ fields {
   // Plots solid colors for each category and nothing else
   //
   bool obvious_mode;
+
+  // If > 0, limits choice of font from set of this size
+  //
+  int font_limit;
+
+  // If > 0, limits choice of colors from set of this size
+  //
+  int color_limit;
 }

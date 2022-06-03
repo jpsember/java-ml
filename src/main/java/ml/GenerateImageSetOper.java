@@ -33,7 +33,7 @@ import js.graphics.gen.Script;
 public class GenerateImageSetOper extends AppOper {
 
   public static final boolean YOLO_DEV = false && alert("YOLO_DEV in effect");
-  
+
   @Override
   public String userCommand() {
     return "genimages";
@@ -102,7 +102,7 @@ public class GenerateImageSetOper extends AppOper {
       Plotter p = Plotter.build();
       p.withCanvas(mImageSize);
 
-      FontInfo fi = randomElement(fonts());
+      FontInfo fi = randomElement(fonts(), config().fontLimit());
       p.with(PAINT_BGND).fillRect();
 
       plotNoise(p);
@@ -118,7 +118,7 @@ public class GenerateImageSetOper extends AppOper {
       Integer firstCat = null;
 
       for (int objIndex = 0; objIndex < totalObjects; objIndex++) {
-        p.with(randomElement(paints()).toBuilder().font(fi.mFont, 1f));
+        p.with(randomElement(paints(), config().colorLimit()).toBuilder().font(fi.mFont, 1f));
 
         int category = random().nextInt(categoriesString.length());
         if (firstCat == null)
@@ -152,8 +152,13 @@ public class GenerateImageSetOper extends AppOper {
           tfmFontOrigin = Matrix.getTranslate(fontRenderOffset);
           Matrix tfmImageCenter = Matrix.getTranslate(randGuassian(mx - rangex, mx + rangex),
               randGuassian(my - rangey, my + rangey));
-          Matrix tfmRotate = Matrix.getRotate(
-              randGuassian(-aug.rotateDegreesMax() * MyMath.M_DEG, aug.rotateDegreesMax() * MyMath.M_DEG));
+
+          Matrix tfmRotate;
+          if (aug.rotateDisable())
+            tfmRotate = Matrix.DEFAULT_INSTANCE;
+          else
+            tfmRotate = Matrix.getRotate(
+                randGuassian(-aug.rotateDegreesMax() * MyMath.M_DEG, aug.rotateDegreesMax() * MyMath.M_DEG));
           float scaleMin = aug.scaleMin();
           float scaleMax = aug.scaleMax();
           if (scaleMin <= 0)
@@ -245,7 +250,7 @@ public class GenerateImageSetOper extends AppOper {
 
     for (int i = 0; i < k; i++) {
       IPoint loc2 = rndPoint();
-      p.with(randomElement(paints()));
+      p.with(randomElement(paints(), config().colorLimit()));
       p.graphics().drawLine(loc.x, loc.y, loc2.x, loc2.y);
       loc = loc2;
     }
@@ -349,6 +354,10 @@ public class GenerateImageSetOper extends AppOper {
   }
 
   private float randGuassian(float min, float max) {
+    if (min == max)
+      return max;
+    if (min > max)
+      badArg("min > max");
     float scl = (max - min) * 0.35f;
     float center = (max + min) * 0.5f;
     while (true) {
@@ -358,7 +367,9 @@ public class GenerateImageSetOper extends AppOper {
     }
   }
 
-  private <T> T randomElement(List<T> elements) {
+  private <T> T randomElement(List<T> elements, int limitSize) {
+    if (limitSize > 0)
+      elements = elements.subList(0, Math.min(elements.size(), limitSize));
     return elements.get(random().nextInt(elements.size()));
   }
 

@@ -1,15 +1,17 @@
 {
       "network_path" : "network.json",
         "categories" : "A",
-       "image_total" :  512,
-
-    // Until we are confident the model is learning,
-    // omit noise
+       "image_total" :  64,
 
   "noise_factor" : 0,
+  "color_limit" : 1,
+  "font_limit" : 1,
 
  "augmentation_config" : {
-  "scale_max" : 3.0,
+      "scale_max" : 3.0,
+      "scale_min" : 3.0,  // Don't do any scaling
+      "rotate_disable" : true,  // or rotating
+      "translate_ratio_max" : 0, // no translation
  },
 
 }
