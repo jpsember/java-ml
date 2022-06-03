@@ -46,7 +46,7 @@ class YoloLoss(nn.Module):
     target = target.view(current.shape)
 
     true_xy = target[:, :, :, F_BOX_X:F_BOX_Y+1]
-    self.log_tensor(".true_xy")
+    self.log_tensor("true_xy")
 
     # true_box_wh will be the width and height of the box, relative to the anchor box
     #
@@ -165,9 +165,11 @@ class YoloLoss(nn.Module):
     width = self.grid_size.x
 
     z = z.view(height,width,-1)
-    # Zoom in on the center grid cells
-    #     ROWS COLS
-    z = z[4:7, 5:8,:]
+
+    if width > 8:
+      # Zoom in on the center grid cells
+      #     ROWS COLS
+      z = z[4:7, 5:8,:]
     self.logger.add(z, name)
 
 

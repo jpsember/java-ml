@@ -3,8 +3,14 @@
              "source_dir" : "generated_images",
        "train_service" : false,
        "inspection_dir" : "inspection",
+
        "augmentation_config" : {
              "horizontal_flip" : false,
+             "shear_disable" : true,
+             "scale_disable" : true,
+             "rotate_disable" : true,
+             "translate_disable" : true,
+             "blur_factor" : -1,
            },
 
       "train_param" : {

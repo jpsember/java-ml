@@ -10,6 +10,7 @@ import gen.NetworkProjectType;
 import gen.NeuralNetwork;
 import gen.Vol;
 import js.data.DataUtil;
+import js.file.Files;
 import js.geometry.IPoint;
 import js.json.JSMap;
 
@@ -20,7 +21,7 @@ public final class NetworkUtil {
   public static NeuralNetwork resolveNetwork(NeuralNetwork networkOrNull, File networkPathOrNull) {
     NeuralNetwork network = DataUtil.resolveField(null, NeuralNetwork.DEFAULT_INSTANCE, networkOrNull,
         networkPathOrNull);
-    return checkNotNull(network, "Cannot find network in path:", networkPathOrNull);
+    return checkNotNull(network, "Cannot find network in path:", Files.infoMap(networkPathOrNull));
   }
 
   public static NeuralNetwork validateNetwork(NeuralNetwork network) {
