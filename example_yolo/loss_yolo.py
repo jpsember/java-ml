@@ -123,7 +123,7 @@ class YoloLoss(nn.Module):
     iou_scores = self.calculate_iou(true_xy, true_wh, pred_xy, pred_wh)
     self.log_tensor(".iou_scores")
 
-    loss_confidence = self.construct_confidence_loss(true_confidence, predicted_confidence)
+    loss_confidence = self.construct_confidence_loss(true_confidence, predicted_confidence, iou_scores)
     show(".loss_confidence:",loss_confidence)
 
     _coord_scaled = self.yolo.lambda_coord * (loss_xy + loss_wh)
@@ -225,7 +225,14 @@ class YoloLoss(nn.Module):
 
 
 
-  def construct_confidence_loss(self, true_confidence, predicted_confidence):
+  def construct_confidence_loss(self, true_confidence, predicted_confidence, iou_scores):
+
+    todo("we want the predicted confidence to be scaled by the IOU value to get objectness")
+    pred_objectness = predicted_confidence * iou_scores
+    self.log_tensor("predicted_confidence")
+    self.log_tensor("iou_scores")
+    self.log_tensor("pred_objectness")
+
 
     # The noobj weight should be distributed among all the boxes (anchors * grid cells),
     # otherwise the weight is dependent upon the grid size
@@ -255,8 +262,7 @@ class YoloLoss(nn.Module):
     # so the number of nonzero entries below is just the number of anchor boxes in the entire image...
 
     self.log_tensor("true_confidence")
-    self.log_tensor("predicted_confidence")
-    squared_diff = torch.square(true_confidence - predicted_confidence)
+    squared_diff = torch.square(true_confidence - pred_objectness)
     self.log_tensor("squared_diff")
     masked_diff = squared_diff * conf_mask
     self.log_tensor("masked_diff")
