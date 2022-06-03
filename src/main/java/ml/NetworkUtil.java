@@ -9,6 +9,7 @@ import gen.Layer;
 import gen.NetworkProjectType;
 import gen.NeuralNetwork;
 import gen.Vol;
+import js.app.AppOper;
 import js.data.DataUtil;
 import js.file.Files;
 import js.geometry.IPoint;
@@ -21,6 +22,13 @@ public final class NetworkUtil {
   public static NeuralNetwork resolveNetwork(NeuralNetwork networkOrNull, File networkPathOrNull) {
     NeuralNetwork network = DataUtil.resolveField(null, NeuralNetwork.DEFAULT_INSTANCE, networkOrNull,
         networkPathOrNull);
+
+    if (network == null && networkPathOrNull != null) {
+      // See if there's a subproject variant
+      networkPathOrNull = AppOper.findSubprojectVariant(networkPathOrNull);
+      network = DataUtil.resolveField(null, NeuralNetwork.DEFAULT_INSTANCE, networkOrNull, networkPathOrNull);
+    }
+
     return checkNotNull(network, "Cannot find network in path:", Files.infoMap(networkPathOrNull));
   }
 
