@@ -15,7 +15,6 @@
 
       "train_param" : {
              "test_size" : 0,      // Get rid of test, to keep logging simple
-        "min_batch_time" : 1000,   // To keep logging readable
       },
 
 

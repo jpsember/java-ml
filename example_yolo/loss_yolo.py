@@ -46,12 +46,12 @@ class YoloLoss(nn.Module):
     target = target.view(current.shape)
 
     true_xy = target[:, :, :, F_BOX_X:F_BOX_Y+1]
-    self.log_tensor("true_xy")
+    self.log_tensor(".true_xy")
 
     # true_box_wh will be the width and height of the box, relative to the anchor box
     #
     true_wh = target[:, :, :, F_BOX_W:F_BOX_H+1]
-    self.log_tensor(".true_wh")
+    self.log_tensor("true_wh")
 
     true_confidence = target[:, :, :, F_CONFIDENCE]
     # Add a dimension to true_confidence so it has equivalent dimensionality as true_xy, true_wh, etc
