@@ -11,7 +11,7 @@ class YoloTrain(JsTrain):
   def __init__(self):
     super().__init__(__file__)
     self.yolo = Yolo.default_instance.parse(self.network.model_config)
-    self.add_timeout()
+    self.add_timeout(600)
 
 
   def define_model(self):

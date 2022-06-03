@@ -108,6 +108,9 @@ class YoloLoss(nn.Module):
 
     # TODO: why can't we just set the 'box' loss based on the IOU inaccuracy?  Then
     # presumably the x,y,w,h will naturally move to the target?
+    #
+    # There is a paper discussing this:  https://arxiv.org/abs/1902.09630
+    #
     loss_xy = x.sum().item() / num_true_boxes
 
     loss = ((true_wh - pred_wh).square())

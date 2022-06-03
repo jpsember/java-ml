@@ -16,7 +16,7 @@
     //"retain_existing_training_sets" : true,
 
 
-      "constant_elements" : [
+      "_OMIT_constant_elements" : [
          {
             "p" : {"category":1},
        "bounds" : [183,160,35,42]

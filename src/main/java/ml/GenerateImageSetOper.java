@@ -46,7 +46,8 @@ public class GenerateImageSetOper extends AppOper {
 
   @Override
   public void perform() {
-    die("temporarily disabled to work with known YOLO images");
+    if (YOLO_DEV)
+      die("temporarily disabled to work with known YOLO images");
     mModel = ModelWrapper.constructFor(config().network(), config().networkPath());
 
     int objectCount = -1;

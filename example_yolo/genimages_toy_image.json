@@ -1,0 +1,15 @@
+{
+      "network_path" : "network.json",
+        "categories" : "A",
+       "image_total" :  512,
+
+    // Until we are confident the model is learning,
+    // omit noise
+
+  "noise_factor" : 0,
+
+ "augmentation_config" : {
+  "scale_max" : 3.0,
+ },
+
+}
