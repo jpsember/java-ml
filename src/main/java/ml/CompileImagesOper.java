@@ -215,7 +215,7 @@ public final class CompileImagesOper extends AppOper {
   // ------------------------------------------------------------------
 
   private void startLogging() {
-    lp().start(config());
+    lp().start(config(), network());
   }
 
   private void stopLogging() {

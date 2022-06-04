@@ -2,22 +2,29 @@ package ml;
 
 import gen.CompileImagesConfig;
 import gen.FloatFormat;
+import gen.NeuralNetwork;
 import gen.TensorInfo;
+import gen.Vol;
 import js.base.BaseObject;
 import js.base.DateTimeTools;
 import js.file.DirWalk;
 import js.file.Files;
+import js.graphics.ImgUtil;
+import js.graphics.ScriptUtil;
 
 import static js.base.Tools.*;
 
+import java.awt.image.BufferedImage;
 import java.io.File;
+import java.util.List;
 import java.util.Map;
 
 public class LogProcessor extends BaseObject implements Runnable {
 
-  public void start(CompileImagesConfig c) {
+  public void start(CompileImagesConfig c, NeuralNetwork network) {
     checkState(mState == 0);
     mConfig = c;
+    mNetwork = network;
     mState = 1;
     mThread = new Thread(this);
     mThread.setDaemon(true);
@@ -91,21 +98,20 @@ public class LogProcessor extends BaseObject implements Runnable {
     files().deletePeacefully(tensorFile);
   }
 
-  private Map<Integer, InfoRecord> pendingRecs = hashMap();
+  private Map<Integer, InfoRecord> mOrphanInfoRecordMap = hashMap();
 
   private void processLabelledImage(InfoRecord rec) {
-    pr("processing labelled image:", rec.inf());
+    log("processing labelled image:", rec.inf());
     int key = rec.key();
-    InfoRecord alt = pendingRecs.get(key);
+    InfoRecord alt = mOrphanInfoRecordMap.get(key);
     if (alt == null) {
       pr("...companion not found; storing in map");
-      pendingRecs.put(key, rec);
-      
-      cullPendingRecs(key);
+      mOrphanInfoRecordMap.put(key, rec);
+      cullStalePendingRecords(key);
       return;
     }
-    pr("...companion found:", alt);
-    pendingRecs.remove(key);
+    log("...companion found:", alt);
+    mOrphanInfoRecordMap.remove(key);
 
     InfoRecord imgRec;
     InfoRecord lblRec;
@@ -118,12 +124,58 @@ public class LogProcessor extends BaseObject implements Runnable {
       lblRec = rec;
       checkArgument(imgRec.labelIndex() == 0);
     }
-    todo("do something with the paired image:", imgRec.imageIndex());
+
+    Vol imgVol = NetworkUtil.determineInputImageVolume(mNetwork);
+
+    switch (mNetwork.imageDataType()) {
+    default:
+      throw notSupported("network.image_data_type", mNetwork.imageDataType());
+    case UNSIGNED_BYTE: {
+      if (imgRec.mBytes == null)
+        badArg("missing image bytes");
+      BufferedImage img = ImgUtil.bytesToBGRImage(imgRec.mBytes, VolumeUtil.spatialDimension(imgVol));
+      File baseFile = new File(targetProjectDir(), "" + imgRec.imageIndex());
+      ImgUtil.writeJPG(files(), img, Files.setExtension(baseFile, ImgUtil.EXT_JPEG), null);
+      todo("write script for image");
+    }
+      break;
+
+    }
+
   }
 
-  private void cullPendingRecs(int key) {
-    // TODO Auto-generated method stub
-    
+  private File targetProjectDir() {
+    if (mTargetProjectDir == null) {
+      mTargetProjectDir = new File("evaluation");
+      files().remakeDirs(mTargetProjectDir);
+      mTargetProjectScriptsDir = ScriptUtil.scriptDirForProject(mTargetProjectDir);
+      files().mkdirs(mTargetProjectScriptsDir);
+    }
+    return mTargetProjectDir;
+  }
+
+  private File targetProjectScriptsDir() {
+    targetProjectDir();
+    return mTargetProjectScriptsDir;
+  }
+
+  private File mTargetProjectDir;
+  private File mTargetProjectScriptsDir;
+
+  /**
+   * If for some reason there are orphaned images or labels, discard them
+   */
+  private void cullStalePendingRecords(int key) {
+    List<Integer> keysToRemove = arrayList();
+    for (int k : mOrphanInfoRecordMap.keySet()) {
+      if (k < key - 10) {
+        keysToRemove.add(k);
+      }
+    }
+    if (keysToRemove.isEmpty())
+      return;
+    alert("Removing stale pending records of size:", keysToRemove.size());
+    mOrphanInfoRecordMap.keySet().removeAll(keysToRemove);
   }
 
   private Files files() {
@@ -231,14 +283,14 @@ public class LogProcessor extends BaseObject implements Runnable {
   }
 
   private CompileImagesConfig mConfig;
+  private NeuralNetwork mNetwork;
   private int mState;
-
   private Thread mThread;
 
   private static class InfoRecord {
 
     public InfoRecord(TensorInfo tensorInfo) {
-      mTensorInfo2 = tensorInfo.build();
+      mTensorInfo = tensorInfo.build();
     }
 
     public int key() {
@@ -258,19 +310,19 @@ public class LogProcessor extends BaseObject implements Runnable {
       mFloats = floats;
     }
 
+    public TensorInfo inf() {
+      return mTensorInfo;
+    }
+
     public int imageIndex() {
-      return mTensorInfo2.imageIndex();
+      return inf().imageIndex();
     }
 
     public int labelIndex() {
-      return mTensorInfo2.labelIndex();
+      return inf().labelIndex();
     }
 
-    public TensorInfo inf() {
-      return mTensorInfo2;
-    }
-
-    final TensorInfo mTensorInfo2;
+    private final TensorInfo mTensorInfo;
     byte[] mBytes;
     float[] mFloats;
   }
