@@ -71,11 +71,11 @@ public final class NetworkUtil {
 
   public static final float LOGIT_1 = logit(1f);
 
-  @Deprecated // Rename this to logistic function
   public static float sigmoid(float value) {
-    return logistic(value);
+    return (float) ensureFinite((1 / (1 + Math.exp(-value))), value, "logistic");
   }
 
+  @Deprecated // Rename to sigmoid?   Apparently they are the same; though strictly speaking sigmoid is a *family* of such functions, one of which is logistic
   public static float logistic(float value) {
     return (float) ensureFinite((1 / (1 + Math.exp(-value))), value, "logistic");
   }
