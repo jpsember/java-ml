@@ -251,6 +251,13 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
     return boxList;
   }
 
+  @Override
+  public List<ScriptElement> transformModelOutputToScredit() {
+    List<ScriptElement> result = arrayList();
+    todo("finish this");
+    return result;
+  }
+
   // For now, make it final
   //
   private final PlotInferenceResultsConfig mParserConfig = PlotInferenceResultsConfig.DEFAULT_INSTANCE;
@@ -373,9 +380,10 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
         midPoint.y * mImageToGridScale.y - gridCell.y);
 
     if (verbose()) {
-    log("  grid cell:", mBoxGridCell);
-    log("  loc(cell):", mBoxCenterInCellSpace);
-    log("  size(img):", mBoxSizeRelativeToAnchorBox);}
+      log("  grid cell:", mBoxGridCell);
+      log("  loc(cell):", mBoxCenterInCellSpace);
+      log("  size(img):", mBoxSizeRelativeToAnchorBox);
+    }
     return true;
   }
 

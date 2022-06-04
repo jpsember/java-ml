@@ -159,6 +159,20 @@ public class LogProcessor extends BaseObject implements Runnable {
         File baseFile = new File(targetProjectDir(), String.format(setName, i));
         File imgPath = Files.setExtension(baseFile, ImgUtil.EXT_JPEG);
         ImgUtil.writeJPG(files(), img, imgPath, null);
+
+        switch (mNetwork.labelDataType()) {
+        case FLOAT32: {
+          float[] targetBuffer = mModel.labelBufferFloats();
+          float[] labelSets = lblRec.mFloats;
+          int imgLblLen = targetBuffer.length;
+          checkArgument(batchSize * imgLblLen == labelSets.length, "label size * batch != labels length");
+          System.arraycopy(labelSets, imgLblLen * i, targetBuffer, 0, imgLblLen);
+        }
+          break;
+        default:
+          throw notSupported("label data type:", mNetwork.labelDataType());
+        }
+
         Script.Builder script = Script.newBuilder();
         script.items(mModel.transformModelOutputToScredit());
         ScriptUtil.write(files(), script, ScriptUtil.scriptPathForImage(imgPath));
@@ -313,7 +327,6 @@ public class LogProcessor extends BaseObject implements Runnable {
     }
 
     public void setData(byte[] bytes) {
-      pr("storing byte array of length:", bytes.length);
       mBytes = bytes;
     }
 
