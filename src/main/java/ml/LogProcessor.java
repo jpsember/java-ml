@@ -9,6 +9,7 @@ import js.base.BaseObject;
 import js.base.DateTimeTools;
 import js.file.DirWalk;
 import js.file.Files;
+import js.geometry.IPoint;
 import js.graphics.ImgUtil;
 import js.graphics.ScriptUtil;
 
@@ -16,6 +17,7 @@ import static js.base.Tools.*;
 
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -25,10 +27,19 @@ public class LogProcessor extends BaseObject implements Runnable {
     checkState(mState == 0);
     mConfig = c;
     mNetwork = network;
+    determineImageAndLabelInfo();
     mState = 1;
     mThread = new Thread(this);
     mThread.setDaemon(true);
     mThread.start();
+  }
+
+  private Vol mImageVolume;
+  private IPoint mImageSize;
+
+  private void determineImageAndLabelInfo() {
+    mImageVolume = NetworkUtil.determineInputImageVolume(mNetwork);
+    mImageSize = VolumeUtil.spatialDimension(mImageVolume);
   }
 
   public void stop() {
@@ -133,10 +144,29 @@ public class LogProcessor extends BaseObject implements Runnable {
     case UNSIGNED_BYTE: {
       if (imgRec.mBytes == null)
         badArg("missing image bytes");
-      BufferedImage img = ImgUtil.bytesToBGRImage(imgRec.mBytes, VolumeUtil.spatialDimension(imgVol));
-      File baseFile = new File(targetProjectDir(), "" + imgRec.imageIndex());
-      ImgUtil.writeJPG(files(), img, Files.setExtension(baseFile, ImgUtil.EXT_JPEG), null);
-      todo("write script for image");
+
+      int imgLength = imgRec.mBytes.length;
+      pr("imgLength", imgLength);
+      pr("imageSize", mImageSize);
+      pr("imageVolume", mImageVolume);
+
+      // We have a stacked batch of images.
+      int bytesPerImage = mImageSize.product() * mImageVolume.depth();
+
+      int batchSize = imgLength / bytesPerImage;
+      pr("bytesPerImage", bytesPerImage);
+      pr("batchSize", batchSize);
+      pr("remainder", imgLength % bytesPerImage);
+      checkArgument(imgLength % bytesPerImage == 0, "images length", imgLength,
+          "is not a multiple of image volume", bytesPerImage);
+      String setName = "" + imgRec.imageIndex() + "_%02d";
+      for (int i = 0; i < batchSize; i++) {
+        byte[] imgb = Arrays.copyOfRange(imgRec.mBytes, bytesPerImage * i, bytesPerImage * (i + 1));
+        BufferedImage img = ImgUtil.bytesToBGRImage(imgb, VolumeUtil.spatialDimension(imgVol));
+        File baseFile = new File(targetProjectDir(), String.format(setName, i));
+        ImgUtil.writeJPG(files(), img, Files.setExtension(baseFile, ImgUtil.EXT_JPEG), null);
+        todo("write script for image");
+      }
     }
       break;
 
@@ -146,7 +176,7 @@ public class LogProcessor extends BaseObject implements Runnable {
 
   private File targetProjectDir() {
     if (mTargetProjectDir == null) {
-      mTargetProjectDir = new File("evaluation");
+      mTargetProjectDir = new File("snapshot");
       files().remakeDirs(mTargetProjectDir);
       mTargetProjectScriptsDir = ScriptUtil.scriptDirForProject(mTargetProjectDir);
       files().mkdirs(mTargetProjectScriptsDir);
@@ -154,7 +184,7 @@ public class LogProcessor extends BaseObject implements Runnable {
     return mTargetProjectDir;
   }
 
-  private File targetProjectScriptsDir() {
+  /* private */ File targetProjectScriptsDir() {
     targetProjectDir();
     return mTargetProjectScriptsDir;
   }
@@ -302,8 +332,8 @@ public class LogProcessor extends BaseObject implements Runnable {
     }
 
     public void setData(byte[] bytes) {
+      pr("storing byte array of length:", bytes.length);
       mBytes = bytes;
-
     }
 
     public void setData(float[] floats) {
