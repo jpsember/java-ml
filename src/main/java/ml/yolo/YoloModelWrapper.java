@@ -251,123 +251,48 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
   @Override
   public List<ScriptElement> transformModelOutputToScredit() {
 
-    float maxObj = -1000;
-
     // Transform the labels within the buffer to be in the format that the model inputs are in.
     // Then we can call the same code as transformModelInputToScredit().
-    //
 
     Yolo yolo = modelConfig();
-    float[] f = labelBufferFloats();
-    float[] f2 = new float[f.length];
+    float[] inp = labelBufferFloats();
+    float[] out = new float[inp.length];
 
-    //    float confidencePct = mParserConfig.confidencePct();
-
-    final int anchorBoxCount = numAnchorBoxes();
     final int fieldsPerBox = YoloUtil.valuesPerAnchorBox(yolo);
-    //    final float objectnessMinForResult = confidencePct / 100f;
     final int categoryCount = yolo.categoryCount();
 
-    // Determine the threshold objectness value, as it appears before the sigmoid function is applied
-    // float objectnessLogitThreshold = NetworkUtil.logit(objectnessMinForResult);
+    int gridSize = mGridSize.product();
+    int labelCount = gridSize * YoloUtil.anchorBoxCount(yolo);
 
     int fieldSetIndex = 0;
-    for (int cellY = 0; cellY < mGridSize.y; cellY++) {
-      for (int cellX = 0; cellX < mGridSize.x; cellX++) {
-        for (int anchorBox = 0; anchorBox < anchorBoxCount; anchorBox++, fieldSetIndex += fieldsPerBox) {
-          float objectness = NetworkUtil.sigmoid(f[fieldSetIndex + F_CONFIDENCE]);
-          f2[fieldSetIndex + F_CONFIDENCE] = objectness;
+    for (int labelIndex = 0; labelIndex < labelCount; labelIndex++, fieldSetIndex += fieldsPerBox) {
+      float objectness = NetworkUtil.sigmoid(inp[fieldSetIndex + F_CONFIDENCE]);
+      out[fieldSetIndex + F_CONFIDENCE] = objectness;
 
-          {
-            int k = fieldSetIndex + F_BOX_XYWH;
-            float bx = NetworkUtil.sigmoid(f[k + 0]);
-            float by = NetworkUtil.sigmoid(f[k + 1]);
-            float ws = NetworkUtil.exp(f[k + 2]);
-            float hs = NetworkUtil.exp(f[k + 3]);
+      {
+        int k = fieldSetIndex + F_BOX_XYWH;
+        float bx = NetworkUtil.sigmoid(inp[k + 0]);
+        float by = NetworkUtil.sigmoid(inp[k + 1]);
+        float ws = NetworkUtil.exp(inp[k + 2]);
+        float hs = NetworkUtil.exp(inp[k + 3]);
 
-            f2[k + 0] = bx;
-            f2[k + 1] = by;
-            f2[k + 2] = ws;
-            f2[k + 3] = hs;
+        out[k + 0] = bx;
+        out[k + 1] = by;
+        out[k + 2] = ws;
+        out[k + 3] = hs;
+      }
 
-            if (false) {
-              if (objectness > maxObj) {
-                maxObj = objectness;
-                pr("objectness:", objectness, "bx:", bx, "by:", by, "ws:", ws, "hs:", hs);
-              }
-            }
-          }
-
-          //          
-          //          if (objectnessLogit < objectnessLogitThreshold)
-          //            continue;
-          //          float objectnessConfidence = NetworkUtil.sigmoid(objectnessLogit);
-          //
-          //          IPoint anchorBoxPixels = yolo.anchorBoxesPixels().get(anchorBox);
-          //          float anchorBoxWidth = anchorBoxPixels.x;
-          //          float anchorBoxHeight = anchorBoxPixels.y;
-          //
-          //          int bestCategory = 0;
-          //          if (categoryCount > 1) 
-          {
-            // float bestConf = -1;
-            int k = fieldSetIndex + F_CLASS_PROBABILITIES;
-            for (int category = 0; category < categoryCount; category++) {
-              float confLogit = f[k + category];
-              f2[k + category] = NetworkUtil.sigmoid(confLogit);
-              //              
-              //              if (category == 0 || bestConf < confLogit) {
-              //                bestCategory = category;
-              //                bestConf = confLogit;
-              //              }
-            }
-          }
-
-          //          int k = fieldSetIndex + F_BOX_XYWH;
-          //          float bx = NetworkUtil.sigmoid(f[k + 0]);
-          //          float by = NetworkUtil.sigmoid(f[k + 1]);
-          //          float ws = NetworkUtil.sigmoid(f[k + 2]);
-          //          float hs = NetworkUtil.sigmoid(f[k + 3]);
-          //
-          //          float bw = anchorBoxWidth * ws;
-          //          float bh = anchorBoxHeight * hs;
-          //
-          //          float midpointX = (bx + cellX) * mGridToImageScale.x;
-          //          float midpointY = (by + cellY) * mGridToImageScale.y;
-          //
-          //          IRect boxRect = new FRect(midpointX - bw / 2, midpointY - bh / 2, bw, bh).toIRect();
-          //          // I think we want to use the 'objectness' confidence, without incorporating the best category's confidence in any way
-          //          ElementProperties.Builder prop = ElementProperties.newBuilder();
-          //          prop.category(bestCategory);
-          //          prop.confidence(MyMath.parameterToPercentage(objectnessConfidence));
-          //          RectElement boxObj = new RectElement(prop, boxRect);
-          //          boxList.add(boxObj);
+      {
+        int k = fieldSetIndex + F_CLASS_PROBABILITIES;
+        for (int category = 0; category < categoryCount; category++) {
+          float confLogit = inp[k + category];
+          out[k + category] = NetworkUtil.sigmoid(confLogit);
         }
       }
     }
-
     // Copy the transformed values back to the label buffer
-    System.arraycopy(f2, 0, f, 0, f.length);
-
+    System.arraycopy(out, 0, inp, 0, inp.length);
     return transformModelInputToScredit();
-    //    
-    //    
-    //    if (verbose()) {
-    //      if (boxList.isEmpty())
-    //        pr("*** No boxes detected");
-    //      else {
-    //        pr("Valid anchor boxes:", boxList.size());
-    //        pr("Highest conf:", highestObjectnessSeen * 100);
-    //      }
-    //    }
-    //
-    //    if (mParserConfig.maxIOverU() > 0)
-    //      boxList = YoloUtil.performNonMaximumSuppression(boxList, mParserConfig.maxIOverU());
-    //    return boxList;
-    //
-    //    List<ScriptElement> result = arrayList();
-    //
-    //    return result;
   }
 
   // For now, make it final
