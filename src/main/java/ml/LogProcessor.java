@@ -11,6 +11,7 @@ import js.file.Files;
 import static js.base.Tools.*;
 
 import java.io.File;
+import java.util.Map;
 
 public class LogProcessor extends BaseObject implements Runnable {
 
@@ -53,19 +54,76 @@ public class LogProcessor extends BaseObject implements Runnable {
       pr("...logger, no corresponding tensor file found:", tensorFile.getName());
     } else {
       TensorInfo ti = Files.parseAbstractData(TensorInfo.DEFAULT_INSTANCE, infoFile);
+      InfoRecord rec = new InfoRecord(ti);
       switch (ti.dataType()) {
       case FLOAT32: {
         float[] t = Files.readFloatsLittleEndian(tensorFile, "tensorFile");
-        String s = formatTensor(ti, t);
-        pr(s);
+        rec.setData(t);
+        if (ti.imageIndex() > 0) {
+          todo("do something with indexed image");
+          pr(ti);
+          break;
+        }
+        if (ti.labelIndex() > 0) {
+          todo("do something with indexed image/label");
+          pr(ti);
+          break;
+        }
       }
         break;
+      case UNSIGNED_BYTE:
+        rec.setData(Files.toByteArray(tensorFile, "tensorFile"));
+        break;
       default:
-        throw notSupported("Unsupported datatype:", ti);
+        throw notSupported(ti);
       }
+
+      if (ti.imageIndex() > 0 || ti.labelIndex() > 0) {
+        processLabelledImage(rec);
+      } else {
+        checkArgument(rec.mFloats != null, "no floats found");
+        String s = formatTensor(ti, rec.mFloats);
+        pr(s);
+      }
+
     }
     files().deletePeacefully(infoFile);
     files().deletePeacefully(tensorFile);
+  }
+
+  private Map<Integer, InfoRecord> pendingRecs = hashMap();
+
+  private void processLabelledImage(InfoRecord rec) {
+    pr("processing labelled image:", rec.inf());
+    int key = rec.key();
+    InfoRecord alt = pendingRecs.get(key);
+    if (alt == null) {
+      pr("...companion not found; storing in map");
+      pendingRecs.put(key, rec);
+      
+      cullPendingRecs(key);
+      return;
+    }
+    pr("...companion found:", alt);
+    pendingRecs.remove(key);
+
+    InfoRecord imgRec;
+    InfoRecord lblRec;
+    if (rec.imageIndex() != 0) {
+      imgRec = rec;
+      lblRec = alt;
+      checkArgument(lblRec.imageIndex() == 0);
+    } else {
+      imgRec = alt;
+      lblRec = rec;
+      checkArgument(imgRec.labelIndex() == 0);
+    }
+    todo("do something with the paired image:", imgRec.imageIndex());
+  }
+
+  private void cullPendingRecs(int key) {
+    // TODO Auto-generated method stub
+    
   }
 
   private Files files() {
@@ -77,6 +135,7 @@ public class LogProcessor extends BaseObject implements Runnable {
   }
 
   private String formatTensor(TensorInfo ti, float[] t) {
+    todo("refactor to accept InfoRecord instead of ti");
 
     String effName = ti.name();
     String suffix = "";
@@ -175,4 +234,44 @@ public class LogProcessor extends BaseObject implements Runnable {
   private int mState;
 
   private Thread mThread;
+
+  private static class InfoRecord {
+
+    public InfoRecord(TensorInfo tensorInfo) {
+      mTensorInfo2 = tensorInfo.build();
+    }
+
+    public int key() {
+      int k1 = imageIndex();
+      int k2 = labelIndex();
+      int key = k1 ^ k2;
+      checkArgument((k1 == 0 || k2 == 0) && key != 0);
+      return key;
+    }
+
+    public void setData(byte[] bytes) {
+      mBytes = bytes;
+
+    }
+
+    public void setData(float[] floats) {
+      mFloats = floats;
+    }
+
+    public int imageIndex() {
+      return mTensorInfo2.imageIndex();
+    }
+
+    public int labelIndex() {
+      return mTensorInfo2.labelIndex();
+    }
+
+    public TensorInfo inf() {
+      return mTensorInfo2;
+    }
+
+    final TensorInfo mTensorInfo2;
+    byte[] mBytes;
+    float[] mFloats;
+  }
 }

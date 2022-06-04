@@ -9,4 +9,11 @@ fields {
   DataType data_type;
 
   *int shape;
+
+  // If > 0, image of a labelled image pair
+  int image_index;
+
+  // If > 0, index of a labelled image pair
+  //
+  int label_index;
 }

@@ -15,9 +15,14 @@ class TensorLogger:
     pass
 
 
-  def add(self, tensor:torch.Tensor, name:str):
-    ti = TensorInfo.new_builder()
-    ti.name = name
+  def add(self, tensor:torch.Tensor, name_or_info): #name:str, ti:TensorInfo = None):
+    ti:TensorInfoBuilder
+    if isinstance(name_or_info, str):
+      nm:str = name_or_info
+      ti = TensorInfo.new_builder()
+      ti.set_name(nm)
+    else:
+      ti = name_or_info.to_builder()
     dt = tensor.dtype
     if dt == torch.float32:
       ti.data_type = DataType.FLOAT32

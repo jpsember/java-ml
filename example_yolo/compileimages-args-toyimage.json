@@ -9,7 +9,7 @@
              "shear_disable" : true,
              "scale_disable" : true,
              "rotate_disable" : true,
-             "translate_disable" : true,
+             //"translate_disable" : true,
              "blur_factor" : -1,
            },
 

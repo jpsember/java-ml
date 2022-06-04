@@ -1,17 +1,17 @@
 {
       "network_path" : "network.json",
         "categories" : "A",
-       "image_total" :  32,   // Make this the same as the batch size, so a single batch covers it
+       "image_total" :  512,
 
   "noise_factor" : 0,
   "color_limit" : 1,
-  "font_limit" : 1,
+  //"font_limit" : 1,
 
  "augmentation_config" : {
-      "scale_max" : 3.0,
-      "scale_min" : 3.0,  // Don't do any scaling
+      "scale_max" : 2.2,
+      "scale_min" : 1.8,
       "rotate_disable" : true,  // or rotating
-      "translate_ratio_max" : 0, // no translation
+      "translate_ratio_max" : 0.2,
  },
 
 }

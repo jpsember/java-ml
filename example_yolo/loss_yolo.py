@@ -10,9 +10,9 @@ from .yolo_util import *
 
 class YoloLoss(nn.Module):
 
-  def __init__(self, network: NeuralNetwork, yolo:Yolo):
+  def __init__(self, network: NeuralNetwork, logger:TensorLogger, yolo:Yolo):
     super(YoloLoss, self).__init__()
-    self.logger = TensorLogger()
+    self.logger = logger
     self.network = network
     self.yolo = yolo
     self.num_anchors = anchor_box_count(yolo)

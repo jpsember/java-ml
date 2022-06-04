@@ -9,12 +9,15 @@ from gen.train_set import *
 from gen.data_type import *
 from gen.compile_images_config import *
 from gen.train_param import *
+from gen.tensor_info import *
 from pycore.stats import Stats
+from pycore.tensor_logger import TensorLogger
 
 
 class JsTrain:
 
   def __init__(self, train_script_file):
+    self.logger = TensorLogger()
     self.signature = None
     self.verbose = False
     self.device = None
@@ -48,14 +51,7 @@ class JsTrain:
     self.train_images = None
     self.batch_size = None
     self.batch_total = None
-
-    if True:
-      self.checkpoint_dir = "checkpoints"
-    else:
-      # Since adding subproject variants, we can't assume this is the configuration filename
-      t = self.proj_path("compileimages-args.json")
-      config:CompileImagesConfig = read_object(CompileImagesConfig.default_instance, t)
-      self.checkpoint_dir = config.target_dir_checkpoint
+    self.checkpoint_dir = "checkpoints"
 
     train_set_count = self.train_config.max_train_sets - 1  # Service tries to provide one more than needed
     check_state(train_set_count > 1)
@@ -72,6 +68,9 @@ class JsTrain:
     self.timeout_length = None
     self.start_time = time_ms()
     self.prev_batch_time = None
+    self.recent_image_array = None
+    self.recent_labels_array = None
+    self.image_index = 0
 
 
   def add_timeout(self, max_seconds=60):
@@ -262,10 +261,12 @@ class JsTrain:
     if dt == DataType.FLOAT32:
       floats_per_image = self.train_info.image_length_bytes // BYTES_PER_FLOAT
       images = read_floats(images_path, floats_per_image * img_index, floats_per_image, img_count)
+      self.recent_image_array = images
     elif dt == DataType.UNSIGNED_BYTE:
       bytes_per_image = self.train_info.image_length_bytes
-      images = read_bytes(images_path, bytes_per_image * img_index, bytes_per_image, img_count,
-                          convert_to_float=True)
+      images = read_bytes(images_path, bytes_per_image * img_index, bytes_per_image, img_count)
+      self.recent_image_array = images
+      images = convert_bytes_to_floats(images)
     else:
       die("Unsupported image data type:", dt)
     # Convert the numpy array to a pytorch tensor
@@ -275,7 +276,8 @@ class JsTrain:
     dt = self.network.label_data_type
     if dt == DataType.UNSIGNED_BYTE:
       record_size = self.train_info.label_length_bytes
-      labels = read_bytes(labels_path, img_index * record_size, record_size, img_count, convert_to_float=False)
+      labels = read_bytes(labels_path, img_index * record_size, record_size, img_count)
+      self.recent_labels_array = labels
       labels = labels.reshape(img_count)
       labels = torch.from_numpy(labels)
       labels = labels.long()
@@ -283,6 +285,7 @@ class JsTrain:
       record_size_floats = self.train_info.label_length_bytes // BYTES_PER_FLOAT
       labels = read_floats(path=labels_path, offset_in_floats=img_index * record_size_floats,
                   record_size_in_floats=record_size_floats, record_count=img_count)
+      self.recent_labels_array = labels
       labels = torch.from_numpy(labels)
     else:
       die("Unsupported label data type:", dt)
@@ -403,6 +406,10 @@ class JsTrain:
       if self.stop_signal_received():
         done_msg = "Stop signal received"
 
+      if warning("temporary"):
+        if self.epoch_number % 4 == 0:
+          self.send_inference_result()
+
       current_time = time_ms()
       if not self.checkpoint_last_time_ms:
         self.checkpoint_interval_ms = 30000
@@ -411,6 +418,7 @@ class JsTrain:
       ms_until_save = (self.checkpoint_last_time_ms + self.checkpoint_interval_ms) - current_time
       if ms_until_save <= 0:
         self.save_checkpoint()
+        self.send_inference_result()
 
       if self.update_timeout():
         done_msg = "Timeout expired"
@@ -418,6 +426,31 @@ class JsTrain:
       if done_msg:
         self.save_checkpoint()
         self.quit_session(done_msg)
+
+
+  # Send image input, labelled output to streaming service
+  #
+  def send_inference_result(self):
+    self.image_index += 1
+    ind = self.image_index
+
+    t = TensorInfo.new_builder()
+    t.name = "image"
+    t.image_index = ind
+    tens = self.ndarray_to_tensor(self.recent_image_array, t)
+    self.logger.add(tens, t)
+
+    t = TensorInfo.new_builder()
+    t.name = "labels"
+    t.label_index = ind
+    tens = self.ndarray_to_tensor(self.recent_labels_array, t)
+    self.logger.add(tens, t)
+
+
+  def ndarray_to_tensor(self, ndarr, ti:TensorInfoBuilder):
+    tens =  torch.from_numpy(ndarr)
+    return tens
+
 
 
   def update_timeout(self)->bool:
