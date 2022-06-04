@@ -431,18 +431,20 @@ class JsTrain:
   # Send image input, labelled output to streaming service
   #
   def send_inference_result(self):
-    self.image_index += 1
-    ind = self.image_index
+    # Use the epoch number as the image index
+    img_index = self.epoch_number
+    check_state(img_index > self.image_index,"epoch:",img_index,"<= prev",self.image_index)
+    self.image_index = img_index
 
     t = TensorInfo.new_builder()
     t.name = "image"
-    t.image_index = ind
+    t.image_index = img_index
     tens = self.ndarray_to_tensor(self.recent_image_array, t)
     self.logger.add(tens, t)
 
     t = TensorInfo.new_builder()
     t.name = "labels"
-    t.label_index = ind
+    t.label_index = img_index
     tens = self.ndarray_to_tensor(self.recent_labels_array, t)
     self.logger.add(tens, t)
 

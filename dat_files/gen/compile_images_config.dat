@@ -31,4 +31,7 @@ fields {
 
   TrainParam train_param;
 
+  // If nonempty, snapshot image/labels are stored here
+  //
+  File snapshot_dir;
 }

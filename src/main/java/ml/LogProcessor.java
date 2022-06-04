@@ -79,16 +79,6 @@ public class LogProcessor extends BaseObject implements Runnable {
       case FLOAT32: {
         float[] t = Files.readFloatsLittleEndian(tensorFile, "tensorFile");
         rec.setData(t);
-        if (ti.imageIndex() > 0) {
-          todo("do something with indexed image");
-          pr(ti);
-          break;
-        }
-        if (ti.labelIndex() > 0) {
-          todo("do something with indexed image/label");
-          pr(ti);
-          break;
-        }
       }
         break;
       case UNSIGNED_BYTE:
@@ -112,6 +102,9 @@ public class LogProcessor extends BaseObject implements Runnable {
   }
 
   private void processLabelledImage(InfoRecord rec) {
+    if (Files.empty(config().snapshotDir()))
+      return;
+
     log("processing labelled image:", rec.inf());
     int key = rec.key();
     InfoRecord alt = mOrphanInfoRecordMap.get(key);
@@ -184,7 +177,9 @@ public class LogProcessor extends BaseObject implements Runnable {
 
   private File targetProjectDir() {
     if (mTargetProjectDir == null) {
-      mTargetProjectDir = new File("snapshot");
+      mTargetProjectDir = config().snapshotDir();
+      checkArgument(Files.basename(mTargetProjectDir).contains("snapshot"),
+          "for safety, must contain word 'snapshot'");
       files().remakeDirs(mTargetProjectDir);
       mTargetProjectScriptsDir = ScriptUtil.scriptDirForProject(mTargetProjectDir);
       files().mkdirs(mTargetProjectScriptsDir);

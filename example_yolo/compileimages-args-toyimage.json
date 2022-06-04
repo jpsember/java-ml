@@ -17,5 +17,5 @@
              "test_size" : 0,      // Get rid of test, to keep logging simple
       },
 
-
+        "snapshot_dir" : "snapshot",
 }
