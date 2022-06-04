@@ -199,6 +199,13 @@ public abstract class ModelWrapper<T extends AbstractData> extends BaseObject {
     throw modelNotSupported("transformModelInputToScredit");
   }
 
+
+  /**
+   * Transform labels from their form as produced by the model back to ScriptElements
+   */
+  public List<ScriptElement> transformModelOutputToScredit() {
+    throw modelNotSupported("transformModelOutputToScredit");
+  }
   /**
    * Get ImageSetInfo builder, constructing if necessary
    */

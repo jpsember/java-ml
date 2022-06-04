@@ -13,7 +13,6 @@ import java.util.Random;
 import gen.AugmentationConfig;
 import gen.CompileImagesConfig;
 import gen.DataType;
-import gen.NeuralNetwork;
 import gen.TransformWrapper;
 import js.base.BaseObject;
 import js.file.DirWalk;
@@ -34,15 +33,15 @@ import ml.ModelWrapper;
  */
 public final class ImageCompiler extends BaseObject {
 
-  public ImageCompiler(CompileImagesConfig config, NeuralNetwork network, Files files) {
-    mConfig = nullTo(config, CompileImagesConfig.DEFAULT_INSTANCE).build();
+  public ImageCompiler(CompileImagesConfig config, ModelWrapper model,   Files files) {
+    mModel = model;
+     mConfig = nullTo(config, CompileImagesConfig.DEFAULT_INSTANCE).build();
     mFiles = nullTo(files, Files.S);
     int seed = config().seed();
     if (seed <= 0)
       seed = 1965;
     mRandom = new Random(seed);
-    mModel = ModelWrapper.constructFor(network, null);
-  }
+   }
 
   public void setInspector(Inspector inspector) {
     mInspector = Inspector.orNull(inspector);

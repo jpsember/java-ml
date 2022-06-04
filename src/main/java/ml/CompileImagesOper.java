@@ -55,7 +55,7 @@ public final class CompileImagesOper extends AppOper {
     }
 
     writeModelData();
-    ImageCompiler imageCompiler = new ImageCompiler(config(), network(), files());
+    ImageCompiler imageCompiler = new ImageCompiler(config(), model(), files());
     Inspector insp = Inspector.build(config().inspectionDir());
     imageCompiler.setInspector(insp);
 
@@ -80,6 +80,13 @@ public final class CompileImagesOper extends AppOper {
     files().remakeDirs(modelDataDir);
     files().writePretty(new File(modelDataDir, "network.json"), network());
     files().writePretty(new File(modelDataDir, "train_param.json"), trainParam());
+  }
+
+  private ModelWrapper model() {
+    if (mModel == null) {
+      mModel = ModelWrapper.constructFor(network(), null);
+    }
+    return mModel;
   }
 
   private NeuralNetwork network() {
@@ -215,7 +222,7 @@ public final class CompileImagesOper extends AppOper {
   // ------------------------------------------------------------------
 
   private void startLogging() {
-    lp().start(config(), network());
+    lp().start(config(), model());
   }
 
   private void stopLogging() {
@@ -229,7 +236,7 @@ public final class CompileImagesOper extends AppOper {
   }
 
   private LogProcessor mLogProcessor;
-  
+
   // ------------------------------------------------------------------
   // Signature file, a signal sent by client to stop service
   // ------------------------------------------------------------------
@@ -357,4 +364,6 @@ public final class CompileImagesOper extends AppOper {
   private float mAvgGeneratedTimeSec = -1;
   private int mAvgReportedCounter;
   private NeuralNetwork mCompiledNetwork;
+  private ModelWrapper mModel;
+
 }

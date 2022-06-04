@@ -12,6 +12,7 @@ import js.file.Files;
 import js.geometry.IPoint;
 import js.graphics.ImgUtil;
 import js.graphics.ScriptUtil;
+import js.graphics.gen.Script;
 
 import static js.base.Tools.*;
 
@@ -23,10 +24,11 @@ import java.util.Map;
 
 public class LogProcessor extends BaseObject implements Runnable {
 
-  public void start(CompileImagesConfig c, NeuralNetwork network) {
+  public void start(CompileImagesConfig c, ModelWrapper model) {
     checkState(mState == 0);
     mConfig = c;
-    mNetwork = network;
+    mModel = model;
+    mNetwork = model.network();
     determineImageAndLabelInfo();
     mState = 1;
     mThread = new Thread(this);
@@ -109,14 +111,12 @@ public class LogProcessor extends BaseObject implements Runnable {
     files().deletePeacefully(tensorFile);
   }
 
-  private Map<Integer, InfoRecord> mOrphanInfoRecordMap = hashMap();
-
   private void processLabelledImage(InfoRecord rec) {
     log("processing labelled image:", rec.inf());
     int key = rec.key();
     InfoRecord alt = mOrphanInfoRecordMap.get(key);
     if (alt == null) {
-      pr("...companion not found; storing in map");
+      log("...companion not found; storing in map");
       mOrphanInfoRecordMap.put(key, rec);
       cullStalePendingRecords(key);
       return;
@@ -144,19 +144,12 @@ public class LogProcessor extends BaseObject implements Runnable {
     case UNSIGNED_BYTE: {
       if (imgRec.mBytes == null)
         badArg("missing image bytes");
-
       int imgLength = imgRec.mBytes.length;
-      pr("imgLength", imgLength);
-      pr("imageSize", mImageSize);
-      pr("imageVolume", mImageVolume);
 
       // We have a stacked batch of images.
       int bytesPerImage = mImageSize.product() * mImageVolume.depth();
 
       int batchSize = imgLength / bytesPerImage;
-      pr("bytesPerImage", bytesPerImage);
-      pr("batchSize", batchSize);
-      pr("remainder", imgLength % bytesPerImage);
       checkArgument(imgLength % bytesPerImage == 0, "images length", imgLength,
           "is not a multiple of image volume", bytesPerImage);
       String setName = "" + imgRec.imageIndex() + "_%02d";
@@ -164,14 +157,15 @@ public class LogProcessor extends BaseObject implements Runnable {
         byte[] imgb = Arrays.copyOfRange(imgRec.mBytes, bytesPerImage * i, bytesPerImage * (i + 1));
         BufferedImage img = ImgUtil.bytesToBGRImage(imgb, VolumeUtil.spatialDimension(imgVol));
         File baseFile = new File(targetProjectDir(), String.format(setName, i));
-        ImgUtil.writeJPG(files(), img, Files.setExtension(baseFile, ImgUtil.EXT_JPEG), null);
-        todo("write script for image");
+        File imgPath = Files.setExtension(baseFile, ImgUtil.EXT_JPEG);
+        ImgUtil.writeJPG(files(), img, imgPath, null);
+        Script.Builder script = Script.newBuilder();
+        script.items(mModel.transformModelOutputToScredit());
+        ScriptUtil.write(files(), script, ScriptUtil.scriptPathForImage(imgPath));
       }
     }
       break;
-
     }
-
   }
 
   private File targetProjectDir() {
@@ -183,14 +177,6 @@ public class LogProcessor extends BaseObject implements Runnable {
     }
     return mTargetProjectDir;
   }
-
-  /* private */ File targetProjectScriptsDir() {
-    targetProjectDir();
-    return mTargetProjectScriptsDir;
-  }
-
-  private File mTargetProjectDir;
-  private File mTargetProjectScriptsDir;
 
   /**
    * If for some reason there are orphaned images or labels, discard them
@@ -312,11 +298,6 @@ public class LogProcessor extends BaseObject implements Runnable {
     return String.format(format.formatStr(), value);
   }
 
-  private CompileImagesConfig mConfig;
-  private NeuralNetwork mNetwork;
-  private int mState;
-  private Thread mThread;
-
   private static class InfoRecord {
 
     public InfoRecord(TensorInfo tensorInfo) {
@@ -356,4 +337,15 @@ public class LogProcessor extends BaseObject implements Runnable {
     byte[] mBytes;
     float[] mFloats;
   }
+
+  private CompileImagesConfig mConfig;
+  private ModelWrapper mModel;
+  private NeuralNetwork mNetwork;
+  private int mState;
+  private Thread mThread;
+
+  private Map<Integer, InfoRecord> mOrphanInfoRecordMap = hashMap();
+  private File mTargetProjectDir;
+  private File mTargetProjectScriptsDir;
+
 }
