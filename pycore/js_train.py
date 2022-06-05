@@ -69,7 +69,7 @@ class JsTrain:
     self.start_time = time_ms()
     self.prev_batch_time = None
     self.recent_image_array = None
-    self.recent_labels_array = None
+    self.recent_model_output = None
     self.image_index = 0
 
 
@@ -277,7 +277,6 @@ class JsTrain:
     if dt == DataType.UNSIGNED_BYTE:
       record_size = self.train_info.label_length_bytes
       labels = read_bytes(labels_path, img_index * record_size, record_size, img_count)
-      self.recent_labels_array = labels
       labels = labels.reshape(img_count)
       labels = torch.from_numpy(labels)
       labels = labels.long()
@@ -285,7 +284,6 @@ class JsTrain:
       record_size_floats = self.train_info.label_length_bytes // BYTES_PER_FLOAT
       labels = read_floats(path=labels_path, offset_in_floats=img_index * record_size_floats,
                   record_size_in_floats=record_size_floats, record_count=img_count)
-      self.recent_labels_array = labels
       labels = torch.from_numpy(labels)
     else:
       die("Unsupported label data type:", dt)
@@ -314,6 +312,8 @@ class JsTrain:
 
       # Compute prediction error
       pred = self.model(tensor_images)
+      # Save this model output in case we want to take a snapshot later
+      self.recent_model_output = pred
 
       # See: https://pytorch.org/docs/stable/generated/torch.nn.CrossEntropyLoss.html
       loss = self.loss_fn(pred, tensor_labels)
@@ -406,8 +406,9 @@ class JsTrain:
       if self.stop_signal_received():
         done_msg = "Stop signal received"
 
-      if False and warning("temporary"):
-        if self.epoch_number % 4 == 0:
+      if True and warning("temporary"):
+        if self.epoch_number % 20 == 0:
+          pr("Saving model inference snapshot")
           self.send_inference_result()
 
       current_time = time_ms()
@@ -447,10 +448,7 @@ class JsTrain:
     t = TensorInfo.new_builder()
     t.name = "labels"
     t.label_index = img_index
-    tens = self.ndarray_to_tensor(self.recent_labels_array, t)
-    # !!!!!!!!!!!! The labels have already had the appropriate sigmoid and whatnot applied....
-    show("recent_labels", tens)
-    die()
+    tens = self.recent_model_output
     self.logger.add(tens, t)
 
 
