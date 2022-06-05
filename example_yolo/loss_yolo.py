@@ -30,7 +30,6 @@ class YoloLoss(nn.Module):
     for box_pixels in yolo.anchor_boxes_pixels:
       c.append((box_pixels.x * b_x, box_pixels.y * b_y))
     anchors = torch.Tensor(c)
-    #self.logger.add(anchors, "anchor_boxes (normalized to grid cell)")
     return anchors
 
 
@@ -61,78 +60,57 @@ class YoloLoss(nn.Module):
     # This produces a mask value which we apply to the xy and wh loss.
     coord_mask = true_confidence[..., None]
 
-    class_prob_end = F_CLASS_PROBABILITIES + y.category_count
-    true_class_probabilities = target[:, :, :, F_CLASS_PROBABILITIES:class_prob_end]
-
     # We could have stored the true class number as an index, instead of a one-hot vector;
     # but the symmetry of the structure of the true vs inferred data keeps things simple.
-
-    # Get the number of ground truth boxes in the batch, as a float, and to avoid divide by zero, assume at least one
     #
-    num_true_boxes = float(max(1, true_confidence.count_nonzero()))
-
-    just_confidence_logits = current[:, :, :, F_CONFIDENCE]
+    class_prob_end = F_CLASS_PROBABILITIES + y.category_count
+    true_class_probabilities = target[:, :, :, F_CLASS_PROBABILITIES:class_prob_end]
 
     # Determine predicted box's x,y
     #
     # We need to map (-inf...+inf) to (0...1); hence apply sigmoid function
     #
     pred_xy = torch.sigmoid(current[:, :, :, F_BOX_X:F_BOX_Y+1]) * coord_mask
-    self.log_tensor(".pred_xy")
+    #self.log_tensor("pred_xy")
 
     # Determine each predicted box's w,h
     #
     # We need to map (-inf...+inf) to (0..+inf); hence apply the exp function
     #
     pred_wh_inf = current[:, :, :, F_BOX_W:F_BOX_H+1]
-    self.log_tensor(".pred_wh_inf")
+    #self.log_tensor("pred_wh_inf")
     pred_wh = torch.exp(pred_wh_inf) * coord_mask
-    self.log_tensor(".pred_wh")
+    #self.log_tensor("pred_wh")
 
     # Determine each predicted box's confidence score.
     # We need to map (-inf...+inf) to (0..1); hence apply sigmoid function
     #
-    predicted_confidence = torch.sigmoid(just_confidence_logits)
+    pred_objectness = torch.sigmoid(current[:, :, :, F_CONFIDENCE])
+    todo("F_CONFIDENCE is misnamed?  Maybe F_OBJECTNESS?")
 
     # Determine each predicted box's set of conditional class probabilities.
     #
     predicted_box_class_logits = current[:,:,:,F_CLASS_PROBABILITIES:class_prob_end]
-
-    if False:
-      show_shape("coord_mask")
-      show_shape("true_confidence")
-      show_shape("true_xy")
-      show_shape("pred_xy")
-
-    x = (true_xy - pred_xy).square()
-    self.log_tensor(".xy true-pred", x)
 
     # TODO: why can't we just set the 'box' loss based on the IOU inaccuracy?  Then
     # presumably the x,y,w,h will naturally move to the target?
     #
     # There is a paper discussing this:  https://arxiv.org/abs/1902.09630
     #
-
-    # Why do we need to divide the loss by the number of boxes?  Shouldn't each box bump the loss up?
-    # So images with more objects have more weight.
-    #
+    x = (true_xy - pred_xy).square()
     loss_xy = x.sum().item()
 
-    loss = ((true_wh - pred_wh).square())
-    self.log_tensor(".wh true-pred", x)
-    loss_wh = loss.sum().item()
+    x = ((true_wh - pred_wh).square())
+    loss_wh = x.sum().item()
 
     iou_scores = self.calculate_iou(true_xy, true_wh, pred_xy, pred_wh)
     self.log_tensor(".iou_scores")
 
-    loss_confidence = self.construct_confidence_loss(true_confidence, predicted_confidence, iou_scores)
-    show(".loss_confidence:",loss_confidence)
+    loss_confidence = self.construct_objectness_loss(true_confidence, pred_objectness, iou_scores)
 
-    _coord_scaled = self.yolo.lambda_coord * (loss_xy + loss_wh)
-    show("._coord_scaled", _coord_scaled)
+    weighted_box_loss = self.yolo.lambda_coord * (loss_xy + loss_wh)
 
-
-    loss = _coord_scaled + loss_confidence
+    loss = weighted_box_loss + loss_confidence
 
     if not warning("disabled class_loss"):
       loss_class = self.construct_class_loss(true_confidence, true_class_probabilities, predicted_box_class_logits)
@@ -226,11 +204,12 @@ class YoloLoss(nn.Module):
 
 
 
-  def construct_confidence_loss(self, true_confidence, predicted_confidence, iou_scores):
+  def construct_objectness_loss(self, true_confidence, predicted_confidence, iou_scores):
+    todo("we want to multiply the TRUE confidence by iou scores to get the TRUE objectness, and treat the predicted confidence as pred_objectness")
     pred_objectness = predicted_confidence * iou_scores
-    self.log_tensor(".predicted_confidence")
-    self.log_tensor(".iou_scores")
-    self.log_tensor(".pred_objectness")
+    self.log_tensor("predicted_confidence")
+    self.log_tensor("iou_scores")
+    self.log_tensor("pred_objectness")
 
 
     # The noobj weight should be distributed among all the boxes (anchors * grid cells),
@@ -260,11 +239,11 @@ class YoloLoss(nn.Module):
     # It is clear that each element of conf_mask is either obj_scale or no_obj_scale,
     # so the number of nonzero entries below is just the number of anchor boxes in the entire image...
 
-    self.log_tensor(".true_confidence")
+    self.log_tensor("true_confidence")
     squared_diff = torch.square(true_confidence - pred_objectness)
-    self.log_tensor(".squared_diff")
+    self.log_tensor("squared_diff")
     masked_diff = squared_diff * conf_mask
-    self.log_tensor(".masked_diff")
+    self.log_tensor("masked_diff")
     loss_conf = torch.sum(masked_diff)
     return loss_conf
 
