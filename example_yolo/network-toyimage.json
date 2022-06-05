@@ -48,7 +48,7 @@
               "image_channels" : 3,
               "category_count" : 1,
               "block_size" : [32,32],
-              "anchor_boxes_pixels" : [[10,10]],
+              "anchor_boxes_pixels" : [[18,18]],
               "lambda_coord" : 5.0,
               "lambda_noobj" : 0.5
         }

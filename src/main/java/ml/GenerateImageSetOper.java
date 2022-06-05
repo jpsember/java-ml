@@ -140,9 +140,6 @@ public class GenerateImageSetOper extends AppOper {
           int mx = mImageSize.x / 2;
           int my = mImageSize.y / 2;
 
-          float rangex = mImageSize.x * aug.translateRatioMax();
-          float rangey = mImageSize.y * aug.translateRatioMax();
-
           int charWidth = m.charWidth(categoriesString.charAt(0));
           int charHeight = (int) (m.getAscent() * ASCENT_SCALE_FACTOR);
 
@@ -150,20 +147,35 @@ public class GenerateImageSetOper extends AppOper {
           // using Java, so the render location is in terms of the baseline (not our center of the character)j
           IPoint fontRenderOffset = IPoint.with(-charWidth / 2, charHeight / 2);
           tfmFontOrigin = Matrix.getTranslate(fontRenderOffset);
-          Matrix tfmImageCenter = Matrix.getTranslate(randGuassian(mx - rangex, mx + rangex),
-              randGuassian(my - rangey, my + rangey));
+
+          Matrix tfmImageCenter;
+          if (aug.translateDisable())
+            tfmImageCenter = Matrix.getTranslate(mx, my);
+          else {
+            float rangex = mImageSize.x * aug.translateRatioMax();
+            float rangey = mImageSize.y * aug.translateRatioMax();
+            tfmImageCenter = Matrix.getTranslate(randGuassian(mx - rangex, mx + rangex),
+                randGuassian(my - rangey, my + rangey));
+          }
 
           Matrix tfmRotate;
           if (aug.rotateDisable())
-            tfmRotate = Matrix.DEFAULT_INSTANCE;
-          else
-            tfmRotate = Matrix.getRotate(
-                randGuassian(-aug.rotateDegreesMax() * MyMath.M_DEG, aug.rotateDegreesMax() * MyMath.M_DEG));
-          float scaleMin = aug.scaleMin();
-          float scaleMax = aug.scaleMax();
-          if (scaleMin <= 0)
-            scaleMin = scaleMax * 0.65f;
-          Matrix tfmScale = Matrix.getScale(randGuassian(scaleMin, scaleMax));
+            tfmRotate = Matrix.IDENTITY;
+          else {
+            float maxRad = aug.rotateDegreesMax() * MyMath.M_DEG;
+            tfmRotate = Matrix.getRotate(randGuassian(-maxRad, maxRad));
+          }
+
+          Matrix tfmScale;
+          if (aug.scaleDisable()) {
+            tfmScale = Matrix.getScale(aug.scaleMax());
+          } else {
+            float scaleMax = aug.scaleMax();
+            float scaleMin = aug.scaleMin();
+            if (scaleMin <= 0)
+              scaleMin = scaleMax * 0.65f;
+            tfmScale = Matrix.getScale(randGuassian(scaleMin, scaleMax));
+          }
 
           objectTfm = Matrix.postMultiply(tfmImageCenter, tfmScale, tfmRotate);
 
