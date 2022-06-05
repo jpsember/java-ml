@@ -4,12 +4,28 @@ from pycore.ipoint import IPoint
 # Define some constants
 #
 
+# 'Normalized to S' means value has been scaled so that Smin, Smax = 0, 1 resp.
+#
 F_BOX_XYWH = 0
+
+# center of box, normalized to grid cell bounds
+#
 F_BOX_CX = F_BOX_XYWH
 F_BOX_CY = F_BOX_XYWH + 1
+
+# width and height of box, normalized to anchor box size
+#
 F_BOX_W = F_BOX_XYWH + 2
 F_BOX_H = F_BOX_XYWH + 3
-F_CONFIDENCE = F_BOX_XYWH + 4   # this is also known as the 'objectness'
+
+# Input: 0 if no object exists, 1 otherwise
+# Output: this represents 'objectness', and ranges 0..1
+#
+F_CONFIDENCE = F_BOX_XYWH + 4
+
+# Input: one-hot vector; all are 0 except the object's class, which is 1
+# Output: largest value represents predicted object's class
+#
 F_CLASS_PROBABILITIES = F_CONFIDENCE + 1
 
 # Tensor dimensions

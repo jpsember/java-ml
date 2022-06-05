@@ -44,17 +44,17 @@ class YoloLoss(nn.Module):
     # Reshape the target to match the current's shape
     target = target.view(current.shape)
 
-    true_xy = target[:, :, :, F_BOX_CX:F_BOX_CY + 1]
-    self.log_tensor(".true_xy")
+    ground_cxcy = target[:, :, :, F_BOX_CX:F_BOX_CY + 1]
+    self.log_tensor(".ground_cxcy")
 
     # true_box_wh will be the width and height of the box, relative to the anchor box
     #
-    true_wh = target[:, :, :, F_BOX_W:F_BOX_H+1]
-    self.log_tensor(".true_wh")
+    ground_wh = target[:, :, :, F_BOX_W:F_BOX_H+1]
+    self.log_tensor(".ground_wh")
 
     true_confidence = target[:, :, :, F_CONFIDENCE]
 
-    # Add a dimension to true_confidence so it has equivalent dimensionality as true_xy, true_wh, etc
+    # Add a dimension to true_confidence so it has equivalent dimensionality as ground_cxcy, ground_wh, etc
     # (this doesn't change its volume, only its dimensions) <-- explain?
     #
     # This produces a mask value which we apply to the xy and wh loss.
@@ -96,18 +96,18 @@ class YoloLoss(nn.Module):
     #
     # There is a paper discussing this:  https://arxiv.org/abs/1902.09630
     #
-    x = (true_xy - pred_xy).square()
+    x = (ground_cxcy - pred_xy).square()
 
     # I think the various components of the loss function must be kept as tensors, not scalars
 
     loss_xy = x.sum()
 
-    x = ((true_wh - pred_wh).square())
+    x = ((ground_wh - pred_wh).square())
     loss_wh = x.sum()
 
     weighted_box_loss = self.yolo.lambda_coord * (loss_xy + loss_wh)
 
-    iou_scores = self.calculate_iou(true_xy, true_wh, pred_xy, pred_wh)
+    iou_scores = self.calculate_iou(ground_cxcy, ground_wh, pred_xy, pred_wh)
     self.log_tensor(".iou_scores")
 
     loss_objectness = self.construct_objectness_loss(true_confidence, pred_objectness, iou_scores)
