@@ -9,7 +9,7 @@ from gen.train_set import *
 from gen.data_type import *
 from gen.compile_images_config import *
 from gen.train_param import *
-from gen.tensor_info import *
+from gen.log_item import *
 from pycore.stats import Stats
 from pycore.tensor_logger import TensorLogger
 
@@ -440,14 +440,16 @@ class JsTrain:
     self.image_index = img_index
 
     t = LogItem.new_builder()
+    t.unique_id = img_index
+    t.family_size = 2
+    t.family_slot = 0
+
     t.name = "image"
-    t.image_index = img_index
     tens = self.ndarray_to_tensor(self.recent_image_array, t)
     self.logger.add(tens, t)
 
-    t = LogItem.new_builder()
     t.name = "labels"
-    t.label_index = img_index
+    t.family_slot = 1
     tens = self.recent_model_output
     self.logger.add(tens, t)
 

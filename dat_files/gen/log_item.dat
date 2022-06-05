@@ -10,10 +10,17 @@ fields {
 
   *int shape;
 
-  // If > 0, image of a labelled image pair
-  int image_index;
-
-  // If > 0, index of a labelled image pair
+  // A unique id distinguishing this item from others (e.g., which family
+  // this belongs to)
   //
-  int label_index;
+  int unique_id;
+
+  // If nonzero, item is one of a family set, and should be buffered
+  // until the entire family has arrived
+  //
+  int family_size;
+
+  // If family_size > 0, this is the slot within the family
+  //
+  int family_slot;
 }

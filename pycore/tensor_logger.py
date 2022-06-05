@@ -4,7 +4,7 @@ from pycore.base import *
 import numpy as np
 import torch
 from torch import nn
-from gen.tensor_info import *
+from gen.log_item import *
 
 class TensorLogger:
 
@@ -15,7 +15,7 @@ class TensorLogger:
     pass
 
 
-  def add(self, tensor:torch.Tensor, name_or_info): #name:str, ti:LogItem = None):
+  def add(self, tensor:torch.Tensor, name_or_info):
     ti:LogItemBuilder
     if isinstance(name_or_info, str):
       nm:str = name_or_info

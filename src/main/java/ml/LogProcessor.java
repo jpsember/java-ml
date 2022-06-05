@@ -19,7 +19,6 @@ import static js.base.Tools.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Map;
 
 public class LogProcessor extends BaseObject implements Runnable {
@@ -67,9 +66,12 @@ public class LogProcessor extends BaseObject implements Runnable {
 
   private void processFile(File infoFile) {
     File tensorFile = Files.setExtension(infoFile, "dat");
+
     // If no extension file exists, it may not have been renamed
     if (!tensorFile.exists())
       DateTimeTools.sleepForRealMs(100);
+
+    todo("InfoRecords won't always have corresponding tensors");
     if (!tensorFile.exists()) {
       pr("...logger, no corresponding tensor file found:", tensorFile.getName());
     } else {
@@ -88,46 +90,52 @@ public class LogProcessor extends BaseObject implements Runnable {
         throw notSupported(ti);
       }
 
-      if (ti.imageIndex() > 0 || ti.labelIndex() > 0) {
+      // If this belongs to a family, buffer it accordingly
+      //
+      if (ti.familySize() != 0) {
         processLabelledImage(rec);
-      } else {
-        checkArgument(rec.mFloats != null, "no floats found");
-        String s = formatTensor(ti, rec.mFloats);
-        pr(s);
+        return;
       }
 
+      checkArgument(rec.mFloats != null, "no floats found");
+      String s = formatTensor(ti, rec.mFloats);
+      pr(s);
     }
     files().deletePeacefully(infoFile);
     files().deletePeacefully(tensorFile);
   }
 
   private void processLabelledImage(InfoRecord rec) {
-    if (Files.empty(config().snapshotDir()))
+    LogItem logItem = rec.inf();
+    if (todo("do this check only when the family is being processed") && //
+        Files.empty(config().snapshotDir()))
       return;
 
-    log("processing labelled image:", rec.inf());
-    int key = rec.key();
-    InfoRecord alt = mOrphanInfoRecordMap.get(key);
-    if (alt == null) {
-      log("...companion not found; storing in map");
-      mOrphanInfoRecordMap.put(key, rec);
-      cullStalePendingRecords(key);
+    log("processing labelled image:", logItem);
+    int key = logItem.uniqueId();
+    InfoRecord[] familySet = mFamilyMap.get(key);
+    if (familySet == null) {
+      familySet = new InfoRecord[logItem.familySize()];
+      mFamilyMap.put(key, familySet);
+    }
+
+    checkState(familySet[logItem.familySlot()] == null, "family slot already taken:", INDENT, logItem);
+    familySet[logItem.familySlot()] = rec;
+    
+    boolean famComplete = true;
+    for (InfoRecord famElement : familySet)
+      if (famElement == null)
+        famComplete = false;
+
+    if (!famComplete) {
+      todo("do culling in a more general location");
       return;
     }
-    log("...companion found:", alt);
-    mOrphanInfoRecordMap.remove(key);
 
-    InfoRecord imgRec;
-    InfoRecord lblRec;
-    if (rec.imageIndex() != 0) {
-      imgRec = rec;
-      lblRec = alt;
-      checkArgument(lblRec.imageIndex() == 0);
-    } else {
-      imgRec = alt;
-      lblRec = rec;
-      checkArgument(imgRec.labelIndex() == 0);
-    }
+    mFamilyMap.remove(logItem.uniqueId());
+
+    InfoRecord imgRec = familySet[0];
+    InfoRecord lblRec = familySet[1];
 
     Vol imgVol = NetworkUtil.determineInputImageVolume(mNetwork);
 
@@ -145,7 +153,7 @@ public class LogProcessor extends BaseObject implements Runnable {
       int batchSize = imgLength / bytesPerImage;
       checkArgument(imgLength % bytesPerImage == 0, "images length", imgLength,
           "is not a multiple of image volume", bytesPerImage);
-      String setName = "" + imgRec.imageIndex() + "_%02d";
+      String setName = "" + imgRec.key() + "_%02d";
       for (int i = 0; i < batchSize; i++) {
         byte[] imgb = Arrays.copyOfRange(imgRec.mBytes, bytesPerImage * i, bytesPerImage * (i + 1));
         BufferedImage img = ImgUtil.bytesToBGRImage(imgb, VolumeUtil.spatialDimension(imgVol));
@@ -187,21 +195,21 @@ public class LogProcessor extends BaseObject implements Runnable {
     return mTargetProjectDir;
   }
 
-  /**
-   * If for some reason there are orphaned images or labels, discard them
-   */
-  private void cullStalePendingRecords(int key) {
-    List<Integer> keysToRemove = arrayList();
-    for (int k : mOrphanInfoRecordMap.keySet()) {
-      if (k < key - 10) {
-        keysToRemove.add(k);
-      }
-    }
-    if (keysToRemove.isEmpty())
-      return;
-    alert("Removing stale pending records of size:", keysToRemove.size());
-    mOrphanInfoRecordMap.keySet().removeAll(keysToRemove);
-  }
+  //  /**
+  //   * If for some reason there are orphaned images or labels, discard them
+  //   */
+  //  private void cullStalePendingRecords(int key) {
+  //    List<Integer> keysToRemove = arrayList();
+  //    for (int k : mOrphanInfoRecordMap.keySet()) {
+  //      if (k < key - 10) {
+  //        keysToRemove.add(k);
+  //      }
+  //    }
+  //    if (keysToRemove.isEmpty())
+  //      return;
+  //    alert("Removing stale pending records of size:", keysToRemove.size());
+  //    mOrphanInfoRecordMap.keySet().removeAll(keysToRemove);
+  //  }
 
   private Files files() {
     return Files.S;
@@ -314,11 +322,7 @@ public class LogProcessor extends BaseObject implements Runnable {
     }
 
     public int key() {
-      int k1 = imageIndex();
-      int k2 = labelIndex();
-      int key = k1 ^ k2;
-      checkArgument((k1 == 0 || k2 == 0) && key != 0);
-      return key;
+      return inf().uniqueId();
     }
 
     public void setData(byte[] bytes) {
@@ -333,14 +337,6 @@ public class LogProcessor extends BaseObject implements Runnable {
       return mTensorInfo;
     }
 
-    public int imageIndex() {
-      return inf().imageIndex();
-    }
-
-    public int labelIndex() {
-      return inf().labelIndex();
-    }
-
     private final LogItem mTensorInfo;
     byte[] mBytes;
     float[] mFloats;
@@ -352,7 +348,7 @@ public class LogProcessor extends BaseObject implements Runnable {
   private int mState;
   private Thread mThread;
 
-  private Map<Integer, InfoRecord> mOrphanInfoRecordMap = hashMap();
+  private Map<Integer, InfoRecord[]> mFamilyMap = hashMap();
   private File mTargetProjectDir;
   private File mTargetProjectScriptsDir;
 
