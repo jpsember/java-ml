@@ -98,11 +98,13 @@ class YoloLoss(nn.Module):
     # There is a paper discussing this:  https://arxiv.org/abs/1902.09630
     #
     x = (true_xy - pred_xy).square()
-    # I think we want to keep these as tensors, not scalars?
-    loss_xy = x.sum() #.item()
+
+    # I think the various components of the loss function must be kept as tensors, not scalars
+
+    loss_xy = x.sum()
 
     x = ((true_wh - pred_wh).square())
-    loss_wh = x.sum() #.item()
+    loss_wh = x.sum()
 
     weighted_box_loss = self.yolo.lambda_coord * (loss_xy + loss_wh)
 
@@ -112,9 +114,7 @@ class YoloLoss(nn.Module):
     loss_objectness = self.construct_objectness_loss(true_confidence, pred_objectness, iou_scores)
     self.log_tensor(".loss_objectness")
 
-    # This weighting by 0.2 is a wild ass guess / desperate act
-    #
-    loss = weighted_box_loss + loss_objectness * 0.2
+    loss = weighted_box_loss + loss_objectness
 
     if not warning("disabled class_loss"):
       loss_class = self.construct_class_loss(true_confidence, true_class_probabilities, predicted_box_class_logits)
@@ -210,6 +210,10 @@ class YoloLoss(nn.Module):
 
 
   def construct_objectness_loss(self, true_confidence, pred_objectness, iou_scores):
+    #
+    # true_confidence is ZERO where there are no true boxes.
+    #
+
     self.log_tensor(".true_confidence")
     self.log_tensor(".iou_scores")
     self.log_tensor(".pred_objectness")
