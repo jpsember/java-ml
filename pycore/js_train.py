@@ -439,20 +439,20 @@ class JsTrain:
       return
     self.image_index = img_index
 
-    t = TensorInfo.new_builder()
+    t = LogItem.new_builder()
     t.name = "image"
     t.image_index = img_index
     tens = self.ndarray_to_tensor(self.recent_image_array, t)
     self.logger.add(tens, t)
 
-    t = TensorInfo.new_builder()
+    t = LogItem.new_builder()
     t.name = "labels"
     t.label_index = img_index
     tens = self.recent_model_output
     self.logger.add(tens, t)
 
 
-  def ndarray_to_tensor(self, ndarr, ti:TensorInfoBuilder):
+  def ndarray_to_tensor(self, ndarr, ti:LogItemBuilder):
     tens =  torch.from_numpy(ndarr)
     return tens
 

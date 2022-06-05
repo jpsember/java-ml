@@ -70,22 +70,20 @@ class YoloLoss(nn.Module):
     #
     # We need to map (-inf...+inf) to (0...1); hence apply sigmoid function
     #
-    pred_xy = torch.sigmoid(current[:, :, :, F_BOX_CX:F_BOX_CY + 1]) * coord_mask
-    #self.log_tensor("pred_xy")
+    pred_cxcy = torch.sigmoid(current[:, :, :, F_BOX_CX:F_BOX_CY + 1]) * coord_mask
+    self.log_tensor(".pred_cxcy")
 
     # Determine each predicted box's w,h
     #
     # We need to map (-inf...+inf) to (0..+inf); hence apply the exp function
     #
-    pred_wh_inf = current[:, :, :, F_BOX_W:F_BOX_H+1]
-    pred_wh = torch.exp(pred_wh_inf) * coord_mask
-    #self.log_tensor("pred_wh")
+    pred_wh = torch.exp(current[:, :, :, F_BOX_W:F_BOX_H+1]) * coord_mask
+    self.log_tensor(".pred_wh")
 
     # Determine each predicted box's confidence score.
     # We need to map (-inf...+inf) to (0..1); hence apply sigmoid function
     #
     pred_objectness = torch.sigmoid(current[:, :, :, F_CONFIDENCE])
-    todo("F_CONFIDENCE is misnamed?  Maybe F_OBJECTNESS?")
 
     # Determine each predicted box's set of conditional class probabilities.
     #
@@ -96,7 +94,7 @@ class YoloLoss(nn.Module):
     #
     # There is a paper discussing this:  https://arxiv.org/abs/1902.09630
     #
-    x = (ground_cxcy - pred_xy).square()
+    x = (ground_cxcy - pred_cxcy).square()
 
     # I think the various components of the loss function must be kept as tensors, not scalars
 
@@ -107,7 +105,7 @@ class YoloLoss(nn.Module):
 
     weighted_box_loss = self.yolo.lambda_coord * (loss_xy + loss_wh)
 
-    iou_scores = self.calculate_iou(ground_cxcy, ground_wh, pred_xy, pred_wh)
+    iou_scores = self.calculate_iou(ground_cxcy, ground_wh, pred_cxcy, pred_wh)
     self.log_tensor(".iou_scores")
 
     loss_objectness = self.construct_objectness_loss(true_confidence, pred_objectness, iou_scores)
@@ -120,9 +118,7 @@ class YoloLoss(nn.Module):
       loss = loss + loss_class
 
     if False and warning("just using iou_scores as loss"):
-      #show_shape(".coord_mask")
       t_iou = iou_scores.view(coord_mask.shape)
-      #show_shape("t_iou")
       loss = (1.0 - t_iou) * coord_mask
       loss = loss.sum()
       self.log_tensor(".loss:1")
@@ -212,13 +208,12 @@ class YoloLoss(nn.Module):
     #
     # true_confidence is ZERO where there are no true boxes.
     #
-
-    self.log_tensor(".true_confidence")
-    self.log_tensor(".iou_scores")
-    self.log_tensor(".pred_objectness")
+    self.log_tensor("true_confidence")
+    self.log_tensor("iou_scores")
+    self.log_tensor("pred_objectness")
 
     true_objectness = true_confidence * iou_scores
-    self.log_tensor(".true_objectness")
+    self.log_tensor("true_objectness")
 
     # The noobj weight should be distributed among all the boxes (anchors * grid cells),
     # otherwise the weight is dependent upon the grid size
@@ -226,9 +221,10 @@ class YoloLoss(nn.Module):
     boxes_in_grid = self.num_anchors * self.grid_cell_total
     noobj_weight = self.yolo.lambda_noobj / boxes_in_grid
 
-    no_obj_mask = 1.0 - true_confidence
-    conf_mask = no_obj_mask * noobj_weight + true_confidence
-    self.log_tensor(".conf_mask")
+
+
+    squared_diff = torch.square(true_objectness - pred_objectness)
+    self.log_tensor("squared_diff")
 
     # conf_mask is the sum of two terms, at least one of which must be zero since
     # one is multiplied by (1 - true_box_exists), and the other by (true_box_exists),
@@ -247,8 +243,10 @@ class YoloLoss(nn.Module):
     # It is clear that each element of conf_mask is either obj_scale or no_obj_scale,
     # so the number of nonzero entries below is just the number of anchor boxes in the entire image...
 
-    squared_diff = torch.square(true_objectness - pred_objectness)
-    self.log_tensor(".squared_diff")
+    no_obj_mask = 1.0 - true_confidence
+    conf_mask = no_obj_mask * noobj_weight + true_confidence
+    self.log_tensor(".conf_mask")
+
     masked_diff = squared_diff * conf_mask
     self.log_tensor(".masked_diff")
     return torch.sum(masked_diff)

@@ -15,11 +15,11 @@ class TensorLogger:
     pass
 
 
-  def add(self, tensor:torch.Tensor, name_or_info): #name:str, ti:TensorInfo = None):
-    ti:TensorInfoBuilder
+  def add(self, tensor:torch.Tensor, name_or_info): #name:str, ti:LogItem = None):
+    ti:LogItemBuilder
     if isinstance(name_or_info, str):
       nm:str = name_or_info
-      ti = TensorInfo.new_builder()
+      ti = LogItem.new_builder()
       ti.set_name(nm)
     else:
       ti = name_or_info.to_builder()
@@ -36,7 +36,7 @@ class TensorLogger:
     self.write(ti, tensor)
 
 
-  def write(self, info:TensorInfo, tensor:torch.Tensor):
+  def write(self, info:LogItem, tensor:torch.Tensor):
     self.number += 1
     p = self.get_path(".json")
     p_temp = self.temp_version(p)

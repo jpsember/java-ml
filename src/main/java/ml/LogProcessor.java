@@ -3,7 +3,7 @@ package ml;
 import gen.CompileImagesConfig;
 import gen.FloatFormat;
 import gen.NeuralNetwork;
-import gen.TensorInfo;
+import gen.LogItem;
 import gen.Vol;
 import js.base.BaseObject;
 import js.base.DateTimeTools;
@@ -73,7 +73,7 @@ public class LogProcessor extends BaseObject implements Runnable {
     if (!tensorFile.exists()) {
       pr("...logger, no corresponding tensor file found:", tensorFile.getName());
     } else {
-      TensorInfo ti = Files.parseAbstractData(TensorInfo.DEFAULT_INSTANCE, infoFile);
+      LogItem ti = Files.parseAbstractData(LogItem.DEFAULT_INSTANCE, infoFile);
       InfoRecord rec = new InfoRecord(ti);
       switch (ti.dataType()) {
       case FLOAT32: {
@@ -211,7 +211,7 @@ public class LogProcessor extends BaseObject implements Runnable {
     return mConfig;
   }
 
-  private String formatTensor(TensorInfo ti, float[] t) {
+  private String formatTensor(LogItem ti, float[] t) {
     todo("refactor to accept InfoRecord instead of ti");
 
     String effName = ti.name();
@@ -309,7 +309,7 @@ public class LogProcessor extends BaseObject implements Runnable {
 
   private static class InfoRecord {
 
-    public InfoRecord(TensorInfo tensorInfo) {
+    public InfoRecord(LogItem tensorInfo) {
       mTensorInfo = tensorInfo.build();
     }
 
@@ -329,7 +329,7 @@ public class LogProcessor extends BaseObject implements Runnable {
       mFloats = floats;
     }
 
-    public TensorInfo inf() {
+    public LogItem inf() {
       return mTensorInfo;
     }
 
@@ -341,7 +341,7 @@ public class LogProcessor extends BaseObject implements Runnable {
       return inf().labelIndex();
     }
 
-    private final TensorInfo mTensorInfo;
+    private final LogItem mTensorInfo;
     byte[] mBytes;
     float[] mFloats;
   }
