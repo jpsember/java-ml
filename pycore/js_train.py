@@ -433,7 +433,9 @@ class JsTrain:
   def send_inference_result(self):
     # Use the epoch number as the image index
     img_index = self.epoch_number
-    check_state(img_index > self.image_index,"epoch:",img_index,"<= prev",self.image_index)
+    # If we already sent this epoch's result, do nothing
+    if img_index <= self.image_index:
+      return
     self.image_index = img_index
 
     t = TensorInfo.new_builder()

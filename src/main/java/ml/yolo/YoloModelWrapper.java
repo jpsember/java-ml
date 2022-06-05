@@ -416,6 +416,10 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
         midPoint.x * mImageToGridScale.x - gridCell.x, //
         midPoint.y * mImageToGridScale.y - gridCell.y);
 
+   
+   if (false) 
+    halt("box:", box, CR, "anchorBox:",anchorBox,CR,"box size rel to anch:",mBoxSizeRelativeToAnchorBox,CR,"boxGridCell:",mBoxGridCell,CR,"center in cell:",mBoxCenterInCellSpace);
+    
     if (verbose()) {
       log("  grid cell:", mBoxGridCell);
       log("  loc(cell):", mBoxCenterInCellSpace);
