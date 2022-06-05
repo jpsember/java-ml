@@ -272,11 +272,15 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
     int gridCellTotal = mGridSize.product();
     int labelCount = gridCellTotal * YoloUtil.anchorBoxCount(yolo);
 
+    float maxObj = -1;
     int fieldSetIndex = 0;
     for (int labelIndex = 0; labelIndex < labelCount; labelIndex++, fieldSetIndex += fieldsPerBox) {
-      
+
       float objectness = NetworkUtil.sigmoid(input[fieldSetIndex + F_CONFIDENCE]);
       output[fieldSetIndex + F_CONFIDENCE] = objectness;
+      if (objectness > maxObj) {
+        maxObj = objectness;
+      }
 
       {
         int k = fieldSetIndex + F_BOX_XYWH;
@@ -307,7 +311,8 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
 
   // For now, make it final
   //
-  private final PlotInferenceResultsConfig mParserConfig = PlotInferenceResultsConfig.DEFAULT_INSTANCE;
+  private final PlotInferenceResultsConfig mParserConfig = PlotInferenceResultsConfig.DEFAULT_INSTANCE //
+      .toBuilder().confidencePct(35).build();//
 
   // ------------------------------------------------------------------
 
