@@ -448,6 +448,9 @@ class JsTrain:
     t.name = "labels"
     t.label_index = img_index
     tens = self.ndarray_to_tensor(self.recent_labels_array, t)
+    # !!!!!!!!!!!! The labels have already had the appropriate sigmoid and whatnot applied....
+    show("recent_labels", tens)
+    die()
     self.logger.add(tens, t)
 
 

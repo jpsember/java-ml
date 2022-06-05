@@ -137,8 +137,11 @@ public class GenerateImageSetOper extends AppOper {
 
         for (int attempt = 0; attempt < 5; attempt++) {
 
-          int mx = mImageSize.x / 2;
-          int my = mImageSize.y / 2;
+          // Don't put it exactly in the center, in case we are doing very few transformations;
+          // we don't want it sitting very close to a grid boundary
+
+          int mx = mImageSize.x / 2 + 8;
+          int my = mImageSize.y / 2 + 8;
 
           int charWidth = m.charWidth(categoriesString.charAt(0));
           int charHeight = (int) (m.getAscent() * ASCENT_SCALE_FACTOR);

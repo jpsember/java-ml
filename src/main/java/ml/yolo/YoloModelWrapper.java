@@ -263,43 +263,45 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
     // Then we can call the same code as transformModelInputToScredit().
 
     Yolo yolo = modelConfig();
-    float[] inp = labelBufferFloats();
-    float[] out = new float[inp.length];
+    float[] input = labelBufferFloats();
+    float[] output = new float[input.length];
 
     final int fieldsPerBox = YoloUtil.valuesPerAnchorBox(yolo);
     final int categoryCount = yolo.categoryCount();
 
-    int gridSize = mGridSize.product();
-    int labelCount = gridSize * YoloUtil.anchorBoxCount(yolo);
+    int gridCellTotal = mGridSize.product();
+    int labelCount = gridCellTotal * YoloUtil.anchorBoxCount(yolo);
 
     int fieldSetIndex = 0;
     for (int labelIndex = 0; labelIndex < labelCount; labelIndex++, fieldSetIndex += fieldsPerBox) {
-      float objectness = NetworkUtil.sigmoid(inp[fieldSetIndex + F_CONFIDENCE]);
-      out[fieldSetIndex + F_CONFIDENCE] = objectness;
+      
+      float objectness = NetworkUtil.sigmoid(input[fieldSetIndex + F_CONFIDENCE]);
+      output[fieldSetIndex + F_CONFIDENCE] = objectness;
 
       {
         int k = fieldSetIndex + F_BOX_XYWH;
-        float bx = NetworkUtil.sigmoid(inp[k + 0]);
-        float by = NetworkUtil.sigmoid(inp[k + 1]);
-        float ws = NetworkUtil.exp(inp[k + 2]);
-        float hs = NetworkUtil.exp(inp[k + 3]);
+        float boxCenterX = NetworkUtil.sigmoid(input[k + 0]);
+        float boxCenterY = NetworkUtil.sigmoid(input[k + 1]);
+        float boxRelAnchorWidth = NetworkUtil.exp(input[k + 2]);
+        float boxRelAnchorHeight = NetworkUtil.exp(input[k + 3]);
 
-        out[k + 0] = bx;
-        out[k + 1] = by;
-        out[k + 2] = ws;
-        out[k + 3] = hs;
+        output[k + 0] = boxCenterX;
+        output[k + 1] = boxCenterY;
+        output[k + 2] = boxRelAnchorWidth;
+        output[k + 3] = boxRelAnchorHeight;
       }
 
       {
         int k = fieldSetIndex + F_CLASS_PROBABILITIES;
         for (int category = 0; category < categoryCount; category++) {
-          float confLogit = inp[k + category];
-          out[k + category] = NetworkUtil.sigmoid(confLogit);
+          float confLogit = input[k + category];
+          output[k + category] = NetworkUtil.sigmoid(confLogit);
         }
       }
     }
+
     // Copy the transformed values back to the label buffer
-    System.arraycopy(out, 0, inp, 0, inp.length);
+    System.arraycopy(output, 0, input, 0, input.length);
     return transformModelInputToScredit();
   }
 
