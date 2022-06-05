@@ -44,7 +44,7 @@ class YoloLoss(nn.Module):
     # Reshape the target to match the current's shape
     target = target.view(current.shape)
 
-    true_xy = target[:, :, :, F_BOX_X:F_BOX_Y+1]
+    true_xy = target[:, :, :, F_BOX_CX:F_BOX_CY + 1]
     self.log_tensor(".true_xy")
 
     # true_box_wh will be the width and height of the box, relative to the anchor box
@@ -70,7 +70,7 @@ class YoloLoss(nn.Module):
     #
     # We need to map (-inf...+inf) to (0...1); hence apply sigmoid function
     #
-    pred_xy = torch.sigmoid(current[:, :, :, F_BOX_X:F_BOX_Y+1]) * coord_mask
+    pred_xy = torch.sigmoid(current[:, :, :, F_BOX_CX:F_BOX_CY + 1]) * coord_mask
     #self.log_tensor("pred_xy")
 
     # Determine each predicted box's w,h
@@ -78,7 +78,6 @@ class YoloLoss(nn.Module):
     # We need to map (-inf...+inf) to (0..+inf); hence apply the exp function
     #
     pred_wh_inf = current[:, :, :, F_BOX_W:F_BOX_H+1]
-    #self.log_tensor("pred_wh_inf")
     pred_wh = torch.exp(pred_wh_inf) * coord_mask
     #self.log_tensor("pred_wh")
 

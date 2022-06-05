@@ -5,8 +5,8 @@ from pycore.ipoint import IPoint
 #
 
 F_BOX_XYWH = 0
-F_BOX_X = F_BOX_XYWH
-F_BOX_Y = F_BOX_XYWH + 1
+F_BOX_CX = F_BOX_XYWH
+F_BOX_CY = F_BOX_XYWH + 1
 F_BOX_W = F_BOX_XYWH + 2
 F_BOX_H = F_BOX_XYWH + 3
 F_CONFIDENCE = F_BOX_XYWH + 4   # this is also known as the 'objectness'
