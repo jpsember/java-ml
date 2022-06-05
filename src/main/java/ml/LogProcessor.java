@@ -57,26 +57,39 @@ public class LogProcessor extends BaseObject implements Runnable {
     while (mState != 2) {
       File logDir = config().targetDirTrain();
       DirWalk w = new DirWalk(logDir).withRecurse(false).withExtensions("json");
-      for (File infoFile : w.files())
-        processFile(infoFile);
+      for (File infoFile : w.files()) {
+        File tensorFile = Files.setExtension(infoFile, "dat");
+        processFile(infoFile, tensorFile);
+        files().deletePeacefully(infoFile);
+        files().deletePeacefully(tensorFile);
+      }
+
       DateTimeTools.sleepForRealMs(50);
     }
     log("stopping");
   }
 
-  private void processFile(File infoFile) {
-    File tensorFile = Files.setExtension(infoFile, "dat");
+  private void processFile(File infoFile, File tensorFile) {
+    LogItem ti = Files.parseAbstractData(LogItem.DEFAULT_INSTANCE, infoFile);
+    if (ti.id() <= mPrevId) {
+      pr("*** log item not greater than prev:", mPrevId, INDENT, ti);
+      return;
+    }
+    checkState(ti.id() > mPrevId, "LogItem ids not strictly increasing");
+    mPrevId = ti.id();
+    InfoRecord rec = new InfoRecord(ti);
 
-    // If no extension file exists, it may not have been renamed
-    if (!tensorFile.exists())
-      DateTimeTools.sleepForRealMs(100);
+    if (rec.hasTensor()) {
+      // If no extension file exists, it may not have been renamed
+      if (!tensorFile.exists())
+        DateTimeTools.sleepForRealMs(100);
 
-    todo("InfoRecords won't always have corresponding tensors");
-    if (!tensorFile.exists()) {
-      pr("...logger, no corresponding tensor file found:", tensorFile.getName());
-    } else {
-      LogItem ti = Files.parseAbstractData(LogItem.DEFAULT_INSTANCE, infoFile);
-      InfoRecord rec = new InfoRecord(ti);
+      todo("InfoRecords won't always have corresponding tensors");
+      if (!tensorFile.exists()) {
+        pr("...logger, no corresponding tensor file found:", tensorFile.getName());
+        return;
+      }
+
       switch (ti.dataType()) {
       case FLOAT32: {
         float[] t = Files.readFloatsLittleEndian(tensorFile, "tensorFile");
@@ -89,30 +102,64 @@ public class LogProcessor extends BaseObject implements Runnable {
       default:
         throw notSupported(ti);
       }
+    }
 
-      // If this belongs to a family, buffer it accordingly
-      //
-      if (ti.familySize() != 0) {
-        processLabelledImage(rec);
-        return;
-      }
+    // If this belongs to a family, buffer it accordingly
+    //
+    if (ti.familySize() != 0) {
+      todo("separate the buffering from the handling (printing, generating script)");
+      processLabelledImage(rec);
+      return;
+    }
 
+    StringBuilder sb = new StringBuilder();
+    if (rec.hasTensor()) {
       checkArgument(rec.mFloats != null, "no floats found");
       String s = formatTensor(ti, rec.mFloats);
-      pr(s);
+      sb.append(s.trim());
+    } else {
+
+      // Parse special sequences of the form ^x;
+      //
+      String msg = ti.message().trim();
+      int cursor = 0;
+      while (cursor < msg.length()) {
+        if (msg.charAt(cursor) == '^') {
+          checkArgument(cursor + 3 <= msg.length() && msg.charAt(cursor + 2) == ';', "ill formed message:",
+              msg, CR, "cursor:", cursor, quote(msg.substring(cursor)));
+          char code = msg.charAt(cursor + 1);
+          switch (code) {
+          case 'v':
+            sb.append("\n\n\n");
+            break;
+          case 'd':
+            sb.append("-----------------------------------------------------------------------");
+            break;
+          default:
+            throw badArg("ill formed message:", msg);
+          }
+          cursor += 3;
+        } else {
+          int nextC = msg.indexOf('^', cursor);
+          if (nextC < 0)
+            nextC = msg.length();
+          sb.append(msg.substring(cursor, nextC));
+          cursor = nextC;
+        }
+      }
     }
-    files().deletePeacefully(infoFile);
-    files().deletePeacefully(tensorFile);
+    addLF(sb);
+    System.out.print(sb.toString());
   }
 
   private void processLabelledImage(InfoRecord rec) {
-    LogItem logItem = rec.inf();
+    LogItem logItem = rec.logItem();
     if (todo("do this check only when the family is being processed") && //
         Files.empty(config().snapshotDir()))
       return;
 
     log("processing labelled image:", logItem);
-    int key = logItem.uniqueId();
+    int key = logItem.familyId();
     InfoRecord[] familySet = mFamilyMap.get(key);
     if (familySet == null) {
       familySet = new InfoRecord[logItem.familySize()];
@@ -121,7 +168,7 @@ public class LogProcessor extends BaseObject implements Runnable {
 
     checkState(familySet[logItem.familySlot()] == null, "family slot already taken:", INDENT, logItem);
     familySet[logItem.familySlot()] = rec;
-    
+
     boolean famComplete = true;
     for (InfoRecord famElement : familySet)
       if (famElement == null)
@@ -132,7 +179,7 @@ public class LogProcessor extends BaseObject implements Runnable {
       return;
     }
 
-    mFamilyMap.remove(logItem.uniqueId());
+    mFamilyMap.remove(logItem.familyId());
 
     InfoRecord imgRec = familySet[0];
     InfoRecord lblRec = familySet[1];
@@ -153,7 +200,7 @@ public class LogProcessor extends BaseObject implements Runnable {
       int batchSize = imgLength / bytesPerImage;
       checkArgument(imgLength % bytesPerImage == 0, "images length", imgLength,
           "is not a multiple of image volume", bytesPerImage);
-      String setName = "" + imgRec.key() + "_%02d";
+      String setName = "" + logItem.familyId() + "_%02d";
       for (int i = 0; i < batchSize; i++) {
         byte[] imgb = Arrays.copyOfRange(imgRec.mBytes, bytesPerImage * i, bytesPerImage * (i + 1));
         BufferedImage img = ImgUtil.bytesToBGRImage(imgb, VolumeUtil.spatialDimension(imgVol));
@@ -222,7 +269,7 @@ public class LogProcessor extends BaseObject implements Runnable {
   private String formatTensor(LogItem ti, float[] t) {
     todo("refactor to accept InfoRecord instead of ti");
 
-    String effName = ti.name();
+    String effName = ti.message();
     String suffix = "";
     {
       int i = effName.indexOf(':');
@@ -240,8 +287,10 @@ public class LogProcessor extends BaseObject implements Runnable {
     }
 
     StringBuilder sb = new StringBuilder();
-    sb.append(ti.name());
-    sb.append('\n');
+    if (nonEmpty(ti.message())) {
+      sb.append(ti.message());
+      sb.append('\n');
+    }
     int[] shape = ti.shape();
 
     // View the tensor as two dimensional, by collapsing dimensions 2...n together into one.
@@ -268,7 +317,7 @@ public class LogProcessor extends BaseObject implements Runnable {
           sb.append(" │ "); // Note: this is a unicode char taller than the vertical brace
         sb.append(fmt(fmt, t[q]));
       }
-      sb.append(" ]\n");
+      sb.append(" ]");
     }
     return sb.toString();
   }
@@ -318,11 +367,11 @@ public class LogProcessor extends BaseObject implements Runnable {
   private static class InfoRecord {
 
     public InfoRecord(LogItem tensorInfo) {
-      mTensorInfo = tensorInfo.build();
+      mLogItem = tensorInfo.build();
     }
 
-    public int key() {
-      return inf().uniqueId();
+    public boolean hasTensor() {
+      return logItem().shape().length != 0;
     }
 
     public void setData(byte[] bytes) {
@@ -333,11 +382,11 @@ public class LogProcessor extends BaseObject implements Runnable {
       mFloats = floats;
     }
 
-    public LogItem inf() {
-      return mTensorInfo;
+    public LogItem logItem() {
+      return mLogItem;
     }
 
-    private final LogItem mTensorInfo;
+    private final LogItem mLogItem;
     byte[] mBytes;
     float[] mFloats;
   }
@@ -347,6 +396,7 @@ public class LogProcessor extends BaseObject implements Runnable {
   private NeuralNetwork mNetwork;
   private int mState;
   private Thread mThread;
+  private int mPrevId;
 
   private Map<Integer, InfoRecord[]> mFamilyMap = hashMap();
   private File mTargetProjectDir;

@@ -2,18 +2,24 @@ enum DataType;
 
 fields {
 
-  // Name of tensor (e.g. variable name)
+  // A unique id > 0 for ordering the items
   //
-  string name;
+  int id;
+
+  // Message or name of tensor
+  //
+  string message;
 
   DataType data_type;
 
+  // If shape is empty, there is no tensor
+  //
   *int shape;
 
   // A unique id distinguishing this item from others (e.g., which family
   // this belongs to)
   //
-  int unique_id;
+  int family_id;
 
   // If nonzero, item is one of a family set, and should be buffered
   // until the entire family has arrived

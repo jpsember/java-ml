@@ -34,6 +34,7 @@ class YoloLoss(nn.Module):
 
 
   def forward(self, current, target):
+    self.logger.add_msg("^v;loss_yolo.py\n^d;")
     y = self.yolo
     batch_size = current.data.size(0)
 
@@ -132,9 +133,7 @@ class YoloLoss(nn.Module):
   def log_tensor(self, name, t=None):
     if name.startswith("."):
       return
-    if warning("disabled"):
-      return
-    
+
     # If tensor not provided, assume name refers to a local variable in the caller's scope
     #
     t = get_var(t, name)

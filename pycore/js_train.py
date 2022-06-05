@@ -440,7 +440,7 @@ class JsTrain:
     self.image_index = img_index
 
     t = LogItem.new_builder()
-    t.unique_id = img_index
+    t.family_id = img_index
     t.family_size = 2
     t.family_slot = 0
 

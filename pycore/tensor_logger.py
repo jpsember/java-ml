@@ -10,19 +10,35 @@ class TensorLogger:
 
 
   def __init__(self, directory:str = "train_data"):
-    self.number = 0
     self.dir = directory
+    self.id = 0
     pass
+
+
+  def add_msg(self, *args):
+    ti = self.new_log_item()
+    ti.message = spr(*args)
+    self.write(ti)
+
+
+  def new_log_item(self, log_item:LogItem = None) -> LogItemBuilder:
+    if log_item is not None:
+      ti = log_item.to_builder()
+    else:
+      ti = LogItem.new_builder()
+    self.id += 1
+    ti.id = self.id
+    return ti
 
 
   def add(self, tensor:torch.Tensor, name_or_info):
     ti:LogItemBuilder
     if isinstance(name_or_info, str):
       nm:str = name_or_info
-      ti = LogItem.new_builder()
-      ti.set_name(nm)
+      ti = self.new_log_item()
+      ti.set_message(nm)
     else:
-      ti = name_or_info.to_builder()
+      ti = self.new_log_item(name_or_info)
     dt = tensor.dtype
     if dt == torch.float32:
       ti.data_type = DataType.FLOAT32
@@ -36,16 +52,17 @@ class TensorLogger:
     self.write(ti, tensor)
 
 
-  def write(self, info:LogItem, tensor:torch.Tensor):
-    self.number += 1
-    p = self.get_path(".json")
+  def write(self, info:LogItem, tensor:torch.Tensor = None):
+    p = self.get_path(info, ".json")
     p_temp = self.temp_version(p)
     txt_write(p_temp, info.to_string(False))
+    os.rename(p_temp, p)
+    if tensor is None:
+      return
     x = tensor.detach().numpy()
-    b = self.get_path(".dat")
+    b = self.get_path(info, ".dat")
     b_temp = self.temp_version(b)
     x.tofile(b_temp)
-    os.rename(p_temp, p)
     os.rename(b_temp, b)
 
 
@@ -60,5 +77,5 @@ class TensorLogger:
     return result
 
 
-  def get_path(self, name:str):
-    return os.path.join(self.dir, str(self.number) + self.clean(name))
+  def get_path(self, info:LogItem, name:str):
+    return os.path.join(self.dir, str(info.id) + self.clean(name))
