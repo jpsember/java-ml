@@ -84,7 +84,9 @@ class YoloLoss(nn.Module):
     #
     # We need to map (-inf...+inf) to (0..+inf); hence apply the exp function
     #
-    pred_wh = torch.exp(current[:, :, :, F_BOX_W:F_BOX_H+1]) * coord_mask
+    pred_wh_inf = current[:, :, :, F_BOX_W:F_BOX_H+1]
+    self.log_tensor(".pred_wh_inf")
+    pred_wh = torch.exp(pred_wh_inf) * coord_mask
     self.log_tensor(".pred_wh")
 
     # Determine each predicted box's confidence score.
@@ -117,7 +119,7 @@ class YoloLoss(nn.Module):
     loss_xy = x.sum().item()
 
     loss = ((true_wh - pred_wh).square())
-    show(".wh error", loss)
+    self.log_tensor(".wh true-pred", x)
     loss_wh = loss.sum().item()
 
     iou_scores = self.calculate_iou(true_xy, true_wh, pred_xy, pred_wh)
@@ -168,7 +170,6 @@ class YoloLoss(nn.Module):
     width = self.grid_size.x
 
     z = z.view(height,width,-1)
-
     if width > 8:
       # Zoom in on the center grid cells
       #     ROWS COLS

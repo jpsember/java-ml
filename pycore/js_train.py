@@ -406,7 +406,7 @@ class JsTrain:
       if self.stop_signal_received():
         done_msg = "Stop signal received"
 
-      if warning("temporary"):
+      if False and warning("temporary"):
         if self.epoch_number % 4 == 0:
           self.send_inference_result()
 

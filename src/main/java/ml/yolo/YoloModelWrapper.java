@@ -224,6 +224,14 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
           float midpointY = (by + cellY) * mGridToImageScale.y;
 
           IRect boxRect = new FRect(midpointX - bw / 2, midpointY - bh / 2, bw, bh).toIRect();
+
+          if (false) {
+            pr("anchorBox:", anchorBoxWidth, anchorBoxHeight);
+            pr("ws, hs:", ws, hs);
+            pr("bw, bh:", bw, bh);
+            die();
+          }
+
           // I think we want to use the 'objectness' confidence, without incorporating the best category's confidence in any way
           ElementProperties.Builder prop = ElementProperties.newBuilder();
           prop.category(bestCategory);
@@ -369,12 +377,6 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
     }
   }
 
-  private IPoint determineBoxGridCell(IPoint pointWithinImage) {
-    IPoint blockSize = modelConfig().blockSize();
-    return new IPoint(Math.floorDiv(pointWithinImage.x, blockSize.x),
-        Math.floorDiv(pointWithinImage.y, blockSize.y));
-  }
-
   private boolean cellWithinGrid(IPoint gridCell) {
     return !(gridCell.x < 0 || gridCell.y < 0 || gridCell.x >= mGridSize.x || gridCell.y >= mGridSize.y);
   }
@@ -400,32 +402,38 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
       return false;
     }
 
-    IPoint midPoint = box.midPoint();
-    IPoint gridCell = determineBoxGridCell(midPoint);
-    if (!cellWithinGrid(gridCell)) {
+    float imageBoxCx = box.midX();
+    float imageBoxCy = box.midY();
+    float gridBoxCx = imageBoxCx * mImageToGridScale.x;
+    float gridBoxCy = imageBoxCy * mImageToGridScale.y;
+    float gridBoxTopLeftX = (float) Math.floor(gridBoxCx);
+    float gridBoxTopLeftY = (float) Math.floor(gridBoxCy);
+    mBoxGridCell = new IPoint(gridBoxTopLeftX, gridBoxTopLeftY);
+    if (!cellWithinGrid(mBoxGridCell)) {
       log("  box centerpoint not within image");
       return false;
     }
 
     FPoint anchorBox = mAnchorBoxes[mAnchorBox];
     mBoxSizeRelativeToAnchorBox = new FPoint(box.width / anchorBox.x, box.height / anchorBox.y);
+    mBoxCenterInCellSpace = new FPoint(gridBoxCx - gridBoxTopLeftX, gridBoxCy - gridBoxTopLeftY);
+    verifyNormalized(mBoxCenterInCellSpace);
 
-    mBoxGridCell = gridCell;
+    if (false)
+      halt("box:", box, CR, "anchorBox:", anchorBox, CR, "box size rel to anch:", mBoxSizeRelativeToAnchorBox,
+          CR, "boxGridCell:", mBoxGridCell, CR, "center in cell:", mBoxCenterInCellSpace);
 
-    mBoxCenterInCellSpace = new FPoint(//
-        midPoint.x * mImageToGridScale.x - gridCell.x, //
-        midPoint.y * mImageToGridScale.y - gridCell.y);
-
-   
-   if (false) 
-    halt("box:", box, CR, "anchorBox:",anchorBox,CR,"box size rel to anch:",mBoxSizeRelativeToAnchorBox,CR,"boxGridCell:",mBoxGridCell,CR,"center in cell:",mBoxCenterInCellSpace);
-    
     if (verbose()) {
       log("  grid cell:", mBoxGridCell);
       log("  loc(cell):", mBoxCenterInCellSpace);
       log("  size(img):", mBoxSizeRelativeToAnchorBox);
     }
     return true;
+  }
+
+  private static void verifyNormalized(FPoint normalizedLoc) {
+    if (normalizedLoc.x < 0 || normalizedLoc.y < 0 || normalizedLoc.x >= 1 || normalizedLoc.y >= 1)
+      throw badArg("location is not normalized to 0...1:", normalizedLoc);
   }
 
   private int numAnchorBoxes() {
