@@ -2,22 +2,21 @@
       "network_path" : "network.json",
         "categories" : "A",
 
-       "image_total" :  64,
+       "image_total" :  320,
 
  "noise_factor" : 0,
-  "color_limit" : 1,
-   "font_limit" : 1,
-  "max_objects" : 1,
+  //"color_limit" : 1,
+   //"font_limit" : 1,
+  "max_objects" : 2,
 
  "augmentation_config" : {
-      "translate_disable": true,
+      //"translate_disable": true,
       "translate_ratio_max" : 0.2,
 
       "rotate_disable" : true,
 
-      "scale_disable" : true,   // sets scale to scale_max
-      "scale_max" : 2.2,
-      "scale_min" : 1.8,
+      //"scale_disable" : true,   // sets scale to scale_max
+      "scale_max" : 1.6,
  },
 
 }
