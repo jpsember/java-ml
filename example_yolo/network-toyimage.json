@@ -25,7 +25,6 @@
 
           {"type" :"conv", "filters": 256 },
           {"type" :"leaky_relu"},
-          {"type" :"maxpool"},
 
           {"type" :"conv", "filters": 128 },
           {"type" :"leaky_relu"},
@@ -53,10 +52,10 @@
         ],
 
         "model_config" : {
-              "image_size" : [64,32],   // just two blocks
+              "image_size" : [64,32],   // 4x2 blocks
               "image_channels" : 3,
               "category_count" : 1,
-              "block_size" : [32,32],
+              "block_size" : [16,16],
               "anchor_boxes_pixels" : [[18,18]],
               "lambda_coord" : 5.0,
               "lambda_noobj" : 0.5

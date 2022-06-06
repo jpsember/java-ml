@@ -292,6 +292,10 @@ public abstract class ModelWrapper<T extends AbstractData> extends BaseObject {
     return (byte[]) mOutputLayer;
   }
 
+  public String renderLabels() {
+    throw modelNotSupported("renderLabels");
+  }
+  
   // ------------------------------------------------------------------
 
   private NeuralNetwork mNetwork;

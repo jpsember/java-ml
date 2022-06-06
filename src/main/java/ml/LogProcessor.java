@@ -22,6 +22,7 @@ import java.io.File;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import static ml.img.ImageCompiler.VERIFY;
 
 public class LogProcessor extends BaseObject implements Runnable {
 
@@ -204,7 +205,7 @@ public class LogProcessor extends BaseObject implements Runnable {
       checkArgument(imgLength % bytesPerImage == 0, "images length", imgLength,
           "is not a multiple of image volume", bytesPerImage);
       String setName = "" + imgRec.logItem().familyId() + "_%02d";
-      
+
       final boolean show = false && alert("showing snapshot labels");
       JSMap m = null;
       if (show) {
@@ -224,13 +225,13 @@ public class LogProcessor extends BaseObject implements Runnable {
           int imgLblLen = targetBuffer.length;
           checkArgument(batchSize * imgLblLen == labelSets.length, "label size * batch != labels length");
           System.arraycopy(labelSets, imgLblLen * i, targetBuffer, 0, imgLblLen);
-       
-            if (show) {
-              StringBuilder sb = new StringBuilder();
-              for (float f : targetBuffer)
-                sb.append(String.format("%4d ",(int)(f * 100)));
-              m.put(String.format("img%02d",i), sb.toString());
-            }
+
+          if (show) {
+            StringBuilder sb = new StringBuilder();
+            for (float f : targetBuffer)
+              sb.append(String.format("%4d ", (int) (f * 100)));
+            m.put(String.format("img%02d", i), sb.toString());
+          }
         }
           break;
         default:
@@ -239,12 +240,13 @@ public class LogProcessor extends BaseObject implements Runnable {
 
         Script.Builder script = Script.newBuilder();
         alert("Seems to be writing constant elements after first one?");
-        
+     if (VERIFY)
+        pr("labels:", INDENT, mModel.renderLabels());
         script.items(mModel.transformModelOutputToScredit());
         ScriptUtil.write(files(), script, ScriptUtil.scriptPathForImage(imgPath));
       }
       if (show)
-        pr("labels:",INDENT,m);
+        pr("labels:", INDENT, m);
     }
       break;
     }

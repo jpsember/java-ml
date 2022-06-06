@@ -47,6 +47,8 @@ public final class ImageCompiler extends BaseObject {
     mInspector = Inspector.orNull(inspector);
   }
 
+  public static final boolean VERIFY = alert("verifying");
+  
   public void compileTrainSet(File targetDir) {
     ModelWrapper model = model();
     files().remakeDirs(targetDir);
@@ -64,6 +66,11 @@ public final class ImageCompiler extends BaseObject {
     float[] imageFloats = null;
 
     DataType imageDataType = model.network().imageDataType();
+
+    if (VERIFY) {
+      todo("are we transforming images correctly?");
+      pr(VERT_SP,"processing", entries().size(), "entries");
+    }
 
     for (ImageEntry entry : entries()) {
       BufferedImage img = ImgUtil.read(entry.imageFile());

@@ -29,6 +29,8 @@ import gen.Yolo;
 import ml.NetworkUtil;
 import ml.VolumeUtil;
 
+import static ml.img.ImageCompiler.VERIFY;
+
 public final class YoloModelWrapper extends ModelWrapper<Yolo> {
 
   @Override
@@ -111,6 +113,10 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
     // Compile annotations into ones that have a single bounding box
     List<RectElement> boxes = arrayList();
 
+    if (VERIFY) {
+      pr("Transforming ScriptElements:", scriptElementList.size());
+    }
+
     for (ScriptElement elem : scriptElementList) {
       switch (elem.tag()) {
       default:
@@ -144,6 +150,10 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
       if (convertBoxToCell(box.bounds()))
         writeBoxToFieldsBuffer(box, outputBuffer);
     }
+    if (VERIFY) {
+      pr(renderLabels());
+    }
+
     return outputBuffer;
   }
 
@@ -357,7 +367,7 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
     b[f + YoloUtil.F_CLASS_PROBABILITIES + ScriptUtil.categoryOrZero(box)] = 1;
 
     if (verbose()) {
-      pr("write box to fields:", box);
+      pr("write box to fields:", box, "f:", f);
       pr("boxGridCell:", mBoxGridCell);
       pr("anchor box:", mAnchorBox);
       pr("box loc rel to cell:", mBoxCenterInCellSpace);
@@ -504,5 +514,27 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
   private int mFieldsPerAnchorBox;
   private int mFieldsPerGridCell;
   private int mFieldsPerImage;
+
+  @Override
+  public String renderLabels() {
+    float[] b = labelBufferFloats();
+    StringBuilder sb = new StringBuilder();
+    for (int cy = 0; cy < mGridSize.y; cy++) {
+      for (int cx = 0; cx < mGridSize.x; cx++) {
+        sb.append(cx == 0 ? " ║" : " │");
+        int cellIndex = cx + mGridSize.x * cy;
+        int f = mFieldsPerGridCell * cellIndex;
+        for (int i = 0; i < mFieldsPerGridCell; i++) {
+          int v = (int) (b[f + i] * 100);
+          if (v == 0)
+            sb.append("    ");
+          else
+            sb.append(String.format("%4d", v));
+        }
+      }
+      sb.append(" ║\n");
+    }
+    return sb.toString();
+  }
 
 }
