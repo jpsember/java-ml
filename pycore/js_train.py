@@ -29,6 +29,8 @@ class JsTrain:
     self.stat_test_loss = Stats("Test Loss")
 
     self.epoch_number = 0
+    self.snapshot_epoch_interval = 2.0
+    self.snapshot_next_epoch = 2
 
     script_path = os.path.realpath(train_script_file)
     self._proj_path = os.path.dirname(script_path)
@@ -406,10 +408,14 @@ class JsTrain:
       if self.stop_signal_received():
         done_msg = "Stop signal received"
 
-      if True and warning("temporary"):
-        if self.epoch_number % 20 == 0:
-          pr("Saving model inference snapshot")
-          self.send_inference_result()
+      next_snapshot_epoch = int(self.snapshot_next_epoch)
+      if self.epoch_number >= next_snapshot_epoch:
+        # Early on, generate more frequent snapshots
+        if self.epoch_number > 20:
+          self.snapshot_epoch_interval *= 1.2
+        self.snapshot_next_epoch = self.epoch_number + self.snapshot_epoch_interval
+        pr("Saving model inference snapshot")
+        self.send_inference_result()
 
       current_time = time_ms()
       if not self.checkpoint_last_time_ms:

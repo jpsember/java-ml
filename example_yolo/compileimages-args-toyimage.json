@@ -9,8 +9,8 @@
              "shear_disable" : true,
              "scale_disable" : true,
              "rotate_disable" : true,
-             //"translate_disable" : true,
-            //"translate_ratio_max" : 0.001,
+             "translate_disable" : true,
+            "translate_ratio_max" : 0.001,
              "blur_factor" : -1,
            },
 

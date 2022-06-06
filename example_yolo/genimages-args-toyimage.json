@@ -5,17 +5,17 @@
        "image_total" :  320,
 
  "noise_factor" : 0,
-  //"color_limit" : 1,
-   //"font_limit" : 1,
-  "max_objects" : 2,
+  "color_limit" : 1,
+  "font_limit" : 1,
+  "max_objects" : 1,
 
  "augmentation_config" : {
       //"translate_disable": true,
-      "translate_ratio_max" : 0.2,
+      "translate_ratio_max" : 0.010,
 
       "rotate_disable" : true,
 
-      //"scale_disable" : true,   // sets scale to scale_max
+      "scale_disable" : true,   // sets scale to scale_max
       "scale_max" : 1.6,
  },
 

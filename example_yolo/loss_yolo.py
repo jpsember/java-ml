@@ -35,8 +35,11 @@ class YoloLoss(nn.Module):
 
 
   def forward(self, current, target):
+
+    include_objectness = True
+
     self.log_counter += 1
-    if False and self.log_active():
+    if include_objectness and self.log_active():
       self.logger.add_msg("^v;loss_yolo.py\n^d;")
     y = self.yolo
     batch_size = current.data.size(0)
@@ -109,15 +112,14 @@ class YoloLoss(nn.Module):
 
     weighted_box_loss = self.yolo.lambda_coord * (loss_xy + loss_wh)
 
-    if warning("using just weighted box loss"):
-      loss = weighted_box_loss
-    else:
+    loss = weighted_box_loss
+    if include_objectness:
       iou_scores = self.calculate_iou(ground_cxcy, ground_wh, pred_cxcy, pred_wh)
       self.log_tensor(".iou_scores")
 
       loss_objectness = self.construct_objectness_loss(true_confidence, pred_objectness, iou_scores)
       self.log_tensor(".loss_objectness")
-      loss = weighted_box_loss + loss_objectness
+      loss = loss + loss_objectness
 
     if not warning("disabled class_loss"):
       loss_class = self.construct_class_loss(true_confidence, true_class_probabilities, predicted_box_class_logits)
