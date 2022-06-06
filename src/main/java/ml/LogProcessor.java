@@ -19,6 +19,7 @@ import static js.base.Tools.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 
 public class LogProcessor extends BaseObject implements Runnable {
@@ -63,7 +64,7 @@ public class LogProcessor extends BaseObject implements Runnable {
         files().deletePeacefully(infoFile);
         files().deletePeacefully(tensorFile);
       }
-
+      cullFamilyBuffer();
       DateTimeTools.sleepForRealMs(50);
     }
     log("stopping");
@@ -91,7 +92,7 @@ public class LogProcessor extends BaseObject implements Runnable {
       }
 
       switch (ti.dataType()) {
-      case FLOAT32:  
+      case FLOAT32:
         rec.setData(Files.readFloatsLittleEndian(tensorFile, "tensorFile"));
         break;
       case UNSIGNED_BYTE:
@@ -104,12 +105,14 @@ public class LogProcessor extends BaseObject implements Runnable {
 
     // If this belongs to a family, buffer it accordingly
     //
-    if (ti.familySize() != 0) {
-      todo("separate the buffering from the handling (printing, generating script)");
-      processLabelledImage(rec);
-      return;
-    }
+    if (ti.familySize() != 0)
+      bufferFamilyLogItem(rec);
+    else
+      processLogItem(rec);
+  }
 
+  private void processLogItem(InfoRecord rec) {
+    LogItem ti = rec.logItem();
     StringBuilder sb = new StringBuilder();
     if (rec.hasTensor()) {
       checkArgument(rec.mFloats != null, "no floats found");
@@ -150,11 +153,8 @@ public class LogProcessor extends BaseObject implements Runnable {
     System.out.print(sb.toString());
   }
 
-  private void processLabelledImage(InfoRecord rec) {
+  private void bufferFamilyLogItem(InfoRecord rec) {
     LogItem logItem = rec.logItem();
-    if (todo("do this check only when the family is being processed") && //
-        Files.empty(config().snapshotDir()))
-      return;
 
     log("processing labelled image:", logItem);
     int key = logItem.familyId();
@@ -172,15 +172,19 @@ public class LogProcessor extends BaseObject implements Runnable {
       if (famElement == null)
         famComplete = false;
 
-    if (!famComplete) {
-      todo("do culling in a more general location");
+    if (!famComplete)
       return;
-    }
 
     mFamilyMap.remove(logItem.familyId());
 
     InfoRecord imgRec = familySet[0];
     InfoRecord lblRec = familySet[1];
+    processSnapshotItem(imgRec, lblRec);
+  }
+
+  private void processSnapshotItem(InfoRecord imgRec, InfoRecord lblRec) {
+    if (Files.empty(config().snapshotDir()))
+      return;
 
     Vol imgVol = NetworkUtil.determineInputImageVolume(mNetwork);
 
@@ -198,7 +202,7 @@ public class LogProcessor extends BaseObject implements Runnable {
       int batchSize = imgLength / bytesPerImage;
       checkArgument(imgLength % bytesPerImage == 0, "images length", imgLength,
           "is not a multiple of image volume", bytesPerImage);
-      String setName = "" + logItem.familyId() + "_%02d";
+      String setName = "" + imgRec.logItem().familyId() + "_%02d";
       for (int i = 0; i < batchSize; i++) {
         byte[] imgb = Arrays.copyOfRange(imgRec.mBytes, bytesPerImage * i, bytesPerImage * (i + 1));
         BufferedImage img = ImgUtil.bytesToBGRImage(imgb, VolumeUtil.spatialDimension(imgVol));
@@ -240,21 +244,25 @@ public class LogProcessor extends BaseObject implements Runnable {
     return mTargetProjectDir;
   }
 
-  //  /**
-  //   * If for some reason there are orphaned images or labels, discard them
-  //   */
-  //  private void cullStalePendingRecords(int key) {
-  //    List<Integer> keysToRemove = arrayList();
-  //    for (int k : mOrphanInfoRecordMap.keySet()) {
-  //      if (k < key - 10) {
-  //        keysToRemove.add(k);
-  //      }
-  //    }
-  //    if (keysToRemove.isEmpty())
-  //      return;
-  //    alert("Removing stale pending records of size:", keysToRemove.size());
-  //    mOrphanInfoRecordMap.keySet().removeAll(keysToRemove);
-  //  }
+  /**
+   * If for some reason there are family sets still waiting after a long while,
+   * delete them
+   */
+  private void cullFamilyBuffer() {
+    List<Integer> keysToRemove = arrayList();
+    for (InfoRecord[] set : mFamilyMap.values()) {
+      for (InfoRecord r : set) {
+        if (r != null && r.logItem().id() < mPrevId - 20) {
+          keysToRemove.add(r.logItem().familyId());
+          break;
+        }
+      }
+    }
+    if (keysToRemove.isEmpty())
+      return;
+    alert("Removing stale buffered records of size:", keysToRemove.size());
+    mFamilyMap.keySet().removeAll(keysToRemove);
+  }
 
   private Files files() {
     return Files.S;

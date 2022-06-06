@@ -36,7 +36,7 @@ class YoloLoss(nn.Module):
 
   def forward(self, current, target):
     self.log_counter += 1
-    if self.log_active():
+    if False and self.log_active():
       self.logger.add_msg("^v;loss_yolo.py\n^d;")
     y = self.yolo
     batch_size = current.data.size(0)
