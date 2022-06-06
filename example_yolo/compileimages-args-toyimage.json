@@ -19,5 +19,4 @@
       },
 
         "snapshot_dir" : "snapshot",
-        "log_epoch_interval" : 20,
 }

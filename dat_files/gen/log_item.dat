@@ -6,9 +6,6 @@ fields {
   //
   int id;
 
-  bool infrequent;
-  int epoch;
-
   // Message or name of tensor
   //
   string message;

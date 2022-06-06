@@ -34,6 +34,4 @@ fields {
   // If nonempty, snapshot image/labels are stored here
   //
   File snapshot_dir;
-
-  int log_epoch_interval;
 }

@@ -12,17 +12,7 @@ class TensorLogger:
   def __init__(self, directory:str = "train_data"):
     self.dir = directory
     self.id = 0
-    self.epoch_number = None
-    self.infrequent = False
     pass
-
-
-  def set_infrequent(self, status:bool):
-    self.infrequent = status
-
-
-  def set_epoch(self, epoch_number:int):
-    self.epoch_number = epoch_number
 
 
   def add_msg(self, *args):
@@ -38,11 +28,6 @@ class TensorLogger:
       ti = LogItem.new_builder()
     self.id += 1
     ti.id = self.id
-    if self.epoch_number is None:
-      warning("no epoch_number set")
-    else:
-      ti.epoch = self.epoch_number
-    ti.infrequent = self.infrequent
     return ti
 
 
@@ -68,8 +53,10 @@ class TensorLogger:
 
 
   def write(self, info:LogItem, tensor:torch.Tensor = None):
+    #check_state(info.id != 0,"no id in LogItem")
     p = self.get_path(info, ".json")
     p_temp = self.temp_version(p)
+    #pr("writing log item id:",info.id,"to:",p)
     txt_write(p_temp, info.to_string(False))
     os.rename(p_temp, p)
     if tensor is None:
@@ -93,4 +80,4 @@ class TensorLogger:
 
 
   def get_path(self, info:LogItem, name:str):
-    return os.path.join(self.dir, str(info.id) + self.clean(name))
+    return os.path.join(self.dir, f"{info.id:07d}{self.clean(name)}")

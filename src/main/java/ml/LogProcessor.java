@@ -71,18 +71,14 @@ public class LogProcessor extends BaseObject implements Runnable {
 
   private void processFile(File infoFile, File tensorFile) {
     LogItem ti = Files.parseAbstractData(LogItem.DEFAULT_INSTANCE, infoFile);
+    //pr("processing log file:", infoFile.getName(), "id:", ti.id());
+
     if (ti.id() <= mPrevId) {
       pr("*** log item not greater than prev:", mPrevId, INDENT, ti);
       return;
     }
     checkState(ti.id() > mPrevId, "LogItem ids not strictly increasing");
     mPrevId = ti.id();
-
-    if (ti.infrequent()) {
-      if (config().logEpochInterval() > 0 && ti.epoch() % config().logEpochInterval() != 0) 
-        return;
-    }
-
     InfoRecord rec = new InfoRecord(ti);
 
     if (rec.hasTensor()) {
