@@ -85,18 +85,14 @@ public class LogProcessor extends BaseObject implements Runnable {
       // If no extension file exists, it may not have been renamed
       if (!tensorFile.exists())
         DateTimeTools.sleepForRealMs(100);
-
-      todo("InfoRecords won't always have corresponding tensors");
       if (!tensorFile.exists()) {
         pr("...logger, no corresponding tensor file found:", tensorFile.getName());
         return;
       }
 
       switch (ti.dataType()) {
-      case FLOAT32: {
-        float[] t = Files.readFloatsLittleEndian(tensorFile, "tensorFile");
-        rec.setData(t);
-      }
+      case FLOAT32:  
+        rec.setData(Files.readFloatsLittleEndian(tensorFile, "tensorFile"));
         break;
       case UNSIGNED_BYTE:
         rec.setData(Files.toByteArray(tensorFile, "tensorFile"));

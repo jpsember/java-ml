@@ -109,13 +109,15 @@ class YoloLoss(nn.Module):
 
     weighted_box_loss = self.yolo.lambda_coord * (loss_xy + loss_wh)
 
-    iou_scores = self.calculate_iou(ground_cxcy, ground_wh, pred_cxcy, pred_wh)
-    self.log_tensor(".iou_scores")
+    if warning("using just weighted box loss"):
+      loss = weighted_box_loss
+    else:
+      iou_scores = self.calculate_iou(ground_cxcy, ground_wh, pred_cxcy, pred_wh)
+      self.log_tensor(".iou_scores")
 
-    loss_objectness = self.construct_objectness_loss(true_confidence, pred_objectness, iou_scores)
-    self.log_tensor(".loss_objectness")
-
-    loss = weighted_box_loss + loss_objectness
+      loss_objectness = self.construct_objectness_loss(true_confidence, pred_objectness, iou_scores)
+      self.log_tensor(".loss_objectness")
+      loss = weighted_box_loss + loss_objectness
 
     if not warning("disabled class_loss"):
       loss_class = self.construct_class_loss(true_confidence, true_class_probabilities, predicted_box_class_logits)
