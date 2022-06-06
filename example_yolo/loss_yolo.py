@@ -36,7 +36,7 @@ class YoloLoss(nn.Module):
 
   def forward(self, current, target):
 
-    include_objectness = True
+    include_objectness = False
 
     self.log_counter += 1
     if include_objectness and self.log_active():

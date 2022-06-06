@@ -13,6 +13,8 @@ import js.geometry.IPoint;
 import js.graphics.ImgUtil;
 import js.graphics.ScriptUtil;
 import js.graphics.gen.Script;
+import js.json.JSList;
+import js.json.JSMap;
 
 import static js.base.Tools.*;
 
@@ -203,6 +205,12 @@ public class LogProcessor extends BaseObject implements Runnable {
       checkArgument(imgLength % bytesPerImage == 0, "images length", imgLength,
           "is not a multiple of image volume", bytesPerImage);
       String setName = "" + imgRec.logItem().familyId() + "_%02d";
+      
+      final boolean show = alert("showing snapshot labels");
+      JSMap m = null;
+      if (show) {
+        m = map();
+      }
       for (int i = 0; i < batchSize; i++) {
         byte[] imgb = Arrays.copyOfRange(imgRec.mBytes, bytesPerImage * i, bytesPerImage * (i + 1));
         BufferedImage img = ImgUtil.bytesToBGRImage(imgb, VolumeUtil.spatialDimension(imgVol));
@@ -217,6 +225,13 @@ public class LogProcessor extends BaseObject implements Runnable {
           int imgLblLen = targetBuffer.length;
           checkArgument(batchSize * imgLblLen == labelSets.length, "label size * batch != labels length");
           System.arraycopy(labelSets, imgLblLen * i, targetBuffer, 0, imgLblLen);
+       
+            if (show) {
+              StringBuilder sb = new StringBuilder();
+              for (float f : targetBuffer)
+                sb.append(String.format("%4d ",(int)(f * 100)));
+              m.put(String.format("img%02d",i), sb.toString());
+            }
         }
           break;
         default:
@@ -224,9 +239,13 @@ public class LogProcessor extends BaseObject implements Runnable {
         }
 
         Script.Builder script = Script.newBuilder();
+        alert("Seems to be writing constant elements after first one?");
+        
         script.items(mModel.transformModelOutputToScredit());
         ScriptUtil.write(files(), script, ScriptUtil.scriptPathForImage(imgPath));
       }
+      if (show)
+        pr("labels:",INDENT,m);
     }
       break;
     }

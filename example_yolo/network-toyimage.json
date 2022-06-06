@@ -40,6 +40,15 @@
           {"type" :"conv", "filters": 512 },
           {"type" :"leaky_relu"},
 
+          {"type" :"conv", "filters": 512 },
+          {"type" :"leaky_relu"},
+
+          {"type" :"conv", "filters": 512 },
+          {"type" :"leaky_relu"},
+
+          {"type" :"conv", "filters": 512 },
+          {"type" :"leaky_relu"},
+
           {"type":"yolo"},
         ],
 

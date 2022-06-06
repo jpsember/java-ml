@@ -7,11 +7,10 @@
  "noise_factor" : 0,
   "color_limit" : 1,
   "font_limit" : 1,
-  "max_objects" : 1,
+  "max_objects" : 2,
 
  "augmentation_config" : {
-      //"translate_disable": true,
-      "translate_ratio_max" : 0.010,
+      "translate_ratio_max" : 0.2,
 
       "rotate_disable" : true,
 

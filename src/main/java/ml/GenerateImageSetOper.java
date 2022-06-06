@@ -46,6 +46,8 @@ public class GenerateImageSetOper extends AppOper {
 
   @Override
   public void perform() {
+    boolean fixedCoord = alert("using particular location for first obj");
+
     if (YOLO_DEV)
       die("temporarily disabled to work with known YOLO images");
     mModel = ModelWrapper.constructFor(config().network(), config().networkPath());
@@ -136,7 +138,7 @@ public class GenerateImageSetOper extends AppOper {
         AugmentationConfig aug = config().augmentationConfig();
 
         for (int attempt = 0; attempt < 5; attempt++) {
-          
+
           // We may want to avoid placing things right in the center if we're restricting
           // the transformations, since this might be right on the border of a grid cell...
           int mx = mImageSize.x / 2;
@@ -154,6 +156,10 @@ public class GenerateImageSetOper extends AppOper {
           if (aug.translateDisable())
             tfmImageCenter = Matrix.getTranslate(mx, my);
           else {
+            if (fixedCoord && objIndex == 0) {
+              mx = (int) (mImageSize.x * .24);
+              my = (int) (mImageSize.y * .2);
+            }
             float rangex = mImageSize.x * aug.translateRatioMax();
             float rangey = mImageSize.y * aug.translateRatioMax();
             tfmImageCenter = Matrix.getTranslate(randGuassian(mx - rangex, mx + rangex),
