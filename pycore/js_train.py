@@ -388,6 +388,7 @@ class JsTrain:
     done_msg = None
 
     while not self.abort_flag:
+      self.logger.set_epoch(self.epoch_number)
       self.train()
       if self.abort_flag:
         break
@@ -440,6 +441,7 @@ class JsTrain:
     self.image_index = img_index
 
     t = LogItem.new_builder()
+    t.epoch = self.epoch_number
     t.family_id = img_index
     t.family_size = 2
     t.family_slot = 0

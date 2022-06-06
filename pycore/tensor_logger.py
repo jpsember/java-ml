@@ -12,7 +12,17 @@ class TensorLogger:
   def __init__(self, directory:str = "train_data"):
     self.dir = directory
     self.id = 0
+    self.epoch_number = None
+    self.infrequent = False
     pass
+
+
+  def set_infrequent(self, status:bool):
+    self.infrequent = status
+
+
+  def set_epoch(self, epoch_number:int):
+    self.epoch_number = epoch_number
 
 
   def add_msg(self, *args):
@@ -28,6 +38,11 @@ class TensorLogger:
       ti = LogItem.new_builder()
     self.id += 1
     ti.id = self.id
+    if self.epoch_number is None:
+      warning("no epoch_number set")
+    else:
+      ti.epoch = self.epoch_number
+    ti.infrequent = self.infrequent
     return ti
 
 

@@ -19,6 +19,8 @@ class YoloLoss(nn.Module):
     self.grid_size = grid_size(yolo)
     self.grid_cell_total = self.grid_size.product()
     self.anchors = self.construct_anchors_tensor()
+    self.counter = 0
+    self.log_active = True
 
 
   # Construct a tensor containing the anchor boxes, normalized to grid cell space
@@ -34,7 +36,10 @@ class YoloLoss(nn.Module):
 
 
   def forward(self, current, target):
-    self.logger.add_msg("^v;loss_yolo.py\n^d;")
+    self.counter += 1
+    self.log_active = (self.counter % 25) == 0
+    if self.log_active:
+      self.logger.add_msg("^v;loss_yolo.py\n^d;")
     y = self.yolo
     batch_size = current.data.size(0)
 
@@ -131,6 +136,8 @@ class YoloLoss(nn.Module):
   # Send a tensor for logging.  Assumes it has the dimension D_IMAGE, D_GRIDSIZE, etc
   #
   def log_tensor(self, name, t=None):
+    if not self.log_active:
+      return
     if name.startswith("."):
       return
 

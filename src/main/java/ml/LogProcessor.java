@@ -77,6 +77,12 @@ public class LogProcessor extends BaseObject implements Runnable {
     }
     checkState(ti.id() > mPrevId, "LogItem ids not strictly increasing");
     mPrevId = ti.id();
+
+    if (ti.infrequent()) {
+      if (config().logEpochInterval() > 0 && ti.epoch() % config().logEpochInterval() != 0) 
+        return;
+    }
+
     InfoRecord rec = new InfoRecord(ti);
 
     if (rec.hasTensor()) {
