@@ -157,8 +157,8 @@ public class GenerateImageSetOper extends AppOper {
             tfmImageCenter = Matrix.getTranslate(mx, my);
           else {
             if (fixedCoord && objIndex == 0) {
-              mx = (int) (mImageSize.x * .24);
-              my = (int) (mImageSize.y * .2);
+              mx = (int) (mImageSize.x * .75);
+              my = (int) (mImageSize.y * .75);
             }
             float rangex = mImageSize.x * aug.translateRatioMax();
             float rangey = mImageSize.y * aug.translateRatioMax();

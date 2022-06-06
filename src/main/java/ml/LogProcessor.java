@@ -13,7 +13,6 @@ import js.geometry.IPoint;
 import js.graphics.ImgUtil;
 import js.graphics.ScriptUtil;
 import js.graphics.gen.Script;
-import js.json.JSList;
 import js.json.JSMap;
 
 import static js.base.Tools.*;
@@ -206,7 +205,7 @@ public class LogProcessor extends BaseObject implements Runnable {
           "is not a multiple of image volume", bytesPerImage);
       String setName = "" + imgRec.logItem().familyId() + "_%02d";
       
-      final boolean show = alert("showing snapshot labels");
+      final boolean show = false && alert("showing snapshot labels");
       JSMap m = null;
       if (show) {
         m = map();

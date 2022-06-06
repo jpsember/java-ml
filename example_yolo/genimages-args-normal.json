@@ -15,7 +15,7 @@
       "rotate_disable" : true,
 
       "scale_disable" : true,   // sets scale to scale_max
-      "scale_max" : 3.6,
+      "scale_max" : 12,
  },
 
 }
