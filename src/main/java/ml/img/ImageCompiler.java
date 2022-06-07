@@ -1,7 +1,6 @@
 package ml.img;
 
 import static js.base.Tools.*;
-import static ml.img.ImageCompiler.*;
 
 import java.awt.image.AffineTransformOp;
 import java.awt.image.BufferedImage;
@@ -48,8 +47,6 @@ public final class ImageCompiler extends BaseObject {
     mInspector = Inspector.orNull(inspector);
   }
 
-  public static final boolean VERIFY = alert("verifying");
-
   public void compileTrainSet(File targetDir) {
     ModelWrapper model = model();
     files().remakeDirs(targetDir);
@@ -68,7 +65,7 @@ public final class ImageCompiler extends BaseObject {
 
     DataType imageDataType = model.network().imageDataType();
 
-    if (false && VERIFY) {
+    if (false && config().logLabels()) {
       todo("are we transforming images correctly?");
       pr(VERT_SP, "processing", entries().size(), "entries");
     }
@@ -120,13 +117,13 @@ public final class ImageCompiler extends BaseObject {
         throw notSupported("ImageDataType:", imageDataType);
       }
 
-      if (true && VERIFY) {
+      if (true && config().logLabels()) {
         pr("Transforming ScriptElements:", image.annotations().size());
       }
 
       model.accept(image);
 
-      if (true && VERIFY) {
+      if (true && config().logLabels()) {
         pr(model.renderLabels());
       }
 

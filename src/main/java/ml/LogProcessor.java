@@ -22,7 +22,6 @@ import java.io.File;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import static ml.img.ImageCompiler.VERIFY;
 
 public class LogProcessor extends BaseObject implements Runnable {
 
@@ -240,7 +239,7 @@ public class LogProcessor extends BaseObject implements Runnable {
 
         Script.Builder script = Script.newBuilder();
         alert("Seems to be writing constant elements after first one?");
-        if (VERIFY)
+        if (config().logLabels())
           pr("Model produced labels:", CR, mModel.renderLabels());
         script.items(mModel.transformModelOutputToScredit());
         ScriptUtil.write(files(), script, ScriptUtil.scriptPathForImage(imgPath));

@@ -34,4 +34,6 @@ fields {
   // If nonempty, snapshot image/labels are stored here
   //
   File snapshot_dir;
+
+  bool log_labels;
 }

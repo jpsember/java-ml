@@ -29,8 +29,6 @@ import gen.Yolo;
 import ml.NetworkUtil;
 import ml.VolumeUtil;
 
-import static ml.img.ImageCompiler.VERIFY;
-
 public final class YoloModelWrapper extends ModelWrapper<Yolo> {
 
   @Override
@@ -146,7 +144,7 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
       if (convertBoxToCell(box.bounds()))
         writeBoxToFieldsBuffer(box, outputBuffer);
     }
-   
+
     return outputBuffer;
   }
 
