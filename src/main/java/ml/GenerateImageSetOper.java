@@ -46,7 +46,7 @@ public class GenerateImageSetOper extends AppOper {
 
   @Override
   public void perform() {
-    boolean fixedCoord = alert("using particular location for first obj");
+    boolean fixedCoord = false && alert("using particular location for first obj");
 
     if (YOLO_DEV)
       die("temporarily disabled to work with known YOLO images");
