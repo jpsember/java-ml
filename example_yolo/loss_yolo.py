@@ -23,7 +23,7 @@ class YoloLoss(nn.Module):
 
   def forward(self, current, target):
 
-    include_objectness = False
+    include_objectness = True
 
     self.log_counter += 1
     if include_objectness and self.log_active():
@@ -58,7 +58,6 @@ class YoloLoss(nn.Module):
     # but the symmetry of the structure of the true vs inferred data keeps things simple.
     #
     class_prob_end = F_CLASS_PROBABILITIES + y.category_count
-    true_class_probabilities = target[:, :, :, F_CLASS_PROBABILITIES:class_prob_end]
 
     # Determine predicted box's x,y
     #
@@ -109,6 +108,7 @@ class YoloLoss(nn.Module):
       loss = loss + loss_objectness
 
     if not warning("disabled class_loss"):
+      true_class_probabilities = target[:, :, :, F_CLASS_PROBABILITIES:class_prob_end]
       loss_class = self.construct_class_loss(true_confidence, true_class_probabilities, predicted_box_class_logits)
       loss = loss + loss_class
 
