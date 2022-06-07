@@ -1,6 +1,7 @@
 package ml.img;
 
 import static js.base.Tools.*;
+import static ml.img.ImageCompiler.*;
 
 import java.awt.image.AffineTransformOp;
 import java.awt.image.BufferedImage;
@@ -33,22 +34,22 @@ import ml.ModelWrapper;
  */
 public final class ImageCompiler extends BaseObject {
 
-  public ImageCompiler(CompileImagesConfig config, ModelWrapper model,   Files files) {
+  public ImageCompiler(CompileImagesConfig config, ModelWrapper model, Files files) {
     mModel = model;
-     mConfig = nullTo(config, CompileImagesConfig.DEFAULT_INSTANCE).build();
+    mConfig = nullTo(config, CompileImagesConfig.DEFAULT_INSTANCE).build();
     mFiles = nullTo(files, Files.S);
     int seed = config().seed();
     if (seed <= 0)
       seed = 1965;
     mRandom = new Random(seed);
-   }
+  }
 
   public void setInspector(Inspector inspector) {
     mInspector = Inspector.orNull(inspector);
   }
 
   public static final boolean VERIFY = alert("verifying");
-  
+
   public void compileTrainSet(File targetDir) {
     ModelWrapper model = model();
     files().remakeDirs(targetDir);
@@ -67,9 +68,9 @@ public final class ImageCompiler extends BaseObject {
 
     DataType imageDataType = model.network().imageDataType();
 
-    if (VERIFY) {
+    if (false && VERIFY) {
       todo("are we transforming images correctly?");
-      pr(VERT_SP,"processing", entries().size(), "entries");
+      pr(VERT_SP, "processing", entries().size(), "entries");
     }
 
     for (ImageEntry entry : entries()) {
@@ -119,7 +120,15 @@ public final class ImageCompiler extends BaseObject {
         throw notSupported("ImageDataType:", imageDataType);
       }
 
+      if (true && VERIFY) {
+        pr("Transforming ScriptElements:", image.annotations().size());
+      }
+
       model.accept(image);
+
+      if (true && VERIFY) {
+        pr(model.renderLabels());
+      }
 
       if (mInspector.used()) {
         // Parse the labels we generated, and write as the annotations to an inspection image

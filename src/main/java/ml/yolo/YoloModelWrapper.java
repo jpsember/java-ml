@@ -113,10 +113,6 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
     // Compile annotations into ones that have a single bounding box
     List<RectElement> boxes = arrayList();
 
-    if (VERIFY) {
-      pr("Transforming ScriptElements:", scriptElementList.size());
-    }
-
     for (ScriptElement elem : scriptElementList) {
       switch (elem.tag()) {
       default:
@@ -150,10 +146,7 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
       if (convertBoxToCell(box.bounds()))
         writeBoxToFieldsBuffer(box, outputBuffer);
     }
-    if (VERIFY) {
-      pr(renderLabels());
-    }
-
+   
     return outputBuffer;
   }
 

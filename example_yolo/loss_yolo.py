@@ -18,20 +18,7 @@ class YoloLoss(nn.Module):
     self.num_anchors = anchor_box_count(yolo)
     self.grid_size = grid_size(yolo)
     self.grid_cell_total = self.grid_size.product()
-    self.anchors = self.construct_anchors_tensor()
     self.log_counter = 0
-
-
-  # Construct a tensor containing the anchor boxes, normalized to grid cell space
-  #
-  def construct_anchors_tensor(self):
-    yolo = self.yolo
-    c = []
-    b_x, b_y = 1.0 / yolo.block_size.x, 1.0 / yolo.block_size.y
-    for box_pixels in yolo.anchor_boxes_pixels:
-      c.append((box_pixels.x * b_x, box_pixels.y * b_y))
-    anchors = torch.Tensor(c)
-    return anchors
 
 
   def forward(self, current, target):
