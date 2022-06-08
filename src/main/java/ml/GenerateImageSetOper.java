@@ -21,7 +21,6 @@ import js.geometry.IRect;
 import js.geometry.Matrix;
 import js.geometry.MyMath;
 import js.graphics.ImgUtil;
-import js.graphics.Inspector;
 import js.graphics.Paint;
 import js.graphics.Plotter;
 import js.graphics.RectElement;
@@ -93,165 +92,183 @@ public class GenerateImageSetOper extends AppOper {
 
     String categoriesString = config().categories();
 
-    Inspector insp = Inspector.build(config().inspectionDir());
-    insp.minSamples(5);
-
     for (int i = 0; i < config().imageTotal(); i++) {
 
-      int totalObjects = objectCount;
-      if (totalObjects < 0)
-        totalObjects = 1 + random().nextInt(config().maxObjects());
       Plotter p = Plotter.build();
       p.withCanvas(mImageSize);
-
-      FontInfo fi = randomElement(fonts(), config().fontLimit());
-      p.with(PAINT_BGND).fillRect();
-
-      plotNoise(p);
-
       Script.Builder script = Script.newBuilder();
-      List<ScriptElement> scriptElements = arrayList();
-      List<IRect> rectList = arrayList();
-
-      if (model.inputImageChannels() == 1)
-        alert(
-            "monochrome isn't necessarily supported yet; clients should just use single channel of generated images, e.g. green");
-
-      Integer firstCat = null;
-
-      for (int objIndex = 0; objIndex < totalObjects; objIndex++) {
-        p.with(randomElement(paints(), config().colorLimit()).toBuilder().font(fi.mFont, 1f));
-
-        int category = random().nextInt(categoriesString.length());
-        if (firstCat == null)
-          firstCat = category;
-        String text = categoriesString.substring(category, category + 1);
-
-        FontMetrics m = fi.metrics(p.graphics());
-
-        Matrix objectTfm = null;
-        Matrix tfmFontOrigin = null;
-        IRect tfmRect = null;
-
-        boolean choseValidRectangle = false;
-
-        AugmentationConfig aug = config().augmentationConfig();
-
-        for (int attempt = 0; attempt < 5; attempt++) {
-
-          // We may want to avoid placing things right in the center if we're restricting
-          // the transformations, since this might be right on the border of a grid cell...
-          int mx = mImageSize.x / 2;
-          int my = mImageSize.y / 2;
-
-          int charWidth = m.charWidth(categoriesString.charAt(0));
-          int charHeight = (int) (m.getAscent() * ASCENT_SCALE_FACTOR);
-
-          // This is the offset in the y coordinate to apply when actually rendering the character
-          // using Java, so the render location is in terms of the baseline (not our center of the character)j
-          IPoint fontRenderOffset = IPoint.with(-charWidth / 2, charHeight / 2);
-          tfmFontOrigin = Matrix.getTranslate(fontRenderOffset);
-
-          Matrix tfmImageCenter;
-          if (aug.translateDisable())
-            tfmImageCenter = Matrix.getTranslate(mx, my);
-          else {
-            if (fixedCoord && objIndex == 0) {
-              mx = (int) (mImageSize.x * .75);
-              my = (int) (mImageSize.y * .75);
-            }
-            float rangex = mImageSize.x * aug.translateRatioMax();
-            float rangey = mImageSize.y * aug.translateRatioMax();
-            tfmImageCenter = Matrix.getTranslate(randGuassian(mx - rangex, mx + rangex),
-                randGuassian(my - rangey, my + rangey));
-          }
-
-          Matrix tfmRotate;
-          if (aug.rotateDisable())
-            tfmRotate = Matrix.IDENTITY;
-          else {
-            float maxRad = aug.rotateDegreesMax() * MyMath.M_DEG;
-            tfmRotate = Matrix.getRotate(randGuassian(-maxRad, maxRad));
-          }
-
-          Matrix tfmScale;
-          if (aug.scaleDisable()) {
-            tfmScale = Matrix.getScale(aug.scaleMax());
-          } else {
-            float scaleMax = aug.scaleMax();
-            float scaleMin = aug.scaleMin();
-            if (scaleMin <= 0)
-              scaleMin = scaleMax * 0.65f;
-            tfmScale = Matrix.getScale(randGuassian(scaleMin, scaleMax));
-          }
-
-          objectTfm = Matrix.postMultiply(tfmImageCenter, tfmScale, tfmRotate);
-
-          IPoint topLeft = IPoint.with(-charWidth / 2, -charHeight / 2);
-          IPoint size = IPoint.with(charWidth, charHeight);
-          IRect origRect = IRect.withLocAndSize(topLeft, size);
-
-          tfmRect = RectElement.applyTruncatedHeuristicTransform(origRect, objectTfm);
-
-          // If this rectangle overlaps too much with a previous one, keep searching
-          choseValidRectangle = true;
-
-          for (IRect prevRect : rectList) {
-            IRect intersection = IRect.intersection(prevRect, tfmRect);
-            if (intersection == null)
-              continue;
-            float intersectionFactor = intersection.area() / (float) tfmRect.area();
-            if (intersectionFactor < 0.25f)
-              continue;
-            choseValidRectangle = false;
-            break;
-          }
-        }
-        if (!choseValidRectangle)
-          continue;
-
-        RectElement rectElement = new RectElement(ElementProperties.newBuilder().category(category), tfmRect);
-        rectList.add(tfmRect);
-        scriptElements.add(rectElement);
-
-        if (obviousMode)
-          continue;
-
-        Matrix tfm = Matrix.postMultiply(objectTfm, tfmFontOrigin);
-        p.graphics().setTransform(tfm.toAffineTransform());
-        p.graphics().drawString(text, 0, 0);
-      }
-      plotNoise(p);
-
-      if (obviousMode) {
-        p.graphics().setColor(Plotter.rgbColorList().get(firstCat));
-        p.fillRect();
-      }
-
-      if (insp.used()) {
-        // TODO: inspector is kind of useless if we are writing out script projects anyways
-        insp.create();
-        insp.image(p.image());
-      }
-
       String imageBaseName = String.format("image_%05d", i);
 
-      // If we're doing a classifier, append the class number to the filename
-      if (projectType() == NetworkProjectType.CLASSIFIER) {
-        imageBaseName += String.format("_%d", first(scriptElements).properties().category());
-      }
+      if (config().pixelOrderMode()) {
+        renderPixelOrderModeImage(p);
+      } else {
 
+        FontInfo fi = randomElement(fonts(), config().fontLimit());
+        p.with(PAINT_BGND).fillRect();
+
+        plotNoise(p);
+
+        List<IRect> rectList = arrayList();
+
+        if (model.inputImageChannels() == 1)
+          alert(
+              "monochrome isn't necessarily supported yet; clients should just use single channel of generated images, e.g. green");
+
+        Integer firstCat = null;
+
+        int totalObjects = objectCount;
+        if (totalObjects < 0)
+          totalObjects = 1 + random().nextInt(config().maxObjects());
+        List<ScriptElement> scriptElements = arrayList();
+
+        for (int objIndex = 0; objIndex < totalObjects; objIndex++) {
+          p.with(randomElement(paints(), config().colorLimit()).toBuilder().font(fi.mFont, 1f));
+
+          int category = random().nextInt(categoriesString.length());
+          if (firstCat == null)
+            firstCat = category;
+          String text = categoriesString.substring(category, category + 1);
+
+          FontMetrics m = fi.metrics(p.graphics());
+
+          Matrix objectTfm = null;
+          Matrix tfmFontOrigin = null;
+          IRect tfmRect = null;
+
+          boolean choseValidRectangle = false;
+
+          AugmentationConfig aug = config().augmentationConfig();
+
+          for (int attempt = 0; attempt < 5; attempt++) {
+
+            // We may want to avoid placing things right in the center if we're restricting
+            // the transformations, since this might be right on the border of a grid cell...
+            int mx = mImageSize.x / 2;
+            int my = mImageSize.y / 2;
+
+            int charWidth = m.charWidth(categoriesString.charAt(0));
+            int charHeight = (int) (m.getAscent() * ASCENT_SCALE_FACTOR);
+
+            // This is the offset in the y coordinate to apply when actually rendering the character
+            // using Java, so the render location is in terms of the baseline (not our center of the character)j
+            IPoint fontRenderOffset = IPoint.with(-charWidth / 2, charHeight / 2);
+            tfmFontOrigin = Matrix.getTranslate(fontRenderOffset);
+
+            Matrix tfmImageCenter;
+            if (aug.translateDisable())
+              tfmImageCenter = Matrix.getTranslate(mx, my);
+            else {
+              if (fixedCoord && objIndex == 0) {
+                mx = (int) (mImageSize.x * .75);
+                my = (int) (mImageSize.y * .75);
+              }
+              float rangex = mImageSize.x * aug.translateRatioMax();
+              float rangey = mImageSize.y * aug.translateRatioMax();
+              tfmImageCenter = Matrix.getTranslate(randGuassian(mx - rangex, mx + rangex),
+                  randGuassian(my - rangey, my + rangey));
+            }
+
+            Matrix tfmRotate;
+            if (aug.rotateDisable())
+              tfmRotate = Matrix.IDENTITY;
+            else {
+              float maxRad = aug.rotateDegreesMax() * MyMath.M_DEG;
+              tfmRotate = Matrix.getRotate(randGuassian(-maxRad, maxRad));
+            }
+
+            Matrix tfmScale;
+            if (aug.scaleDisable()) {
+              tfmScale = Matrix.getScale(aug.scaleMax());
+            } else {
+              float scaleMax = aug.scaleMax();
+              float scaleMin = aug.scaleMin();
+              if (scaleMin <= 0)
+                scaleMin = scaleMax * 0.65f;
+              tfmScale = Matrix.getScale(randGuassian(scaleMin, scaleMax));
+            }
+
+            objectTfm = Matrix.postMultiply(tfmImageCenter, tfmScale, tfmRotate);
+
+            IPoint topLeft = IPoint.with(-charWidth / 2, -charHeight / 2);
+            IPoint size = IPoint.with(charWidth, charHeight);
+            IRect origRect = IRect.withLocAndSize(topLeft, size);
+
+            tfmRect = RectElement.applyTruncatedHeuristicTransform(origRect, objectTfm);
+
+            // If this rectangle overlaps too much with a previous one, keep searching
+            choseValidRectangle = true;
+
+            for (IRect prevRect : rectList) {
+              IRect intersection = IRect.intersection(prevRect, tfmRect);
+              if (intersection == null)
+                continue;
+              float intersectionFactor = intersection.area() / (float) tfmRect.area();
+              if (intersectionFactor < 0.25f)
+                continue;
+              choseValidRectangle = false;
+              break;
+            }
+          }
+          if (!choseValidRectangle)
+            continue;
+
+          RectElement rectElement = new RectElement(ElementProperties.newBuilder().category(category),
+              tfmRect);
+          rectList.add(tfmRect);
+          scriptElements.add(rectElement);
+
+          if (obviousMode)
+            continue;
+
+          Matrix tfm = Matrix.postMultiply(objectTfm, tfmFontOrigin);
+          p.graphics().setTransform(tfm.toAffineTransform());
+          p.graphics().drawString(text, 0, 0);
+        }
+        plotNoise(p);
+
+        if (obviousMode) {
+          p.graphics().setColor(Plotter.rgbColorList().get(firstCat));
+          p.fillRect();
+        }
+
+        // If we're doing a classifier, append the class number to the filename
+        if (projectType() == NetworkProjectType.CLASSIFIER) {
+          imageBaseName += String.format("_%d", first(scriptElements).properties().category());
+        }
+
+        script.items(scriptElements);
+      }
       {
         String path = Files.setExtension(imageBaseName, ImgUtil.EXT_JPEG);
         File f = new File(targetDir, path);
         ImgUtil.writeImage(files(), p.image(), f);
       }
-
-      script.items(scriptElements);
       {
         String path = Files.setExtension(imageBaseName, Files.EXT_JSON);
         File f = new File(annotationDir, path);
         ScriptUtil.write(files(), script, f);
+      }
+    }
+  }
+
+  private void renderPixelOrderModeImage(Plotter p) {
+    int[] pixels = ImgUtil.rgbPixels(p.image());
+    ModelWrapper model = model();
+    checkArgument(model.inputImageVolumeProduct() <= 256, "Image volume is too large for pixel order mode:",
+        model.inputImageVolume());
+    IPoint imgSize = model.inputImagePlanarSize();
+
+    int channels = model.inputImageChannels();
+
+    int pi = 0;
+    for (int y = 0; y < imgSize.y; y++) {
+      for (int x = 0; x < imgSize.x; x++, pi++) {
+        int elementIndex = pi * channels;
+        if (channels != 3)
+          throw notSupported("expected 3 channels");
+        // I'm not certain what order the red,green,blue will end up being; but that is probably not important
+        pixels[pi] = ImgUtil.compileRGB((byte) (elementIndex + 0), (byte) (elementIndex + 1),
+            (byte) (elementIndex + 2));
       }
     }
   }

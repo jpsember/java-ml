@@ -15,8 +15,6 @@ fields {
   //
   int noise_factor = 30;
 
-  File inspection_dir;
-
   int max_objects = 4;
 
   // Plots solid colors for each category and nothing else
