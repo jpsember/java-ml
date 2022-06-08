@@ -6,15 +6,14 @@ from gen.vol import *
 from pycore.ipoint import IPoint
 
 
-def read_bytes(path: str, offset: int, record_size: int, record_count: int) -> np.ndarray:
-  t = np.fromfile(path, dtype=np.int8, count=record_size * record_count, offset= offset)
+def read_unsigned_bytes(path: str, offset: int, record_size: int, record_count: int) -> np.ndarray:
+  t = np.fromfile(path, dtype=np.ubyte, count=record_size * record_count, offset= offset)
   t = t.reshape((record_count, record_size))
   return t
 
 
-def convert_bytes_to_floats(t:np.ndarray):
+def convert_unsigned_bytes_to_floats(t:np.ndarray):
   return t.astype(np.float32) * (1.0 / 255)  # This constant is the same as ImgUtil.RGB_TO_FLOAT
-
 
 
 def read_floats(path: str, offset_in_floats: int, record_size_in_floats: int, record_count: int) -> np.ndarray:

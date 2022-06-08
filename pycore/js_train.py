@@ -260,29 +260,30 @@ class JsTrain:
   #
   def read_images(self, images_path, labels_path, img_index, img_count):
     dt = self.network.image_data_type
+    images = None
     if dt == DataType.FLOAT32:
       floats_per_image = self.train_info.image_length_bytes // BYTES_PER_FLOAT
       images = read_floats(images_path, floats_per_image * img_index, floats_per_image, img_count)
       self.recent_image_array = images
     elif dt == DataType.UNSIGNED_BYTE:
       bytes_per_image = self.train_info.image_length_bytes
-      images = read_bytes(images_path, bytes_per_image * img_index, bytes_per_image, img_count)
+      images = read_unsigned_bytes(images_path, bytes_per_image * img_index, bytes_per_image, img_count)
       self.recent_image_array = images
-      images = convert_bytes_to_floats(images)
+      images = convert_unsigned_bytes_to_floats(images)
     else:
       die("Unsupported image data type:", dt)
 
     # Convert the numpy array to a pytorch tensor
     images = images.reshape((img_count, self.img_height, self.img_width, self.img_channels))
-    print(images[0,:,:,2])
-    warning("the pixel values > 127 are being treated as negative")
-    halt("printed first image, one color plane")
+    if True:
+      pr("first image, one color component:", images[0,:,:,2])
+      halt()
     images = torch.from_numpy(images)
 
     dt = self.network.label_data_type
     if dt == DataType.UNSIGNED_BYTE:
       record_size = self.train_info.label_length_bytes
-      labels = read_bytes(labels_path, img_index * record_size, record_size, img_count)
+      labels = read_unsigned_bytes(labels_path, img_index * record_size, record_size, img_count)
       labels = labels.reshape(img_count)
       labels = torch.from_numpy(labels)
       labels = labels.long()
