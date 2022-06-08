@@ -275,7 +275,7 @@ class JsTrain:
 
     # Convert the numpy array to a pytorch tensor
     images = images.reshape((img_count, self.img_height, self.img_width, self.img_channels))
-    if True:
+    if False:
       pr("first image, one color component:", images[0,:,:,2])
       halt()
     images = torch.from_numpy(images)
