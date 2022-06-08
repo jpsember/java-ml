@@ -267,20 +267,17 @@ class JsTrain:
     elif dt == DataType.UNSIGNED_BYTE:
       bytes_per_image = self.train_info.image_length_bytes
       images = read_bytes(images_path, bytes_per_image * img_index, bytes_per_image, img_count)
-      print(images.shape)
-      print(images[0,:])
-      halt("printed numpy array of bytes read from filesystem")
-
       self.recent_image_array = images
       images = convert_bytes_to_floats(images)
     else:
       die("Unsupported image data type:", dt)
+
     # Convert the numpy array to a pytorch tensor
-    warning("not sure of the order here")
     images = images.reshape((img_count, self.img_height, self.img_width, self.img_channels))
+    print(images[0,:,:,2])
+    warning("the pixel values > 127 are being treated as negative")
+    halt("printed first image, one color plane")
     images = torch.from_numpy(images)
-    warning("permuting images as stored on drive")
-    images = images.permute(0, 3, 1, 2)
 
     dt = self.network.label_data_type
     if dt == DataType.UNSIGNED_BYTE:
