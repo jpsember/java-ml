@@ -272,8 +272,11 @@ class JsTrain:
     else:
       die("Unsupported image data type:", dt)
     # Convert the numpy array to a pytorch tensor
-    images = images.reshape((img_count, self.img_channels, self.img_height, self.img_width))
+    warning("not sure of the order here")
+    images = images.reshape((img_count, self.img_height, self.img_width, self.img_channels))
     images = torch.from_numpy(images)
+    warning("permuting images as stored on drive")
+    images = images.permute(0, 3, 1, 2)
 
     dt = self.network.label_data_type
     if dt == DataType.UNSIGNED_BYTE:

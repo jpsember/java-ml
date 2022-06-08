@@ -30,4 +30,8 @@ fields {
   // If > 0, limits choice of colors from set of this size
   //
   int color_limit;
+
+  // If true, generates pixels whose values represent the x,y,channel coordinates
+  //
+  bool pixel_order_mode;
 }

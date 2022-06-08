@@ -2,7 +2,7 @@
      "network_path" : "network.json",
        "source_dir" : "generated_images",
        "train_service" : false,
-       "inspection_dir" : "inspection",
+       //"inspection_dir" : "inspection",
 
        "augmentation_config" : {
              "horizontal_flip" : false,

@@ -85,6 +85,7 @@ class YoloLoss(nn.Module):
     # We need to map (-inf...+inf) to (0..1); hence apply sigmoid function
     #
     pred_objectness = torch.sigmoid(current[:, :, :, F_CONFIDENCE])
+    self.log_tensor(".pred_objectness")
     #pr("shape of pred_objectness:", pred_objectness.shape)
 
     # TODO: why can't we just set the 'box' loss based on the IOU inaccuracy?  Then
@@ -158,13 +159,23 @@ class YoloLoss(nn.Module):
     if len(z.size()) == 0:
       self.logger.add_msg(f"{name}: {z.data:5.3}")
       return
-    z = z[0,:]
+
+
+    first_page_only = True
+    if False and name == "masked_diff":
+      first_page_only = False
 
     height = self.grid_size.y
     width = self.grid_size.x
 
-    z = z.view(height,width,-1)
-    if width > 8:
+    if first_page_only:
+      z = z[0,:]
+      z = z.view(height,width,-1)
+    else:
+      y = list(z.shape)
+      z = z.view(y[0],height,width,-1)
+
+    if first_page_only and width > 8:
       # Zoom in on the center grid cells
       #     ROWS COLS
       z = z[4:7, 5:8,:]
@@ -224,11 +235,9 @@ class YoloLoss(nn.Module):
     self.log_tensor(".true_confidence")
     self.log_tensor(".pred_confidence")
     noobj_weight = self.yolo.lambda_noobj
-    boxes_in_grid = self.num_anchors * self.grid_cell_total
-    noobj_weight = noobj_weight / boxes_in_grid
     squared_diff = torch.square(true_confidence - pred_confidence)
     no_obj_mask = 1.0 - true_confidence
-    lambda_obj_weight = 5
+    lambda_obj_weight = 3
     todo("add lambda_obj_weight to yolo params?")
     conf_mask = no_obj_mask * noobj_weight + true_confidence * lambda_obj_weight
     self.log_tensor(".conf_mask")

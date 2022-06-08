@@ -321,28 +321,47 @@ public class LogProcessor extends BaseObject implements Runnable {
     // View the tensor as two dimensional, by collapsing dimensions 2...n together into one.
     // More elaborate manipulations, cropping, etc., should be done within the Python code
     //
+    todo("have support for optionally flattening dimensions");
+    boolean special = false;
     if (shape.length <= 1 || shape[0] == 0) {
       int[] altShape = new int[2];
       altShape[0] = 1;
       altShape[1] = t.length;
       shape = altShape;
+    } else if (shape.length >= 3 && shape[0] == 32) {
+      special = true;
     }
 
-    int rows = shape[0];
-    int cols = shape[1];
-    for (int i = 2; i < shape.length; i++) {
-      cols *= shape[i];
-    }
-    checkArgument(rows * cols == t.length);
-    int q = 0;
-    for (int y = 0; y < rows; y++) {
-      sb.append("[ ");
-      for (int x = 0; x < cols; x++, q++) {
-        if (x > 0)
-          sb.append(" │ "); // Note: this is a unicode char taller than the vertical brace
-        sb.append(fmt(fmt, t[q]));
+    int pages = 1;
+    int rows, cols;
+    if (special) {
+      pages = shape[0];
+      rows = shape[1];
+      cols = shape[2];
+      for (int i = 3; i < shape.length; i++) {
+        cols *= shape[i];
       }
-      sb.append(" ]\n");
+    } else {
+      rows = shape[0];
+      cols = shape[1];
+      for (int i = 2; i < shape.length; i++) {
+        cols *= shape[i];
+      }
+    }
+    checkArgument(pages * rows * cols == t.length);
+    int q = 0;
+    for (int p = 0; p < pages; p++) {
+      for (int y = 0; y < rows; y++) {
+        sb.append("[ ");
+        for (int x = 0; x < cols; x++, q++) {
+          if (x > 0)
+            sb.append(" │ "); // Note: this is a unicode char taller than the vertical brace
+          sb.append(fmt(fmt, t[q]));
+        }
+        sb.append(" ]\n");
+      }
+      if (pages > 1)
+        sb.append("\n");
     }
     return sb.toString();
   }
