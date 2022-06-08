@@ -23,7 +23,8 @@ class YoloLoss(nn.Module):
 
   def forward(self, current, target):
 
-    include_objectness = True
+    include_objectness = False
+    include_confidence = True
 
     self.log_counter += 1
     if include_objectness and self.log_active():
@@ -34,9 +35,11 @@ class YoloLoss(nn.Module):
     # Each of these dimensions corresponds to (D_IMAGE, D_GRIDCELL, ..., D_BOXINFO)
     #
     current = current.view(batch_size, self.grid_cell_total, self.num_anchors, -1)  # -1 : infer remaining
+    #pr("shape of current:",current.shape)
 
     # Reshape the target to match the current's shape
     target = target.view(current.shape)
+    #pr("shape of target:",current.shape)
 
     ground_cxcy = target[:, :, :, F_BOX_CX:F_BOX_CY + 1]
     self.log_tensor(".ground_cxcy")
@@ -45,14 +48,17 @@ class YoloLoss(nn.Module):
     #
     ground_wh = target[:, :, :, F_BOX_W:F_BOX_H+1]
     self.log_tensor(".ground_wh")
+    #pr("shape of ground_wh:",ground_wh.shape)
 
     true_confidence = target[:, :, :, F_CONFIDENCE]
+    #pr("shape of true_confidence:", true_confidence.shape)
 
     # Add a dimension to true_confidence so it has equivalent dimensionality as ground_cxcy, ground_wh, etc
     # (this doesn't change its volume, only its dimensions) <-- explain?
     #
     # This produces a mask value which we apply to the xy and wh loss.
     coord_mask = true_confidence[..., None]
+    #pr("shape of coord_mask:", coord_mask.shape)
 
     # We could have stored the true class number as an index, instead of a one-hot vector;
     # but the symmetry of the structure of the true vs inferred data keeps things simple.
@@ -65,6 +71,7 @@ class YoloLoss(nn.Module):
     #
     pred_cxcy = torch.sigmoid(current[:, :, :, F_BOX_CX:F_BOX_CY + 1]) * coord_mask
     self.log_tensor(".pred_cxcy")
+    #pr("shape of pred_cxcy:", pred_cxcy.shape)
 
     # Determine each predicted box's w,h
     #
@@ -72,15 +79,13 @@ class YoloLoss(nn.Module):
     #
     pred_wh = torch.exp(current[:, :, :, F_BOX_W:F_BOX_H+1]) * coord_mask
     self.log_tensor(".pred_wh")
+    #pr("shape of pred_wh:", pred_wh.shape)
 
     # Determine each predicted box's confidence score.
     # We need to map (-inf...+inf) to (0..1); hence apply sigmoid function
     #
     pred_objectness = torch.sigmoid(current[:, :, :, F_CONFIDENCE])
-
-    # Determine each predicted box's set of conditional class probabilities.
-    #
-    predicted_box_class_logits = current[:,:,:,F_CLASS_PROBABILITIES:class_prob_end]
+    #pr("shape of pred_objectness:", pred_objectness.shape)
 
     # TODO: why can't we just set the 'box' loss based on the IOU inaccuracy?  Then
     # presumably the x,y,w,h will naturally move to the target?
@@ -88,27 +93,36 @@ class YoloLoss(nn.Module):
     # There is a paper discussing this:  https://arxiv.org/abs/1902.09630
     #
     x = (ground_cxcy - pred_cxcy).square()
-
+    #pr("shape of gxy-pxh sqr:", x.shape)
     # I think the various components of the loss function must be kept as tensors, not scalars
-
     loss_xy = x.sum()
 
-    x = ((ground_wh - pred_wh).square())
+    x = (ground_wh - pred_wh).square()
+    #pr("shape of gwh-pwh sqr:", x.shape)
     loss_wh = x.sum()
 
-    weighted_box_loss = self.yolo.lambda_coord * (loss_xy + loss_wh)
-
+    weighted_box_loss = y.lambda_coord * (loss_xy + loss_wh)
+    #self.log_tensor("weighted_box_loss")
     loss = weighted_box_loss
+
+    if include_confidence:
+      loss_confidence = self.construct_confidence_loss(true_confidence, pred_objectness)
+      #self.log_tensor("loss_confidence")
+      loss = loss + loss_confidence
+      #self.logger.add_msg(f"loss xy:{loss_xy:6.2f} wh:{loss_wh:6.2f} box:{weighted_box_loss:8.2f} conf:{loss_confidence.data:6.2f}")
+
     if include_objectness:
       iou_scores = self.calculate_iou(ground_cxcy, ground_wh, pred_cxcy, pred_wh)
       self.log_tensor(".iou_scores")
-
       loss_objectness = self.construct_objectness_loss(true_confidence, pred_objectness, iou_scores)
-      self.log_tensor(".loss_objectness")
+      self.log_tensor("loss_objectness")
       loss = loss + loss_objectness
 
     if not warning("disabled class_loss"):
       true_class_probabilities = target[:, :, :, F_CLASS_PROBABILITIES:class_prob_end]
+      # Determine each predicted box's set of conditional class probabilities.
+      #
+      predicted_box_class_logits = current[:, :, :, F_CLASS_PROBABILITIES:class_prob_end]
       loss_class = self.construct_class_loss(true_confidence, true_class_probabilities, predicted_box_class_logits)
       loss = loss + loss_class
 
@@ -118,11 +132,13 @@ class YoloLoss(nn.Module):
       loss = loss.sum()
       self.log_tensor(".loss:1")
 
+    #pr("shape of loss:", loss.shape)
+    
     return loss
 
 
   def log_active(self) -> bool:
-    return self.log_counter % 60 == 0
+    return self.log_counter % 5 == 0
 
 
   # Send a tensor for logging.  Assumes it has the dimension D_IMAGE, D_GRIDSIZE, etc
@@ -140,7 +156,7 @@ class YoloLoss(nn.Module):
     # Construct a slice of the tensor for inspection
     z = t.detach()
     if len(z.size()) == 0:
-      self.logger.add(z, name)
+      self.logger.add_msg(f"{name}: {z.data:5.3}")
       return
     z = z[0,:]
 
@@ -204,6 +220,24 @@ class YoloLoss(nn.Module):
 
 
 
+  def construct_confidence_loss(self, true_confidence, pred_confidence):
+    self.log_tensor(".true_confidence")
+    self.log_tensor(".pred_confidence")
+    noobj_weight = self.yolo.lambda_noobj
+    boxes_in_grid = self.num_anchors * self.grid_cell_total
+    noobj_weight = noobj_weight / boxes_in_grid
+    squared_diff = torch.square(true_confidence - pred_confidence)
+    no_obj_mask = 1.0 - true_confidence
+    lambda_obj_weight = 5
+    todo("add lambda_obj_weight to yolo params?")
+    conf_mask = no_obj_mask * noobj_weight + true_confidence * lambda_obj_weight
+    self.log_tensor(".conf_mask")
+    masked_diff = squared_diff * conf_mask
+    self.log_tensor(".masked_diff")
+    return torch.sum(masked_diff)
+
+
+
   def construct_objectness_loss(self, true_confidence, pred_objectness, iou_scores):
     #
     # true_confidence is ZERO where there are no true boxes.
@@ -218,10 +252,10 @@ class YoloLoss(nn.Module):
     # The noobj weight should be distributed among all the boxes (anchors * grid cells),
     # otherwise the weight is dependent upon the grid size
     #
-    boxes_in_grid = self.num_anchors * self.grid_cell_total
-    noobj_weight = self.yolo.lambda_noobj / boxes_in_grid
-
-
+    noobj_weight = self.yolo.lambda_noobj
+    if not warning("not scaling objectness loss by box count"):
+      boxes_in_grid = self.num_anchors * self.grid_cell_total
+      noobj_weight = noobj_weight / boxes_in_grid
 
     squared_diff = torch.square(true_objectness - pred_objectness)
     self.log_tensor("squared_diff")

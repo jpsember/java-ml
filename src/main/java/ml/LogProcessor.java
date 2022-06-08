@@ -342,7 +342,7 @@ public class LogProcessor extends BaseObject implements Runnable {
           sb.append(" │ "); // Note: this is a unicode char taller than the vertical brace
         sb.append(fmt(fmt, t[q]));
       }
-      sb.append(" ]");
+      sb.append(" ]\n");
     }
     return sb.toString();
   }
