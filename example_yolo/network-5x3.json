@@ -54,5 +54,7 @@
               "anchor_boxes_pixels" : [[40,30]],
               "lambda_coord" : 5.0,
               "lambda_noobj" : 0.5
-        }
+        },
+
+        "special_option" : "pixel_alignment",
   }

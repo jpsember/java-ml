@@ -2,6 +2,7 @@
 
 enum gen.NetworkProjectType;
 enum gen.DataType;
+enum gen.SpecialOption;
 
 fields {
   int version;
@@ -43,4 +44,6 @@ fields {
 
   DataType image_data_type;
   DataType label_data_type;
+
+  SpecialOption special_option;
 }

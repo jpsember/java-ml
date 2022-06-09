@@ -20,6 +20,7 @@ import gen.ImageSetInfo;
 import gen.Layer;
 import gen.NetworkProjectType;
 import gen.NeuralNetwork;
+import gen.SpecialOption;
 import gen.Vol;
 import gen.Yolo;
 
@@ -145,6 +146,10 @@ public abstract class ModelWrapper<T extends AbstractData> extends BaseObject {
 
   public final NetworkProjectType projectType() {
     return network().projectType();
+  }
+
+  public final boolean isSpecial(SpecialOption option) {
+    return network().specialOption() == option;
   }
 
   public final long[] inputImageTensorShape() {
@@ -295,7 +300,7 @@ public abstract class ModelWrapper<T extends AbstractData> extends BaseObject {
   public String renderLabels() {
     throw modelNotSupported("renderLabels");
   }
-  
+
   // ------------------------------------------------------------------
 
   private NeuralNetwork mNetwork;

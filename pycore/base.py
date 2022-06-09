@@ -261,7 +261,7 @@ def die(*args):
 
 def halt(*args):
   loc = get_caller_location(2)
-  s = "...at " + loc + ":" + _log_msg("   halting program early (development only)", *args)
+  s = "...at " + loc + ": " + _log_msg("  halting program early (development only)", *args)
   print(s, flush=True)
   quit()
 

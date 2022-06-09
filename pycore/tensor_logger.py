@@ -42,7 +42,7 @@ class TensorLogger:
     dt = tensor.dtype
     if dt == torch.float32:
       ti.data_type = DataType.FLOAT32
-    elif dt == torch.int8:
+    elif dt == torch.uint8:
       ti.data_type = DataType.UNSIGNED_BYTE
     elif dt == torch.int16:
       ti.data_type = DataType.UNSIGNED_SHORT

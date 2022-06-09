@@ -17,10 +17,6 @@ fields {
 
   int max_objects = 4;
 
-  // Plots solid colors for each category and nothing else
-  //
-  bool obvious_mode;
-
   // If > 0, limits choice of font from set of this size
   //
   int font_limit;
@@ -28,8 +24,4 @@ fields {
   // If > 0, limits choice of colors from set of this size
   //
   int color_limit;
-
-  // If true, generates pixels whose values represent the x,y,channel coordinates
-  //
-  bool pixel_order_mode;
 }

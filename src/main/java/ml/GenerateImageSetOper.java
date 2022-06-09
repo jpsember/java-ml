@@ -28,6 +28,7 @@ import js.graphics.ScriptElement;
 import js.graphics.ScriptUtil;
 import js.graphics.gen.ElementProperties;
 import js.graphics.gen.Script;
+import static gen.SpecialOption.*;
 
 public class GenerateImageSetOper extends AppOper {
 
@@ -76,16 +77,15 @@ public class GenerateImageSetOper extends AppOper {
 
     }
 
-    boolean obviousMode = config().obviousMode();
-    if (obviousMode) {
+    
+    ModelWrapper model = model();
+    mImageSize = model.inputImagePlanarSize();
+    if (model.isSpecial(OBVIOUS)) {
       checkArgument(projectType() == NetworkProjectType.CLASSIFIER,
           "obvious mode only supported in CLASSIFIER");
       checkArgument(config().categories().length() <= Plotter.rgbColorList().size(),
           "obvious mode doesn't support that many categories");
     }
-
-    ModelWrapper model = model();
-    mImageSize = model.inputImagePlanarSize();
 
     File targetDir = files().remakeDirs(config().targetDir());
     File annotationDir = files().mkdirs(ScriptUtil.scriptDirForProject(targetDir));
@@ -99,7 +99,7 @@ public class GenerateImageSetOper extends AppOper {
       Script.Builder script = Script.newBuilder();
       String imageBaseName = String.format("image_%05d", i);
 
-      if (config().pixelOrderMode()) {
+      if (model.isSpecial(PIXEL_ALIGNMENT)) {
         renderPixelOrderModeImage(p);
       } else {
 
@@ -217,7 +217,7 @@ public class GenerateImageSetOper extends AppOper {
           rectList.add(tfmRect);
           scriptElements.add(rectElement);
 
-          if (obviousMode)
+          if (model.isSpecial(OBVIOUS))
             continue;
 
           Matrix tfm = Matrix.postMultiply(objectTfm, tfmFontOrigin);
@@ -226,7 +226,7 @@ public class GenerateImageSetOper extends AppOper {
         }
         plotNoise(p);
 
-        if (obviousMode) {
+        if (model.isSpecial(OBVIOUS)) {
           p.graphics().setColor(Plotter.rgbColorList().get(firstCat));
           p.fillRect();
         }
@@ -254,21 +254,25 @@ public class GenerateImageSetOper extends AppOper {
   private void renderPixelOrderModeImage(Plotter p) {
     int[] pixels = ImgUtil.rgbPixels(p.image());
     ModelWrapper model = model();
-    checkArgument(model.inputImageVolumeProduct() <= 256, "Image volume is too large for pixel order mode:",
-        model.inputImageVolume());
     IPoint imgSize = model.inputImagePlanarSize();
 
-    int channels = model.inputImageChannels();
+    if (model.inputImageChannels() != 3)
+      throw notSupported("expected 3 channels");
 
     int pi = 0;
     for (int y = 0; y < imgSize.y; y++) {
       for (int x = 0; x < imgSize.x; x++, pi++) {
-        int elementIndex = pi * channels;
-        if (channels != 3)
-          throw notSupported("expected 3 channels");
-        // I'm not certain what order the red,green,blue will end up being; but that is probably not important
-        pixels[pi] = ImgUtil.compileRGB((byte) (elementIndex + 0), (byte) (elementIndex + 1),
-            (byte) (elementIndex + 2));
+        int xyValue = y * 7 + x * 13;
+        int rv = xyValue + 1;
+        int gv = xyValue+2;
+        int bv = xyValue + 3;
+        // RGB pixels have format:
+        //       24       16       8        0
+        //  unused |  red    | blue  |  green
+        //
+        // We want the red component to lie in channel 0, green in 1, and blue in 2:
+        //
+        pixels[pi] = ImgUtil.compileRGB((byte)bv, (byte)gv, (byte)rv);
       }
     }
   }
