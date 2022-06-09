@@ -2,4 +2,5 @@ enum {
   none,
   obvious,          // images consist of solid colors corresponding to image category
   pixel_alignment,  // generates pixels whose values are (y * 7 + x * 13 + (1+channel)) (mod 256)
+  blue,             // all generated images are just a solid blue
 }

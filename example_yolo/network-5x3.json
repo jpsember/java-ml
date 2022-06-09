@@ -56,5 +56,5 @@
               "lambda_noobj" : 0.5
         },
 
-        "special_option" : "pixel_alignment",
+         "special_option" : "blue",
   }

@@ -2,6 +2,7 @@ package ml.img;
 
 import static js.base.Tools.*;
 
+import java.awt.geom.AffineTransform;
 import java.awt.image.AffineTransformOp;
 import java.awt.image.BufferedImage;
 import java.io.DataOutputStream;
@@ -83,12 +84,29 @@ public final class ImageCompiler extends BaseObject {
 
       BufferedImage targetImage = ImgUtil.build(model.inputImagePlanarSize(), img.getType());
       AugmentationConfig config = config().augmentationConfig();
-      AffineTransformOp op = new AffineTransformOp(entry.transform().matrix().toAffineTransform(),
-          AffineTransformOp.TYPE_BILINEAR);
 
-      annotations = ScriptUtil.transform(annotations, entry.transform().matrix());
+      // Determine transformation to apply to the script elements and image.
+      // If we're doing special handling, image doesn't get transformed
 
+      Matrix scriptTransform = entry.transform().matrix();
+      AffineTransform imageTfm;
+
+      boolean adjBright = config.adjustBrightness();
+      switch (model.network().specialOption()) {
+      default:
+        imageTfm = scriptTransform.toAffineTransform();
+        break;
+      case OBVIOUS:
+      case BLUE:
+      case PIXEL_ALIGNMENT:
+        imageTfm = new AffineTransform(); // Identity transform
+        adjBright = false;
+        break;
+      }
+      AffineTransformOp op = new AffineTransformOp(imageTfm, AffineTransformOp.TYPE_BILINEAR);
       op.filter(img, targetImage);
+
+      annotations = ScriptUtil.transform(annotations, scriptTransform);
       mInspector.create("tfm").image(targetImage).elements(annotations);
 
       LabelledImage image = new LabelledImage(model);
@@ -98,7 +116,7 @@ public final class ImageCompiler extends BaseObject {
       case FLOAT32: {
         imageFloats = ImgUtil.floatPixels(targetImage, model.inputImageChannels(), imageFloats);
 
-        if (config.adjustBrightness())
+        if (adjBright)
           applyRandomBrightness(imageFloats, config.brightShiftMin(), config.brightShiftMax());
 
         mInspector.create("float").imageSize(model.inputImagePlanarSize())
@@ -107,7 +125,7 @@ public final class ImageCompiler extends BaseObject {
       }
         break;
       case UNSIGNED_BYTE: {
-        if (config.adjustBrightness())
+        if (adjBright)
           notSupported("adjust_brightness is not supported for data type", imageDataType);
         checkArgument(model.inputImageChannels() == 3, "not supported yet for channels != 3");
         image.setPixels(ImgUtil.bgrPixels(targetImage));
