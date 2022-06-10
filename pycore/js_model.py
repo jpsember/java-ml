@@ -3,11 +3,39 @@
 from pycore.pytorch_util import *
 from gen.neural_network import NeuralNetwork
 from pycore.printsize import *
+import torch.nn.functional as F
 
 class JsModel(nn.Module):
 
   def __init__(self, network: NeuralNetwork):
     super(JsModel, self).__init__()
+
+    # Issue #42: use a hard-coded network based on pytorch tutorial  ihttps://pytorch.org/tutorials/beginner/blitz/cifar10_tutorial.html
+    self.hard_coded = warning("using hard-coded network")
+
+    if self.hard_coded:
+      self.conv1 = nn.Conv2d(3, # in channels
+                             16, # out channels (# filters)
+                             3, padding=1)  # kernel size
+      self.pool1 = nn.MaxPool2d(2)   # input: 96x160, out: 48x80
+      self.conv2 = nn.Conv2d(16, 32, 3, padding=1)
+      self.pool2 = nn.MaxPool2d(2)   # input: 48x80, out 24x40
+      self.conv3 = nn.Conv2d(32, 64, 3, padding=1)
+      self.pool3 = nn.MaxPool2d(2)   # input: 24x40, out 16x20
+      self.conv4 = nn.Conv2d(64, 128, 3, padding=1)
+      self.pool4 = nn.MaxPool2d(2)   # input: 12x20, out 6x10
+      self.conv5 = nn.Conv2d(128, 256, 3, padding=1)
+      self.pool5 = nn.MaxPool2d(2)   # input: 6x10, out 3x5
+      self.conv6 = nn.Conv2d(256, 128, 3, padding=1)
+      self.conv7 = nn.Conv2d(128, 256, 3, padding=1)
+      self.conv8 = nn.Conv2d(256, 512, 3, padding=1)
+      self.conv9 = nn.Conv2d(512, 256, 3, padding=1)
+      self.conv10 = nn.Conv2d(256, 512, 3, padding=1)
+      self.conv11 = nn.Conv2d(512, 256, 3, padding=1)
+      self.conv12 = nn.Conv2d(256, 512, 3, padding=1)
+      self.fc1 = nn.Linear(512 * 3 * 5, 120)
+      self.fc2 = nn.Linear(120, 3 * 5 * 6)
+      return
 
     self.tensors = []
     self.add_size("image input")
@@ -92,5 +120,22 @@ class JsModel(nn.Module):
 
 
   def forward(self, x):
+    if self.hard_coded:
+      x = self.pool1(F.relu(self.conv1(x)))
+      x = self.pool2(F.relu(self.conv2(x)))
+      x = self.pool3(F.relu(self.conv3(x)))
+      x = self.pool4(F.relu(self.conv4(x)))
+      x = self.pool5(F.relu(self.conv5(x)))
+      x = F.relu(self.conv6(x))
+      x = F.relu(self.conv7(x))
+      x = F.relu(self.conv8(x))
+      x = F.relu(self.conv9(x))
+      x = F.relu(self.conv10(x))
+      x = F.relu(self.conv11(x))
+      x = F.relu(self.conv12(x))
+      x = torch.flatten(x, 1)  # flatten all dimensions except batch
+      x = F.relu(self.fc1(x))
+      x = self.fc2(x)
+      return x
     return self.layers(x)
 
