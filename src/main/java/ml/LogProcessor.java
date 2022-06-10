@@ -268,10 +268,28 @@ public class LogProcessor extends BaseObject implements Runnable {
         "is not a multiple of image volume", bytesPerImage);
     String setName = "" + trainImagesRec.familyId() + "_%02d";
 
+    byte[] imgb = new byte[bytesPerImage];
+    checkArgument(mImageVolume.depth() == 3, "not supported for channels != 3");
+
     for (int i = 0; i < batchSize; i++) {
-      halt("bytes per image:", bytesPerImage, INDENT, brief(trainImagesRec));
-      byte[] imgb = Arrays.copyOfRange(trainImagesRec.tensorBytes(), bytesPerImage * i,
-          bytesPerImage * (i + 1));
+     
+      // The model wants the shape to be (image, channel, column, row)
+      // which is different from the BufferedImage (row, column, channel),
+      // so reverse this interleaving
+      //
+      // ....but what about the ordering of the rows and columns?
+      //
+      {
+        byte[] src = trainImagesRec.tensorBytes();
+        int j = bytesPerImage * i;
+        int bytesPerChannel = bytesPerImage / 3;
+        int q = 0;
+        for (int k = 0; k < bytesPerImage; k += 3, q++) {
+          imgb[k] = src[j + q];
+          imgb[k + 1] = src[j + bytesPerChannel + q];
+          imgb[k + 2] = src[j + bytesPerChannel * 2 + q];
+        }
+      }
       BufferedImage img = ImgUtil.bytesToBGRImage(imgb, VolumeUtil.spatialDimension(imgVol));
       File baseFile = new File(targetProjectDir(), String.format(setName, i));
       File imgPath = Files.setExtension(baseFile, ImgUtil.EXT_JPEG);
