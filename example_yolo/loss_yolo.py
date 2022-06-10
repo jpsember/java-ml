@@ -1,4 +1,5 @@
 from gen.yolo import Yolo
+from gen.log_item import *
 from pycore.pytorch_util import *
 from gen.neural_network import NeuralNetwork
 from pycore.tensor_logger import TensorLogger
@@ -19,9 +20,30 @@ class YoloLoss(nn.Module):
 
 
   def forward(self, current, target):
+    if JG.ISSUE42:
+      JG.issue_42_counter += 1
+      pr("issue 42 counter:", JG.issue_42_counter)
+      if JG.issue_42_counter == 8:
+        li = self.logger.new_log_item()
+        li.family_size = 4
+        li.family_id = 8000 + JG.issue_42_counter
+        li.special_handling = 1
+        li.family_slot = 0
+        li.message = "images_input"
+        self.logger.add(JG.recent_images_input,li)
+        li.family_slot = 1
+        li.message = "labels_input"
+        self.logger.add(JG.recent_labels_input,li)
+        li.family_slot = 2
+        li.message = "loss_img_input"
+        self.logger.add(current,li)
+        li.family_slot = 3
+        li.message = "loss_lbl_input"
+        self.logger.add(target,li)
 
-    include_objectness = True
-    include_confidence = False
+
+    include_objectness = False
+    include_confidence = True
 
     self.log_counter += 1
     #if include_objectness and self.log_active():
@@ -100,7 +122,7 @@ class YoloLoss(nn.Module):
       iou_scores = self.calculate_iou(ground_cxcy, ground_wh, pred_cxcy, pred_wh)
       self.log_tensor(".iou_scores")
       loss_objectness = self.construct_objectness_loss(true_confidence, pred_objectness, iou_scores)
-      self.log_tensor("loss_objectness")
+      self.log_tensor(".loss_objectness")
       loss = loss + loss_objectness
 
     if not warning("disabled class_loss"):
@@ -235,9 +257,9 @@ class YoloLoss(nn.Module):
     #
     # true_confidence is ZERO where there are no true boxes.
     #
-    self.log_tensor("true_confidence")
-    self.log_tensor("iou_scores")
-    self.log_tensor("pred_objectness")
+    self.log_tensor(".true_confidence")
+    self.log_tensor(".iou_scores")
+    self.log_tensor(".pred_objectness")
 
     true_objectness = true_confidence * iou_scores
     self.log_tensor("true_objectness")

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import time
 
+from pycore.jg import JG
 from pycore.pytorch_util import *
 import os
 import os.path
@@ -74,6 +75,7 @@ class JsTrain:
     self.recent_image_array = None
     self.recent_model_output = None
     self.image_index = 0
+    JG.singleton = self
 
 
   def add_timeout(self, max_seconds=60):
@@ -128,27 +130,6 @@ class JsTrain:
     return None
 
 
-  # -------------------------------------------------------------------------------------
-  # For logging purposes only
-  #
-
-  def show_train_set_elem(self, elem) -> [str]:
-    if elem is None:
-      return "<none>"
-    return base_name(elem.directory) + ":" + str(elem.used)
-
-
-  def show_train_set(self) -> [str]:
-    x = []
-    for idx, y in enumerate(self.train_set_list):
-      s = self.show_train_set_elem(y)
-      x.append(s)
-    return x
-
-  #
-  # -------------------------------------------------------------------------------------
-
-
   def discard_stale_train_sets(self):
     # Discard any sets that have already been used the max number of times
     for idx, x in enumerate(self.train_set_list):
@@ -157,7 +138,6 @@ class JsTrain:
       recycle_factor = self.train_config.recycle
       check_state(x.used <= recycle_factor)
       if x.used == recycle_factor:
-        self.log("discarding stale:", self.show_train_set_elem(x))
         delete_directory(x.directory, "set_")
         self.train_set_list[idx] = None
 
@@ -201,7 +181,6 @@ class JsTrain:
   def select_data_set(self):
 
     self.discard_stale_train_sets()
-    self.log("looking for training set; list:",self.show_train_set())
 
     total_wait_time = 0
     while True:
@@ -334,6 +313,12 @@ class JsTrain:
 
       # Compute prediction error
       pred = self.model(tensor_images)
+
+
+      if JG.ISSUE42:
+        JG.recent_images_input = tensor_images
+        JG.recent_labels_input = tensor_labels
+
       # Save this model output in case we want to take a snapshot later
       self.recent_model_output = pred
 

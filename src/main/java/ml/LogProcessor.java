@@ -178,14 +178,22 @@ public class LogProcessor extends BaseObject implements Runnable {
 
     mFamilyMap.remove(logItem.familyId());
 
-    InfoRecord imgRec = familySet[0];
-    InfoRecord lblRec = familySet[1];
-    processSnapshotItem(imgRec, lblRec);
+    switch (logItem.specialHandling()) {
+    default:
+      throw notSupported("special handling for:", INDENT, logItem);
+    case 0:
+      processSnapshotItem(familySet);
+      break;
+    case 1: processIssue42(familySet);
+      break;
+    }
   }
 
-  private void processSnapshotItem(InfoRecord imgRec, InfoRecord lblRec) {
+  private void processSnapshotItem(InfoRecord[] family) {
     if (Files.empty(config().snapshotDir()))
       return;
+    InfoRecord imgRec = family[0];
+    InfoRecord lblRec = family[1];
 
     Vol imgVol = NetworkUtil.determineInputImageVolume(mNetwork);
 
@@ -249,6 +257,80 @@ public class LogProcessor extends BaseObject implements Runnable {
       break;
     }
   }
+  
+  
+  private void processIssue42(InfoRecord[] family) {
+    if (Files.empty(config().snapshotDir()))
+      return;
+    InfoRecord imgInpRec = family[0];
+    InfoRecord lblInpRec = family[1];
+    InfoRecord imgLossRec = family[2];
+    InfoRecord lblLossRec = family[3];
+
+    todo("finish support for issue 42");
+//    Vol imgVol = NetworkUtil.determineInputImageVolume(mNetwork);
+//
+//    switch (mNetwork.imageDataType()) {
+//    default:
+//      throw notSupported("network.image_data_type", mNetwork.imageDataType());
+//    case UNSIGNED_BYTE: {
+//      if (imgRec.mBytes == null)
+//        badArg("missing image bytes");
+//      int imgLength = imgRec.mBytes.length;
+//
+//      // We have a stacked batch of images.
+//      int bytesPerImage = mImageSize.product() * mImageVolume.depth();
+//
+//      int batchSize = imgLength / bytesPerImage;
+//      checkArgument(imgLength % bytesPerImage == 0, "images length", imgLength,
+//          "is not a multiple of image volume", bytesPerImage);
+//      String setName = "" + imgRec.logItem().familyId() + "_%02d";
+//
+//      final boolean show = false && alert("showing snapshot labels");
+//      JSMap m = null;
+//      if (show) {
+//        m = map();
+//      }
+//      for (int i = 0; i < batchSize; i++) {
+//        byte[] imgb = Arrays.copyOfRange(imgRec.mBytes, bytesPerImage * i, bytesPerImage * (i + 1));
+//        BufferedImage img = ImgUtil.bytesToBGRImage(imgb, VolumeUtil.spatialDimension(imgVol));
+//        File baseFile = new File(targetProjectDir(), String.format(setName, i));
+//        File imgPath = Files.setExtension(baseFile, ImgUtil.EXT_JPEG);
+//        ImgUtil.writeJPG(files(), img, imgPath, null);
+//
+//        switch (mNetwork.labelDataType()) {
+//        case FLOAT32: {
+//          float[] targetBuffer = mModel.labelBufferFloats();
+//          float[] labelSets = lblRec.mFloats;
+//          int imgLblLen = targetBuffer.length;
+//          checkArgument(batchSize * imgLblLen == labelSets.length, "label size * batch != labels length");
+//          System.arraycopy(labelSets, imgLblLen * i, targetBuffer, 0, imgLblLen);
+//
+//          if (show) {
+//            StringBuilder sb = new StringBuilder();
+//            for (float f : targetBuffer)
+//              sb.append(String.format("%4d ", (int) (f * 100)));
+//            m.put(String.format("img%02d", i), sb.toString());
+//          }
+//        }
+//          break;
+//        default:
+//          throw notSupported("label data type:", mNetwork.labelDataType());
+//        }
+//
+//        Script.Builder script = Script.newBuilder();
+//        if (config().logLabels())
+//          pr("Model produced labels:", CR, mModel.renderLabels());
+//        script.items(mModel.transformModelOutputToScredit());
+//        ScriptUtil.write(files(), script, ScriptUtil.scriptPathForImage(imgPath));
+//      }
+//      if (show)
+//        pr("labels:", INDENT, m);
+//    }
+//      break;
+//    }
+  }
+
 
   private File targetProjectDir() {
     if (mTargetProjectDir == null) {
@@ -434,6 +516,26 @@ public class LogProcessor extends BaseObject implements Runnable {
     float[] mFloats;
   }
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   private CompileImagesConfig mConfig;
   private ModelWrapper mModel;
   private NeuralNetwork mNetwork;

@@ -29,4 +29,8 @@ fields {
   // If family_size > 0, this is the slot within the family
   //
   int family_slot;
+
+  // Any special handling to be performed by logger
+  //
+  int special_handling;
 }

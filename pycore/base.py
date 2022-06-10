@@ -7,6 +7,7 @@ import traceback
 import json
 import jstyleson   # pip install jstyleson
 import inspect
+from pycore.jg import JG
 
 
 # Define some constants
