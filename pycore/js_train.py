@@ -330,6 +330,7 @@ class JsTrain:
 
       tensor_images, tensor_labels = self.read_images(train_images_path, train_labels_path, img_index, self.batch_size)
       tensor_images, tensor_labels = tensor_images.to(self.device), tensor_labels.to(self.device)
+      self.optimizer.zero_grad()
 
       # Compute prediction error
       pred = self.model(tensor_images)
@@ -344,9 +345,7 @@ class JsTrain:
       self.stat_train_loss.set_value(loss.item())
 
       # Backpropagation
-      self.optimizer.zero_grad()
       loss.backward()
-
       self.optimizer.step()
 
 

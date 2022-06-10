@@ -238,7 +238,6 @@ public class LogProcessor extends BaseObject implements Runnable {
         }
 
         Script.Builder script = Script.newBuilder();
-        alert("Seems to be writing constant elements after first one?");
         if (config().logLabels())
           pr("Model produced labels:", CR, mModel.renderLabels());
         script.items(mModel.transformModelOutputToScredit());
