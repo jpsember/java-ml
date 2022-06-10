@@ -31,6 +31,12 @@ class TensorLogger:
     return ti
 
 
+  def to_list(self, arg):
+    if isinstance(arg, list):
+      return arg
+    return list(arg)
+
+
   def add(self, tensor:torch.Tensor, name_or_info):
     ti:LogItemBuilder
     if isinstance(name_or_info, str):
@@ -39,33 +45,40 @@ class TensorLogger:
       ti.set_message(nm)
     else:
       ti = self.new_log_item(name_or_info)
-    dt = tensor.dtype
-    if dt == torch.float32:
-      ti.data_type = DataType.FLOAT32
-    elif dt == torch.uint8:
-      ti.data_type = DataType.UNSIGNED_BYTE
-    elif dt == torch.int16:
-      ti.data_type = DataType.UNSIGNED_SHORT
-    else:
-      die("unsupported data type:", dt)
-    ti.shape = list(tensor.shape)
+      self.store_tensor(ti, tensor)
     self.write(ti, tensor)
 
 
+  def store_tensor(self, ti:LogItemBuilder, tensor:torch.Tensor):
+    ti.shape = list(tensor.shape)
+    ti.set_tensor_bytes(None).set_tensor_floats(None)
+    dt = tensor.dtype
+    if dt == torch.float32:
+      x = torch.flatten(tensor)
+      ti.set_tensor_floats(self.to_list(x.tolist()))
+    elif dt == torch.uint8:
+      x = torch.flatten(tensor)
+      ti.set_tensor_bytes(self.to_list(x.tolist()))
+    #elif dt == torch.int16:
+      #ti.data_type = DataType.UNSIGNED_SHORT
+    else:
+      die("unsupported data type:", dt)
+
+
+
   def write(self, info:LogItem, tensor:torch.Tensor = None):
+    if tensor is not None:
+      info = info.to_builder()
+      self.store_tensor(info, tensor)
+
     #check_state(info.id != 0,"no id in LogItem")
     p = self.get_path(info, ".json")
     p_temp = self.temp_version(p)
+
     #pr("writing log item id:",info.id,"to:",p)
+    # This writes the byte and float arrays using standard json, which is quite inefficient, but who cares
     txt_write(p_temp, info.to_string(False))
     os.rename(p_temp, p)
-    if tensor is None:
-      return
-    x = tensor.detach().numpy()
-    b = self.get_path(info, ".dat")
-    b_temp = self.temp_version(b)
-    x.tofile(b_temp)
-    os.rename(b_temp, b)
 
 
   def clean(self, name:str):

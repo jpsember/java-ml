@@ -316,7 +316,7 @@ class JsTrain:
 
 
       if JG.ISSUE42:
-        JG.recent_images_input = tensor_images
+        JG.recent_images_input = convert_float_tensor_to_byte_tensor(tensor_images)
         JG.recent_labels_input = tensor_labels
 
       # Save this model output in case we want to take a snapshot later
@@ -417,8 +417,11 @@ class JsTrain:
         if self.epoch_number > 20:
           self.snapshot_epoch_interval *= 1.2
         self.snapshot_next_epoch = self.epoch_number + self.snapshot_epoch_interval
-        pr("Saving model inference snapshot")
-        self.send_inference_result()
+        if JG.ISSUE42:
+          warning("normal snapshots are disabled for ISSUE42")
+        else:
+          pr("Saving model inference snapshot")
+          self.send_inference_result()
 
       current_time = time_ms()
       if not self.checkpoint_last_time_ms:
@@ -449,6 +452,8 @@ class JsTrain:
     self.image_index = img_index
 
     t = LogItem.new_builder()
+    todo("have symbolic constants for special handling")
+    t.special_handling = 1
     t.family_id = img_index
     t.family_size = 2
     t.family_slot = 0

@@ -1,34 +1,25 @@
-enum DataType;
-
 fields {
 
   // A unique id > 0 for ordering the items
   //
   int id;
 
+  int family_size;
+  int family_slot;
+  int family_id;
+
   // Message or name of tensor
   //
   string message;
-
-  DataType data_type;
 
   // If shape is empty, there is no tensor
   //
   *int shape;
 
-  // A unique id distinguishing this item from others (e.g., which family
-  // this belongs to)
+  // Tensor values, if one is included
   //
-  int family_id;
-
-  // If nonzero, item is one of a family set, and should be buffered
-  // until the entire family has arrived
-  //
-  int family_size;
-
-  // If family_size > 0, this is the slot within the family
-  //
-  int family_slot;
+  ?*byte tensor_bytes;
+  ?*float tensor_floats;
 
   // Any special handling to be performed by logger
   //

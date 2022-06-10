@@ -12,6 +12,10 @@ def read_unsigned_bytes(path: str, offset: int, record_size: int, record_count: 
   return t
 
 
+def convert_float_tensor_to_byte_tensor(t:torch.Tensor):
+  return (t * (255 / 1.0)).to(torch.uint8)
+
+
 def convert_unsigned_bytes_to_floats(t:np.ndarray):
   return t.astype(np.float32) * (1.0 / 255)  # This constant is the same as ImgUtil.RGB_TO_FLOAT
 

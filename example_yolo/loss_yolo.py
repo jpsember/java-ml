@@ -27,7 +27,7 @@ class YoloLoss(nn.Module):
         li = self.logger.new_log_item()
         li.family_size = 4
         li.family_id = 8000 + JG.issue_42_counter
-        li.special_handling = 1
+        li.special_handling = 2
         li.family_slot = 0
         li.message = "images_input"
         self.logger.add(JG.recent_images_input,li)
