@@ -38,3 +38,8 @@ c_0, c_n : 0, except for i = the box's category, when we store 1
 ## Investigate labelling boxes on boundaries as well, so model doesn't get penalized for edge cases
 
 The suppression filtering will remove the duplicates that can result from it.
+
+
+## Use generalized IOU to avoid necessity of including box x,y,w,h in loss function
+
+https://arxiv.org/abs/1902.09630
