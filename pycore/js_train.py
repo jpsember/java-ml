@@ -255,7 +255,6 @@ class JsTrain:
 
     # Convert the numpy array to a pytorch tensor
     if JG.PIXEL_FORMAT:
-      todo("use the pixel verification to confirm we get the pixels we expect")
       images = images.reshape((img_count, self.img_channels, self.img_height, self.img_width))
     else:
       images = images.reshape((img_count, self.img_height, self.img_width, self.img_channels))
