@@ -254,13 +254,18 @@ class JsTrain:
       die("Unsupported image data type:", dt)
 
     # Convert the numpy array to a pytorch tensor
-    images = images.reshape((img_count, self.img_height, self.img_width, self.img_channels))
+    if JG.PIXEL_FORMAT:
+      todo("use the pixel verification to confirm we get the pixels we expect")
+      images = images.reshape((img_count, self.img_channels, self.img_height, self.img_width))
+    else:
+      images = images.reshape((img_count, self.img_height, self.img_width, self.img_channels))
     if False:
       pr("first image, one color component:", images[0,:,:,2])
       halt()
     images = torch.from_numpy(images)
-    # Permute the tensor so the channels come BEFORE the height and width
-    images = torch.permute(images, (0,3,1,2)).contiguous()
+    if not JG.PIXEL_FORMAT:
+      # Permute the tensor so the channels come BEFORE the height and width
+      images = torch.permute(images, (0,3,1,2)).contiguous()
     if self.network.special_option == SpecialOption.PIXEL_ALIGNMENT:
       pr("Performing special option: PIXEL_ALIGNMENT")
       for i in range(max(self.img_width, self.img_height)):

@@ -30,6 +30,7 @@ import gen.Yolo;
  * to provide a handier way of manipulating these things.
  */
 public abstract class ModelWrapper<T extends AbstractData> extends BaseObject {
+  public static final boolean ISSUE_42_PIXEL_ORDER = true;
 
   /**
    * Construct an appropriate concrete ModelWrapper for a network

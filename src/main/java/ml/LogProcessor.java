@@ -15,6 +15,7 @@ import js.graphics.ImgUtil;
 import js.graphics.ScriptUtil;
 import js.graphics.gen.Script;
 import js.json.JSMap;
+import ml.img.ImageCompiler;
 
 import static js.base.Tools.*;
 
@@ -184,7 +185,7 @@ public class LogProcessor extends BaseObject implements Runnable {
       int batchSize = imgLength / bytesPerImage;
       checkArgument(imgLength % bytesPerImage == 0, "images length", imgLength,
           "is not a multiple of image volume", bytesPerImage);
-      String setName = "" + imgRec.familyId() + "_%02d";
+      String setName = String.format("%05d_", imgRec.familyId()) + "_%02d";
 
       final boolean show = false && alert("showing snapshot labels");
       JSMap m = null;
@@ -193,6 +194,10 @@ public class LogProcessor extends BaseObject implements Runnable {
       }
       for (int i = 0; i < batchSize; i++) {
         byte[] imgb = Arrays.copyOfRange(imgRec.tensorBytes(), bytesPerImage * i, bytesPerImage * (i + 1));
+        if (ModelWrapper.ISSUE_42_PIXEL_ORDER) {
+          imgb = ImageCompiler.pixelCYXtoYXC(mImageSize, imgb);
+        }
+
         BufferedImage img = ImgUtil.bytesToBGRImage(imgb, VolumeUtil.spatialDimension(imgVol));
         File baseFile = new File(targetProjectDir(), String.format(setName, i));
         File imgPath = Files.setExtension(baseFile, ImgUtil.EXT_JPEG);
@@ -254,6 +259,8 @@ public class LogProcessor extends BaseObject implements Runnable {
 
     LogItem imgLossRec = family[2];
     LogItem lblLossRec = family[3];
+    if (false && imgLossRec == null && lblLossRec == null)
+      pr("");
 
     Vol imgVol = NetworkUtil.determineInputImageVolume(mNetwork);
     checkArgument(mNetwork.imageDataType() == DataType.UNSIGNED_BYTE);
@@ -272,7 +279,6 @@ public class LogProcessor extends BaseObject implements Runnable {
     checkArgument(mImageVolume.depth() == 3, "not supported for channels != 3");
 
     for (int i = 0; i < batchSize; i++) {
-     
       // The model wants the shape to be (image, channel, column, row)
       // which is different from the BufferedImage (row, column, channel),
       // so reverse this interleaving

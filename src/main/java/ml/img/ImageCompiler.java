@@ -128,7 +128,11 @@ public final class ImageCompiler extends BaseObject {
         if (adjBright)
           notSupported("adjust_brightness is not supported for data type", imageDataType);
         checkArgument(model.inputImageChannels() == 3, "not supported yet for channels != 3");
-        image.setPixels(ImgUtil.bgrPixels(targetImage));
+        byte[] bgrPixels = ImgUtil.bgrPixels(targetImage);
+        if (ModelWrapper.ISSUE_42_PIXEL_ORDER) {
+          bgrPixels = pixelYXCtoCYX(model.inputImagePlanarSize(), bgrPixels);
+        }
+        image.setPixels(bgrPixels);
       }
         break;
       default:
@@ -317,4 +321,36 @@ public final class ImageCompiler extends BaseObject {
   private Inspector mInspector = Inspector.NULL_INSPECTOR;
   private List<ImageEntry> mEntries;
   private boolean mEntriesValidated;
+
+  
+
+  /**
+   * Take an image that is (rows, columns, channels) and produce (channels,
+   * rows, columns)
+   */
+  public static byte[] pixelYXCtoCYX(IPoint size, byte[] pixIn) {
+    int planarSize = size.product();
+    byte[] pixOut = new byte[pixIn.length];
+    checkArgument(planarSize * 3 == pixIn.length);
+    for (int i = 0; i < planarSize; i++) {
+      int j = i * 3;
+      pixOut[i] = pixIn[j + 0];
+      pixOut[planarSize + i] = pixIn[j + 1];
+      pixOut[planarSize * 2 + i] = pixIn[j + 2];
+    }
+    return pixOut;
+  }
+
+  public static byte[] pixelCYXtoYXC(IPoint size, byte[] pixIn) {
+    int planarSize = size.product();
+    byte[] pixOut = new byte[pixIn.length];
+    checkArgument(planarSize * 3 == pixIn.length);
+    for (int i = 0; i < planarSize; i++) {
+      int j = i * 3;
+      pixOut[j+0] = pixIn[i];
+      pixOut[j+1] = pixIn[planarSize + i];
+      pixOut[j+2] = pixIn[planarSize * 2 + i];
+    }
+    return pixOut;
+  }
 }
