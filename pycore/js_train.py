@@ -268,14 +268,13 @@ class JsTrain:
       images = torch.permute(images, (0,3,1,2)).contiguous()
     if self.network.special_option == SpecialOption.PIXEL_ALIGNMENT:
       pr("Performing special option: PIXEL_ALIGNMENT")
-      for i in range(max(self.img_width, self.img_height)):
-        x = clamp(i, 0, self.img_width-1)
-        y = clamp(i, 0, self.img_height-1)
-        for c in range(self.img_channels):
-          pv = int(images[0, c, y, x] * 255.0)
-          expected = (y * 7 + x * 13 + (c+1)) & 0xff
-          if pv != expected:
-            pr("Problem with pixel c=",c,"x=",x,"y=",y,"value is",pv,", expected",expected)
+      for y in range(self.img_height):
+        for x in range(self.img_width):
+          for c in range(self.img_channels):
+            pv = int(images[0, c, y, x] * 255.0)
+            expected = (y * 7 + x * 13 + (c+1)) & 0xff
+            if pv != expected:
+              pr("Problem with pixel c=",c,"x=",x,"y=",y,"value is",pv,", expected",expected)
       halt("Stopping, done special option")
 
     dt = self.network.label_data_type
