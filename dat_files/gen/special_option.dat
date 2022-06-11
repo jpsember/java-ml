@@ -1,6 +1,16 @@
 enum {
+
   none,
+
   obvious,          // images consist of solid colors corresponding to image category
-  pixel_alignment,  // generates pixels whose values are (y * 7 + x * 13 + (1+channel)) (mod 256)
+
+
+  // generates pixels whose values are (y * 7 + x * 13 + (1+channel)) (mod 256),
+  // so python code can verify the pixels are in the order that we expect.
+  // It will do this verification, print out any problems, and exit immediately.
+  //
+  pixel_alignment,
+
+
   blue,             // all generated images are just a solid blue
 }
