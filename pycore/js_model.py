@@ -4,6 +4,7 @@ from pycore.pytorch_util import *
 from gen.neural_network import NeuralNetwork
 from pycore.printsize import *
 import torch.nn.functional as F
+from pycore.jg import JG
 
 class JsModel(nn.Module):
 
@@ -11,9 +12,8 @@ class JsModel(nn.Module):
     super(JsModel, self).__init__()
 
     # Issue #42: use a hard-coded network based on pytorch tutorial  ihttps://pytorch.org/tutorials/beginner/blitz/cifar10_tutorial.html
-    self.hard_coded = warning("using hard-coded network")
-
-    if self.hard_coded:
+    #
+    if JG.HARD_CODED_NETWORK:
       self.conv1 = nn.Conv2d(3, # in channels
                              16, # out channels (# filters)
                              3, padding=1)  # kernel size
@@ -120,7 +120,7 @@ class JsModel(nn.Module):
 
 
   def forward(self, x):
-    if self.hard_coded:
+    if JG.HARD_CODED_NETWORK:
       x = self.pool1(F.relu(self.conv1(x)))
       x = self.pool2(F.relu(self.conv2(x)))
       x = self.pool3(F.relu(self.conv3(x)))
