@@ -7,8 +7,10 @@ import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics2D;
 import java.awt.geom.AffineTransform;
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 
 import gen.AugmentationConfig;
@@ -113,6 +115,7 @@ public class GenerateImageSetOper extends AppOper {
     p.with(PAINT_BGND).fillRect();
     AffineTransform origTransform = p.graphics().getTransform();
 
+    plotBgndImage(p);
     plotNoise(p);
 
     List<IRect> rectList = arrayList();
@@ -283,6 +286,18 @@ public class GenerateImageSetOper extends AppOper {
     return IPoint.with(random().nextInt(mImageSize.x), random().nextInt(mImageSize.y));
   }
 
+  private void plotBgndImage(Plotter p) {
+    todo("add option for bgnd image");
+    String imageName = "sepia.png";
+    BufferedImage bgndImage = bgndImage(imageName);
+    IPoint imgSize = ImgUtil.size(bgndImage);
+    IPoint slack = IPoint.difference(imgSize, mImageSize);
+    checkArgument(Math.min(slack.x, slack.y) > 0, "image isn't big enough");
+    IPoint trs = new IPoint(random().nextFloat() * slack.x, random().nextFloat() * slack.y).negate();
+pr("drawing image at:",trs);
+    p.graphics().drawImage(bgndImage,  trs.x,  trs.y, null);
+  }
+
   private void plotNoise(Plotter p) {
     int nf = config().noiseFactor();
     if (nf <= 0)
@@ -423,6 +438,17 @@ public class GenerateImageSetOper extends AppOper {
   private ModelWrapper model() {
     return mModel;
   }
+
+  private BufferedImage bgndImage(String name) {
+    BufferedImage img = mImageMap.get(name);
+    if (img == null) {
+      img = ImgUtil.read(Files.openResource(getClass(), name));
+      mImageMap.put(name, img);
+    }
+    return img;
+  }
+
+  private Map<String, BufferedImage> mImageMap = hashMap();
 
   private ModelWrapper mModel;
   private IPoint mImageSize;
