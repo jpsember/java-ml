@@ -20,4 +20,5 @@
 
  //"pixel_order_mode" : true,
 
+ "bgnd_image" : "sepia.png",
 }

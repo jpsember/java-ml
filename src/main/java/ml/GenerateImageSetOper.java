@@ -287,15 +287,15 @@ public class GenerateImageSetOper extends AppOper {
   }
 
   private void plotBgndImage(Plotter p) {
-    todo("add option for bgnd image");
-    String imageName = "sepia.png";
+    String imageName = config().bgndImage();
+    if (nullOrEmpty(imageName))
+      return;
     BufferedImage bgndImage = bgndImage(imageName);
     IPoint imgSize = ImgUtil.size(bgndImage);
     IPoint slack = IPoint.difference(imgSize, mImageSize);
     checkArgument(Math.min(slack.x, slack.y) > 0, "image isn't big enough");
-    IPoint trs = new IPoint(random().nextFloat() * slack.x, random().nextFloat() * slack.y).negate();
-pr("drawing image at:",trs);
-    p.graphics().drawImage(bgndImage,  trs.x,  trs.y, null);
+    IPoint originWithinBgndImage = new IPoint(random().nextFloat() * slack.x, random().nextFloat() * slack.y).negate();
+    p.graphics().drawImage(bgndImage, originWithinBgndImage.x, originWithinBgndImage.y, null);
   }
 
   private void plotNoise(Plotter p) {
