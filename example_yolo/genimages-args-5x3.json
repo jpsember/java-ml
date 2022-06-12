@@ -20,5 +20,8 @@
 
  //"pixel_order_mode" : true,
 
+ // Plotting a background image doesn't get rid of the NaN values
+ // (which I think is a good thing, actually)
+ //
  "bgnd_image" : "sepia.png",
 }
