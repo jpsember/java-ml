@@ -42,7 +42,7 @@ class YoloLoss(nn.Module):
       self.logger.add(target,li)
 
 
-    verify_not_nan("current")
+    verify_not_nan("loss_yolo.forward", "current")
 
     self.log_counter += 1
     y = self.yolo
@@ -93,7 +93,7 @@ class YoloLoss(nn.Module):
     # We need to map (-inf...+inf) to (0..+inf); hence apply the exp function
     #
     pred_wh = torch.exp(current[:, :, :, F_BOX_W:F_BOX_H+1]) * coord_mask
-    verify_not_nan("pred_wh")
+    verify_not_nan("loss_yolo_fwd", "pred_wh")
     self.log_tensor(".pred_wh")
 
     # Determine each predicted box's confidence score.
@@ -105,9 +105,15 @@ class YoloLoss(nn.Module):
     x = (ground_cxcy - pred_cxcy).square()
     loss_xy = x.sum() / true_box_count
 
-    self.log_tensor("ground_wh")
-    self.log_tensor("pred_wh")
-    x = (torch.sqrt(ground_wh) - torch.sqrt(pred_wh)).square()
+    self.log_tensor(".ground_wh")
+    self.log_tensor(".pred_wh")
+    verify_non_negative("ground_wh")
+    verify_non_negative("pred_wh")
+
+    # FFS, taking sqrt of zero can cause gradient to be NaN;
+    #  https://discuss.pytorch.org/t/runtimeerror-function-sqrtbackward-returned-nan-values-in-its-0th-output/48702
+    #  
+    x = (torch.sqrt(ground_wh + 1e-8) - torch.sqrt(pred_wh + 1e-8)).square()
     self.log_tensor("squareddiff",x)
     loss_wh = x.sum() / true_box_count
 

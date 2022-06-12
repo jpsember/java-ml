@@ -94,27 +94,43 @@ def show_shape(tensor_or_name, tensor=None):
   pr(f"{nm:>20} s{list(tensor.shape)}")
 
 
-def verify_not_nan(tensor_or_name, tensor=None):
+def verify_not_nan(prompt, tensor_or_name, tensor=None):
+  nm, tensor = get_name_and_tensor_pair(tensor_or_name, tensor)
+  if not nm:
+    return
+  if torch.any(torch.isnan(tensor)):
+    pr("Tensor",nm,"has NaN values")
+    pr(tensor)
+    die("(**************** NaN values found in", nm,":",prompt)
+
+
+def verify_weights_not_nan(prompt, tensor_or_name, tensor=None):
+  todo("refactor to reuse verify_not_nan with the weights?")
+  nm, tensor = get_name_and_tensor_pair(tensor_or_name, tensor)
+  if not nm:
+    return
+  wt = tensor.weight
+  if torch.any(torch.isnan(wt)):
+    pr("Tensor",nm,"has NaN values;",prompt)
+    die("(**************** NaN values found in weights for layer", nm,";",prompt)
+
+
+def verify_non_negative(tensor_or_name, tensor=None):
+  nm, tensor = get_name_and_tensor_pair(tensor_or_name, tensor)
+  if torch.min(tensor).data < 0:
+    pr("Tensor",nm,"has negative values")
+    pr(tensor)
+    die("(**************** Negative values found in", nm)
+
+
+def get_name_and_tensor_pair(tensor_or_name, tensor):
   nm = tensor_or_name
   if tensor is None:
     if isinstance(tensor_or_name, torch.Tensor):
       tensor = tensor_or_name
       nm = "(unknown)"
     else:
-      if tensor_or_name.startswith("."):
-        return
-      tensor = get_var(None, tensor_or_name, 1)
-  if torch.any(torch.isnan(tensor)):
-    pr("Tensor",nm,"has NaN values")
-    pr(tensor)
-    die("(**************** NaN values found in", nm)
-
-
-def verify_weights_not_nan(layer_name, layer, prompt):
-  todo("refactor to reuse verify_not_nan with the weights?")
-  if layer_name.startswith("."):
-    return
-  wt = layer.weight
-  if torch.any(torch.isnan(wt)):
-    pr("Tensor",layer_name,"has NaN values;",prompt)
-    die("(**************** NaN values found in weights for layer", layer_name,";",prompt)
+      tensor = get_var(None, tensor_or_name, 2)
+  if nm.startswith("."):
+    nm = None
+  return nm, tensor

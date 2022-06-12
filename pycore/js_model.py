@@ -42,7 +42,7 @@ class JsModel(nn.Module):
 
 
   def verify_weights(self, message):
-    verify_weights_not_nan("conv1", self.conv1, message)
+    verify_weights_not_nan(message, "conv1", self.conv1)
 
 
   def forward(self, x):
