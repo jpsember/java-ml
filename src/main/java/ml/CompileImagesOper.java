@@ -148,6 +148,11 @@ public final class CompileImagesOper extends AppOper {
 
     startLogging();
     while (true) {
+      if (lp().errorFlag()) {
+        files().writeString(stopSignalFile(), "");
+        break;
+      }
+
       if (!signature.equals(readSignature())) {
         log("(CompileImagesOper: Signature file has changed or disappeared, stopping)");
         break;

@@ -55,9 +55,23 @@ public class LogProcessor extends BaseObject implements Runnable {
     mState = 2;
   }
 
+  public boolean errorFlag() {
+    return mErrorFlag;
+  }
+
   @Override
   public void run() {
     log("starting");
+    try {
+      auxRun();
+    } catch (Throwable t) {
+      pr("LogProcessor caught exception:", t);
+      mErrorFlag = true;
+      stop();
+    }
+  }
+
+  private void auxRun() {
     while (mState != 2) {
       File logDir = config().targetDirTrain();
       DirWalk w = new DirWalk(logDir).withRecurse(false).withExtensions("json");
@@ -484,5 +498,5 @@ public class LogProcessor extends BaseObject implements Runnable {
   private Map<Integer, LogItem[]> mFamilyMap = hashMap();
   private File mTargetProjectDir;
   private File mTargetProjectScriptsDir;
-
+  private boolean mErrorFlag;
 }
