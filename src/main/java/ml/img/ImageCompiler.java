@@ -336,13 +336,6 @@ public final class ImageCompiler extends BaseObject {
       pixOut[planarSize + i] = pixIn[j + 1];
       pixOut[planarSize * 2 + i] = pixIn[j + 2];
     }
-    if (false && alert("temporary verification")) {
-      pr("pixIn:", pixIn[0], pixIn[1]);
-      pr("pixOut[0...] = ", pixOut[0], pixOut[1], pixOut[2], pixOut[3], pixOut[4], pixOut[5]);
-      pr("pixOut[c...] = ", pixOut[planarSize + 0], pixOut[planarSize + 1], pixOut[planarSize + 2],
-          pixOut[planarSize + 3], pixOut[planarSize + 4], pixOut[planarSize + 5]);
-      //halt();
-    }
     return pixOut;
   }
 

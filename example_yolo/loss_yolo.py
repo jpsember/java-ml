@@ -17,15 +17,16 @@ class YoloLoss(nn.Module):
     self.grid_size = grid_size(yolo)
     self.grid_cell_total = self.grid_size.product()
     self.log_counter = 0
+    self.issue_42_counter = 0
 
 
   def forward(self, current, target):
-    JG.issue_42_counter += 1
-    pr("issue 42 counter:", JG.issue_42_counter)
-    if JG.issue_42_counter == 8:
+    self.issue_42_counter += 1
+    pr("YoloLoss, forward, issue 42 counter:", self.issue_42_counter)
+    if self.issue_42_counter == 8:
       li = self.logger.new_log_item()
       li.family_size = 4
-      li.family_id = 8000 + JG.issue_42_counter
+      li.family_id = 8000 + self.issue_42_counter
       li.special_handling = 2
       li.family_slot = 0
       li.message = "images_input"

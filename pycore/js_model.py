@@ -41,9 +41,15 @@ class JsModel(nn.Module):
 
   def forward(self, x):
     pr("forward,", self.debug_forward_counter)
-    self.debug_forward_counter += 1
     verify_not_nan("js_model_forward", x)
+    if self.debug_forward_counter == 1:
+      pr("input to forward:")
+      pr(x)
+    warning("applying conv1 is producing NaN from reasonable inputs between 0...1")
     x = self.conv1(x)
+    if self.debug_forward_counter == 1:
+      pr("after conv1:")
+      pr(x)
     verify_not_nan("conv1", x)
     x = F.relu(x)
     verify_not_nan("relu1",x)
@@ -66,5 +72,7 @@ class JsModel(nn.Module):
     x = F.relu(self.fc1(x))
     verify_not_nan("js_model_forward_final_relu", x)
     x = self.fc2(x)
+    pr("...done forward")
+    self.debug_forward_counter += 1
     return x
 
