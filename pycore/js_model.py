@@ -10,6 +10,7 @@ class JsModel(nn.Module):
 
   def __init__(self, network: NeuralNetwork):
     super(JsModel, self).__init__()
+    self.debug_forward_counter = 0
 
     # Issue #42: use a hard-coded network based on pytorch tutorial  ihttps://pytorch.org/tutorials/beginner/blitz/cifar10_tutorial.html
     #
@@ -121,6 +122,8 @@ class JsModel(nn.Module):
 
   def forward(self, x):
     if JG.HARD_CODED_NETWORK:
+      pr("forward,", self.debug_forward_counter)
+      self.debug_forward_counter += 1
       verify_not_nan("js_model_forward", x)
       x = self.conv1(x)
       verify_not_nan("conv1", x)
