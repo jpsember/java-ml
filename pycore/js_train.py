@@ -328,8 +328,12 @@ class JsTrain:
       self.stat_train_loss.set_value(loss.item())
 
       # Backpropagation
+      self.model.verify_weights("before loss.backward")
       loss.backward()
+      self.model.verify_weights("after loss.backward")
+
       self.optimizer.step()
+      self.model.verify_weights("after optimizer step")
 
 
   # Perform optional calculations for the test operation; default does nothing

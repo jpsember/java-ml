@@ -14,9 +14,10 @@ class JsModel(nn.Module):
 
     # Issue #42: use a hard-coded network based on pytorch tutorial  ihttps://pytorch.org/tutorials/beginner/blitz/cifar10_tutorial.html
     #
-    self.conv1 = nn.Conv2d(3, # in channels
-                           16, # out channels (# filters)
-                           3, padding=1)  # kernel size
+    self.conv1 = nn.Conv2d(in_channels=3, # in channels
+                           out_channels=16, # out channels (# filters)
+                           kernel_size=3,
+                           padding=1)  # kernel size
     self.pool1 = nn.MaxPool2d(2)   # input: 96x160, out: 48x80
     self.conv2 = nn.Conv2d(16, 32, 3, padding=1)
     self.pool2 = nn.MaxPool2d(2)   # input: 48x80, out 24x40
@@ -36,15 +37,19 @@ class JsModel(nn.Module):
     self.fc1 = nn.Linear(512 * 3 * 5, 120)
     self.fc2 = nn.Linear(120, 3 * 5 * 6)
 
+    warning("Enabling 'detect_anomaly'")
+    torch.autograd.set_detect_anomaly(True)
 
+
+  def verify_weights(self, message):
+    verify_weights_not_nan("conv1", self.conv1, message)
 
 
   def forward(self, x):
     pr("forward,", self.debug_forward_counter)
     verify_not_nan("js_model_forward", x)
     if self.debug_forward_counter == 1:
-      pr("input to forward:")
-      pr(x)
+      self.verify_weights("before applying conv1")
     warning("applying conv1 is producing NaN from reasonable inputs between 0...1")
     x = self.conv1(x)
     if self.debug_forward_counter == 1:

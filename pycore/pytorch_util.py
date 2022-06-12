@@ -108,3 +108,13 @@ def verify_not_nan(tensor_or_name, tensor=None):
     pr("Tensor",nm,"has NaN values")
     pr(tensor)
     die("(**************** NaN values found in", nm)
+
+
+def verify_weights_not_nan(layer_name, layer, prompt):
+  todo("refactor to reuse verify_not_nan with the weights?")
+  if layer_name.startswith("."):
+    return
+  wt = layer.weight
+  if torch.any(torch.isnan(wt)):
+    pr("Tensor",layer_name,"has NaN values;",prompt)
+    die("(**************** NaN values found in weights for layer", layer_name,";",prompt)
