@@ -24,4 +24,8 @@ fields {
   // Any special handling to be performed by logger
   //
   int special_handling;
+
+  // True if illegal values (e.g. NaN) were found while parsing (on Java side)
+  //
+  bool illegal_values_found;
 }

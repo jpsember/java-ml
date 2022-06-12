@@ -76,11 +76,15 @@ public class LogProcessor extends BaseObject implements Runnable {
       File logDir = config().targetDirTrain();
       DirWalk w = new DirWalk(logDir).withRecurse(false).withExtensions("json");
       for (File infoFile : w.files()) {
-        LogItem ti;
-        try {
-          ti = Files.parseAbstractData(LogItem.DEFAULT_INSTANCE, infoFile);
-        } catch (Throwable t) {
-          throw badArg("Problem parsing file:", infoFile, "message:", t.getMessage());
+        LogItem ti = parseLogItem(infoFile);
+        if (ti.illegalValuesFound()) {
+          String formatted = prettyPrint(ti);
+          if (formatted.length() > 500)
+            formatted = formatted.substring(0, 500) + "...";
+          pr("======== Tensor name:", ti.message());
+          pr("Illegal values found !");
+          pr(formatted);
+          pr("======== Tensor name:", ti.message());
         }
         int tensorTypeCount = 0;
         if (ti.tensorBytes() != null)
@@ -103,6 +107,30 @@ public class LogProcessor extends BaseObject implements Runnable {
       DateTimeTools.sleepForRealMs(50);
     }
     log("stopping");
+  }
+
+  /**
+   * Parse LogItem from file, replacing NaN with -999 so it still parses
+   */
+  private LogItem parseLogItem(File file) {
+    String content = Files.readString(file);
+    boolean hasNan = content.contains("NaN");
+    LogItem result;
+    if (hasNan) {
+      content = content.replace("NaN", "-999");
+    }
+    result = Files.parseAbstractData(LogItem.DEFAULT_INSTANCE, new JSMap(content));
+    if (hasNan)
+      result = result.toBuilder().illegalValuesFound(true).build();
+    return result;
+  }
+
+  /**
+   * Pretty print a LogItem, changing any "-999" (that presumably represent NaNs
+   * found earlier) with "NaN"
+   */
+  private String prettyPrint(LogItem ti) {
+    return ti.toString().replace("-999.0", "NaN").replace("-999", "NaN");
   }
 
   private void processLogItem(LogItem ti) {

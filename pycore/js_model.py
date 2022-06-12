@@ -121,20 +121,29 @@ class JsModel(nn.Module):
 
   def forward(self, x):
     if JG.HARD_CODED_NETWORK:
-      x = self.pool1(F.relu(self.conv1(x)))
+      verify_not_nan("js_model_forward", x)
+      x = self.conv1(x)
+      verify_not_nan("conv1", x)
+      x = F.relu(x)
+      verify_not_nan("relu1",x)
+      x = self.pool1(x)
+      verify_not_nan("pool1", x)
       x = self.pool2(F.relu(self.conv2(x)))
+      verify_not_nan("aaa", x)
       x = self.pool3(F.relu(self.conv3(x)))
       x = self.pool4(F.relu(self.conv4(x)))
       x = self.pool5(F.relu(self.conv5(x)))
       x = F.relu(self.conv6(x))
       x = F.relu(self.conv7(x))
       x = F.relu(self.conv8(x))
+      verify_not_nan("ggg", x)
       x = F.relu(self.conv9(x))
       x = F.relu(self.conv10(x))
       x = F.relu(self.conv11(x))
       x = F.relu(self.conv12(x))
       x = torch.flatten(x, 1)  # flatten all dimensions except batch
       x = F.relu(self.fc1(x))
+      verify_not_nan("js_model_forward_final_relu", x)
       x = self.fc2(x)
       return x
     return self.layers(x)
