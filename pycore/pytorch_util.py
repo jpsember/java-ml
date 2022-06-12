@@ -107,4 +107,4 @@ def verify_not_nan(tensor_or_name, tensor=None):
   if torch.any(torch.isnan(tensor)):
     pr("Tensor",nm,"has NaN values")
     pr(tensor)
-    die("NaN values found in", nm)
+    die("(**************** NaN values found in", nm)

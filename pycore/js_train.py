@@ -99,7 +99,6 @@ class JsTrain:
     if self.train_images % self.batch_size != 0:
       warning("training image count", self.train_images,"is not a multiple of the batch size:", self.batch_size)
     self.batch_total = self.train_images // self.batch_size
-    #halt("train_images:",self.train_images,"batch_size:",self.batch_size,"batch total:",self.batch_total)
 
 
   def proj_path(self, rel_path : str):
@@ -254,26 +253,22 @@ class JsTrain:
       die("Unsupported image data type:", dt)
 
     # Convert the numpy array to a pytorch tensor
-    if JG.PIXEL_FORMAT:
-      images = images.reshape((img_count, self.img_channels, self.img_height, self.img_width))
-    else:
-      images = images.reshape((img_count, self.img_height, self.img_width, self.img_channels))
-    if False:
-      pr("first image, one color component:", images[0,:,:,2])
-      halt()
+
+    images = images.reshape((img_count, self.img_channels, self.img_height, self.img_width))
     images = torch.from_numpy(images)
-    if not JG.PIXEL_FORMAT:
-      # Permute the tensor so the channels come BEFORE the height and width
-      images = torch.permute(images, (0,3,1,2)).contiguous()
     if self.network.special_option == SpecialOption.PIXEL_ALIGNMENT:
       pr("Performing special option: PIXEL_ALIGNMENT")
+      prob_count = 0
       for y in range(self.img_height):
         for x in range(self.img_width):
           for c in range(self.img_channels):
             pv = int(images[0, c, y, x] * 255.0)
             expected = (y * 7 + x * 13 + (c+1)) & 0xff
             if pv != expected:
+              prob_count += 1
               pr("Problem with pixel c=",c,"x=",x,"y=",y,"value is",pv,", expected",expected)
+              if prob_count == 20:
+                halt("lots of problems")
       halt("Stopping, done special option")
 
     dt = self.network.label_data_type

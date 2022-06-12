@@ -322,8 +322,6 @@ public final class ImageCompiler extends BaseObject {
   private List<ImageEntry> mEntries;
   private boolean mEntriesValidated;
 
-  
-
   /**
    * Take an image that is (rows, columns, channels) and produce (channels,
    * rows, columns)
@@ -338,6 +336,13 @@ public final class ImageCompiler extends BaseObject {
       pixOut[planarSize + i] = pixIn[j + 1];
       pixOut[planarSize * 2 + i] = pixIn[j + 2];
     }
+    if (false && alert("temporary verification")) {
+      pr("pixIn:", pixIn[0], pixIn[1]);
+      pr("pixOut[0...] = ", pixOut[0], pixOut[1], pixOut[2], pixOut[3], pixOut[4], pixOut[5]);
+      pr("pixOut[c...] = ", pixOut[planarSize + 0], pixOut[planarSize + 1], pixOut[planarSize + 2],
+          pixOut[planarSize + 3], pixOut[planarSize + 4], pixOut[planarSize + 5]);
+      //halt();
+    }
     return pixOut;
   }
 
@@ -347,9 +352,9 @@ public final class ImageCompiler extends BaseObject {
     checkArgument(planarSize * 3 == pixIn.length);
     for (int i = 0; i < planarSize; i++) {
       int j = i * 3;
-      pixOut[j+0] = pixIn[i];
-      pixOut[j+1] = pixIn[planarSize + i];
-      pixOut[j+2] = pixIn[planarSize * 2 + i];
+      pixOut[j + 0] = pixIn[i];
+      pixOut[j + 1] = pixIn[planarSize + i];
+      pixOut[j + 2] = pixIn[planarSize * 2 + i];
     }
     return pixOut;
   }
