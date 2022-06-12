@@ -76,8 +76,12 @@ public class LogProcessor extends BaseObject implements Runnable {
       File logDir = config().targetDirTrain();
       DirWalk w = new DirWalk(logDir).withRecurse(false).withExtensions("json");
       for (File infoFile : w.files()) {
-        LogItem ti = Files.parseAbstractData(LogItem.DEFAULT_INSTANCE, infoFile);
-
+        LogItem ti;
+        try {
+          ti = Files.parseAbstractData(LogItem.DEFAULT_INSTANCE, infoFile);
+        } catch (Throwable t) {
+          throw badArg("Problem parsing file:", infoFile, "message:", t.getMessage());
+        }
         int tensorTypeCount = 0;
         if (ti.tensorBytes() != null)
           tensorTypeCount++;

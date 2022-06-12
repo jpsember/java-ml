@@ -71,6 +71,10 @@ class YoloLoss(nn.Module):
 
     true_confidence = target[:, :, :, F_CONFIDENCE]
 
+    # Determine number of ground truth boxes.  Clamp to minimum of 1 to avoid divide by zero.
+    #
+    true_box_count = torch.clamp(torch.count_nonzero(true_confidence), min=1).to(torch.float)
+
     # Add a dimension to true_confidence so it has equivalent dimensionality as ground_cxcy, ground_wh, etc
     # (this doesn't change its volume, only its dimensions) <-- explain?
     #
@@ -94,6 +98,7 @@ class YoloLoss(nn.Module):
     # We need to map (-inf...+inf) to (0..+inf); hence apply the exp function
     #
     pred_wh = torch.exp(current[:, :, :, F_BOX_W:F_BOX_H+1]) * coord_mask
+    verify_not_nan("pred_wh")
     self.log_tensor(".pred_wh")
 
     # Determine each predicted box's confidence score.
@@ -103,11 +108,15 @@ class YoloLoss(nn.Module):
     self.log_tensor(".pred_objectness")
 
     x = (ground_cxcy - pred_cxcy).square()
-    loss_xy = x.sum()
+    loss_xy = x.sum() / true_box_count
 
-    x = (ground_wh - pred_wh).square()
-    loss_wh = x.sum()
+    self.log_tensor("ground_wh")
+    self.log_tensor("pred_wh")
+    x = (torch.sqrt(ground_wh) - torch.sqrt(pred_wh)).square()
+    self.log_tensor("squareddiff",x)
+    loss_wh = x.sum() / true_box_count
 
+    self.log_tensor("loss_wh")
     weighted_box_loss = y.lambda_coord * (loss_xy + loss_wh)
     loss = weighted_box_loss
 

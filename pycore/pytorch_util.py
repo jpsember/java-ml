@@ -92,3 +92,19 @@ def show_shape(tensor_or_name, tensor=None):
     else:
       tensor = get_var(None, tensor_or_name, 1)
   pr(f"{nm:>20} s{list(tensor.shape)}")
+
+
+def verify_not_nan(tensor_or_name, tensor=None):
+  nm = tensor_or_name
+  if tensor is None:
+    if isinstance(tensor_or_name, torch.Tensor):
+      tensor = tensor_or_name
+      nm = "(unknown)"
+    else:
+      if tensor_or_name.startswith("."):
+        return
+      tensor = get_var(None, tensor_or_name, 1)
+  if torch.any(torch.isnan(tensor)):
+    pr("Tensor",nm,"has NaN values")
+    pr(tensor)
+    die("NaN values found in", nm)
