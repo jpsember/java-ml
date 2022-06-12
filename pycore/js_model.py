@@ -52,9 +52,6 @@ class JsModel(nn.Module):
       self.verify_weights("before applying conv1")
     warning("applying conv1 is producing NaN from reasonable inputs between 0...1")
     x = self.conv1(x)
-    if self.debug_forward_counter == 1:
-      pr("after conv1:")
-      pr(x)
     verify_not_nan("conv1", x)
     x = F.relu(x)
     verify_not_nan("relu1",x)

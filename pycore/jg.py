@@ -5,7 +5,6 @@
 
 class JG:
   trainer = None
-  ISSUE42 = False
   HARD_CODED_NETWORK = True
   recent_images_input = None
   recent_labels_input = None
