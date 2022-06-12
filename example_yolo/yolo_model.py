@@ -6,16 +6,6 @@ from gen.neural_network import NeuralNetwork
 
 class YoloModel(JsModel):
 
-
   def __init__(self, network: NeuralNetwork):
     super(YoloModel, self).__init__(network)
 
-
-  def process_custom_layer(self, lyr):
-    if lyr.type != "yolo":
-      die("unsupported layer type:", lyr.type)
-    if lyr.input_volume != lyr.output_volume:
-      self.add_layer(nn.Flatten(), "fc.Flatten")
-      self.add_layer(nn.Linear(vol_volume(lyr.input_volume), vol_volume(lyr.output_volume)), "fc.Linear")
-    else:
-      die("untested if input volume = output volume")
