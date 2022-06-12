@@ -42,6 +42,8 @@ class YoloLoss(nn.Module):
         self.logger.add(target,li)
 
 
+    verify_not_nan("current")
+
     include_objectness = False
     include_confidence = True
 
