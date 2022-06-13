@@ -10,7 +10,7 @@ class YoloTrain(JsTrain):
 
   def __init__(self):
     super().__init__(__file__)
-    self.yolo = Yolo.default_instance.parse(self.network.model_config)
+    JG.yolo = Yolo.default_instance.parse(self.network.model_config)
     #self.add_timeout(3600)
 
 
@@ -19,4 +19,4 @@ class YoloTrain(JsTrain):
 
 
   def define_loss_function(self):
-    return YoloLoss(self.network, self.logger, self.yolo)
+    return YoloLoss(self.network, self.logger, JG.yolo)

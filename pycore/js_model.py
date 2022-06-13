@@ -5,6 +5,7 @@ from gen.neural_network import NeuralNetwork
 from pycore.printsize import *
 import torch.nn.functional as F
 from pycore.jg import JG
+from example_yolo.yolo_util import *
 
 class JsModel(nn.Module):
 
@@ -40,17 +41,22 @@ class JsModel(nn.Module):
     warning("Enabling 'detect_anomaly'")
     torch.autograd.set_detect_anomaly(True)
 
+    self.batch_size = None
+    self.num_anchors = None
+    self.grid_size = None
+    self.grid_cell_total = None
+    # self.yolo = None
+    # pr("set self.yolo to None in js_model")
+
 
   def verify_weights(self, message):
     verify_weights_not_nan(message, "conv1", self.conv1)
 
 
   def forward(self, x):
-    pr("forward,", self.debug_forward_counter)
     verify_not_nan("js_model_forward", x)
     if self.debug_forward_counter == 1:
       self.verify_weights("before applying conv1")
-    warning("applying conv1 is producing NaN from reasonable inputs between 0...1")
     x = self.conv1(x)
     verify_not_nan("conv1", x)
     x = F.relu(x)
@@ -74,7 +80,74 @@ class JsModel(nn.Module):
     x = F.relu(self.fc1(x))
     verify_not_nan("js_model_forward_final_relu", x)
     x = self.fc2(x)
-    pr("...done forward")
+
+    # Apply narrowing functions to appropriate fields now, so we don't need to do them in the loss function or the
+    # Java code
+    # Each of these dimensions corresponds to (D_IMAGE, D_GRIDCELL, ..., D_BOXINFO)
+    #
+    y = JG.yolo
+
+    if self.batch_size is None:
+      self.batch_size = x.data.size(0)
+      self.num_anchors = anchor_box_count(y)
+      self.grid_size = grid_size(y)
+      self.grid_cell_total = self.grid_size.product()
+
+
+
+
+
+
+
+
+    current = x.view(self.batch_size, self.grid_cell_total, self.num_anchors, -1)  # -1 : infer remaining
+
+    # ground_cxcy = target[:, :, :, F_BOX_CX:F_BOX_CY + 1]
+    # self.log_tensor(".ground_cxcy")
+    #
+    # # true_box_wh will be the width and height of the box, relative to the anchor box
+    # #
+    # ground_wh = target[:, :, :, F_BOX_W:F_BOX_H+1]
+    # self.log_tensor(".ground_wh")
+    #
+    #
+    # # Determine number of ground truth boxes.  Clamp to minimum of 1 to avoid divide by zero.
+    # #
+    # true_box_count = torch.clamp(torch.count_nonzero(true_confidence), min=1).to(torch.float)
+    #
+    # # Add a dimension to true_confidence so it has equivalent dimensionality as ground_cxcy, ground_wh, etc
+    # # (this doesn't change its volume, only its dimensions) <-- explain?
+    # #
+    # # This produces a mask value which we apply to the xy and wh loss.
+    # coord_mask = true_confidence[..., None]
+
+    # We could have stored the true class number as an index, instead of a one-hot vector;
+    # but the symmetry of the structure of the true vs inferred data keeps things simple.
+    #
+    class_prob_end = F_CLASS_PROBABILITIES + y.category_count
+
+    # Determine predicted box's x,y
+    #
+    # We need to map (-inf...+inf) to (0...1); hence apply sigmoid function
+    #
+    pred_cxcy = torch.sigmoid(current[:, :, :, F_BOX_CX:F_BOX_CY + 1])
+
+    # Determine each predicted box's w,h
+    #
+    # We need to map (-inf...+inf) to (0..+inf); hence apply the exp function
+    #
+    pred_wh = torch.exp(current[:, :, :, F_BOX_W:F_BOX_H+1])
+
+    # Determine each predicted box's confidence score.
+    # We need to map (-inf...+inf) to (0..1); hence apply sigmoid function
+    #
+    pred_objectness = torch.sigmoid(current[:, :, :, F_CONFIDENCE:F_CONFIDENCE+1])
+
+    # TODO: apply narrowing to the categories
+    pred_categories = current[:, :, :, F_CLASS_PROBABILITIES:class_prob_end]
+
+    x = torch.cat((pred_cxcy, pred_wh, pred_objectness, pred_categories), D_BOXINFO)
+
     self.debug_forward_counter += 1
     return x
 

@@ -12,7 +12,7 @@ class YoloLoss(nn.Module):
     super(YoloLoss, self).__init__()
     self.logger = logger
     self.network = network
-    self.yolo = yolo
+    #self.yolo = yolo
     self.num_anchors = anchor_box_count(yolo)
     self.grid_size = grid_size(yolo)
     self.grid_cell_total = self.grid_size.product()
@@ -23,7 +23,7 @@ class YoloLoss(nn.Module):
     verify_not_nan("loss_yolo.forward", "current")
 
     self.log_counter += 1
-    y = self.yolo
+    y = JG.yolo
     batch_size = current.data.size(0)
 
     # Each of these dimensions corresponds to (D_IMAGE, D_GRIDCELL, ..., D_BOXINFO)
@@ -40,7 +40,6 @@ class YoloLoss(nn.Module):
     #
     ground_wh = target[:, :, :, F_BOX_W:F_BOX_H+1]
     self.log_tensor(".ground_wh")
-    #pr("shape of ground_wh:",ground_wh.shape)
 
     true_confidence = target[:, :, :, F_CONFIDENCE]
 
@@ -63,21 +62,24 @@ class YoloLoss(nn.Module):
     #
     # We need to map (-inf...+inf) to (0...1); hence apply sigmoid function
     #
-    pred_cxcy = torch.sigmoid(current[:, :, :, F_BOX_CX:F_BOX_CY + 1]) * coord_mask
+    # WE HAVE ALREADY APPLIED THE NARROWING MAPPINGS
+    pred_cxcy = current[:, :, :, F_BOX_CX:F_BOX_CY + 1] * coord_mask
     self.log_tensor(".pred_cxcy")
 
     # Determine each predicted box's w,h
     #
     # We need to map (-inf...+inf) to (0..+inf); hence apply the exp function
     #
-    pred_wh = torch.exp(current[:, :, :, F_BOX_W:F_BOX_H+1]) * coord_mask
+    # WE HAVE ALREADY APPLIED THE NARROWING MAPPINGS
+    pred_wh = current[:, :, :, F_BOX_W:F_BOX_H+1] * coord_mask
     verify_not_nan("loss_yolo_fwd", "pred_wh")
     self.log_tensor(".pred_wh")
 
     # Determine each predicted box's confidence score.
     # We need to map (-inf...+inf) to (0..1); hence apply sigmoid function
     #
-    pred_objectness = torch.sigmoid(current[:, :, :, F_CONFIDENCE])
+    # WE HAVE ALREADY APPLIED THE NARROWING MAPPINGS
+    pred_objectness = current[:, :, :, F_CONFIDENCE]
     self.log_tensor(".pred_objectness")
 
     x = (ground_cxcy - pred_cxcy).square()
@@ -92,10 +94,9 @@ class YoloLoss(nn.Module):
     #  https://discuss.pytorch.org/t/runtimeerror-function-sqrtbackward-returned-nan-values-in-its-0th-output/48702
     #  
     x = (torch.sqrt(ground_wh + 1e-8) - torch.sqrt(pred_wh + 1e-8)).square()
-    self.log_tensor("squareddiff",x)
     loss_wh = x.sum() / true_box_count
 
-    self.log_tensor("loss_wh")
+    self.log_tensor(".loss_wh")
     weighted_box_loss = y.lambda_coord * (loss_xy + loss_wh)
     loss = weighted_box_loss
 
@@ -156,7 +157,7 @@ class YoloLoss(nn.Module):
   def construct_confidence_loss(self, true_confidence, pred_confidence):
     self.log_tensor(".true_confidence")
     self.log_tensor(".pred_confidence")
-    noobj_weight = self.yolo.lambda_noobj
+    noobj_weight = JG.yolo.lambda_noobj
     squared_diff = torch.square(true_confidence - pred_confidence)
     no_obj_mask = 1.0 - true_confidence
     lambda_obj_weight = 3
