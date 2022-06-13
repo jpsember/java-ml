@@ -32,39 +32,36 @@ class YoloLoss(nn.Module):
     # Reshape the target to match the current's shape
     target = target.view(current.shape)
 
-    ground_cxcy = target[:, :, :, F_BOX_CX:F_BOX_CY + 1]
+    ground_confidence = target[:, :, :, F_CONFIDENCE:F_CONFIDENCE+1]
+
+    # TODO: we could apply the ground_confidence mask later, after calculating difference between ground and pred
+    ground_cxcy = target[:, :, :, F_BOX_CX:F_BOX_CY + 1] * ground_confidence
     self.log_tensor(".ground_cxcy")
 
     # true_box_wh will be the width and height of the box, relative to the anchor box
     #
-    ground_wh = target[:, :, :, F_BOX_W:F_BOX_H+1]
+    ground_wh = target[:, :, :, F_BOX_W:F_BOX_H+1] * ground_confidence
     self.log_tensor(".ground_wh")
 
-    true_confidence = target[:, :, :, F_CONFIDENCE]
 
     # Determine number of ground truth boxes.  Clamp to minimum of 1 to avoid divide by zero.
     #
-    true_box_count = torch.clamp(torch.count_nonzero(true_confidence), min=1).to(torch.float)
+    true_box_count = torch.clamp(torch.count_nonzero(ground_confidence), min=1).to(torch.float)
 
-    # Add a dimension to true_confidence so it has equivalent dimensionality as ground_cxcy, ground_wh, etc
-    # (this doesn't change its volume, only its dimensions) <-- explain?
-    #
-    # This produces a mask value which we apply to the xy and wh loss.
-    coord_mask = true_confidence[..., None]
 
     # We could have stored the true class number as an index, instead of a one-hot vector;
     # but the symmetry of the structure of the true vs inferred data keeps things simple.
     #
     class_prob_end = F_CLASS_PROBABILITIES + y.category_count
 
-    pred_cxcy = current[:, :, :, F_BOX_CX:F_BOX_CY + 1] * coord_mask
+    pred_cxcy = current[:, :, :, F_BOX_CX:F_BOX_CY + 1] * ground_confidence
     self.log_tensor(".pred_cxcy")
 
-    pred_wh = current[:, :, :, F_BOX_W:F_BOX_H+1] * coord_mask
+    pred_wh = current[:, :, :, F_BOX_W:F_BOX_H+1] * ground_confidence
     verify_not_nan("loss_yolo_fwd", "pred_wh")
     self.log_tensor(".pred_wh")
 
-    pred_objectness = current[:, :, :, F_CONFIDENCE]
+    pred_objectness = current[:, :, :, F_CONFIDENCE:F_CONFIDENCE+1]
     self.log_tensor(".pred_objectness")
 
     x = (ground_cxcy - pred_cxcy).square()
@@ -87,7 +84,10 @@ class YoloLoss(nn.Module):
 
     todo("Should we scale the loss function (box etc) by number of anchor boxes & cells?")
 
-    loss_confidence = self.construct_confidence_loss(true_confidence, pred_objectness)
+    loss_confidence = self.construct_confidence_loss(ground_confidence, pred_objectness)
+    self.log_tensor("ground_confidence")
+    self.log_tensor("pred_objectness")
+    self.log_tensor("loss_confidence")
     #self.log_tensor("loss_confidence")
     loss = loss + loss_confidence
 
@@ -144,13 +144,13 @@ class YoloLoss(nn.Module):
     self.log_tensor(".pred_confidence")
     noobj_weight = JG.yolo.lambda_noobj
     squared_diff = torch.square(true_confidence - pred_confidence)
+    self.log_tensor("squared_diff")
     no_obj_mask = 1.0 - true_confidence
-    lambda_obj_weight = 3
-    todo("add lambda_obj_weight to yolo params?")
-    conf_mask = no_obj_mask * noobj_weight + true_confidence * lambda_obj_weight
-    self.log_tensor(".conf_mask")
+    self.log_tensor("no_obj_mask")
+    conf_mask = no_obj_mask * noobj_weight + true_confidence
+    self.log_tensor("conf_mask")
     masked_diff = squared_diff * conf_mask
-    self.log_tensor(".masked_diff")
+    self.log_tensor("masked_diff")
     return torch.sum(masked_diff)
 
 
