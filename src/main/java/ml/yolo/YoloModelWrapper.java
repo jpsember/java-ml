@@ -259,57 +259,6 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
 
   @Override
   public List<ScriptElement> transformModelOutputToScredit() {
-
-    // WE ARE NOW HAVING THE MODEL DO THESE TRANSFORMATIONS FOR US.
-
-    // Transform the labels within the buffer to be in the format that the model inputs are in.
-    // Then we can call the same code as transformModelInputToScredit().
-
-    //    Yolo yolo = modelConfig();
-    //    float[] input = labelBufferFloats();
-    //    float[] output = new float[input.length];
-    //
-    //    final int fieldsPerBox = YoloUtil.valuesPerAnchorBox(yolo);
-    //    final int categoryCount = yolo.categoryCount();
-
-    //    int gridCellTotal = mGridSize.product();
-    //    int labelCount = gridCellTotal * YoloUtil.anchorBoxCount(yolo);
-
-    //    float maxObj = -1;
-    //    int fieldSetIndex = 0;
-    //    for (int labelIndex = 0; labelIndex < labelCount; labelIndex++, fieldSetIndex += fieldsPerBox) {
-    //
-    //      float objectness = NetworkUtil.sigmoid(input[fieldSetIndex + F_CONFIDENCE]);
-    //      output[fieldSetIndex + F_CONFIDENCE] = objectness;
-    //      if (objectness > maxObj) {
-    //        maxObj = objectness;
-    //      }
-    //
-    //      // No longer necessary, since we are having the model do this
-    //      if (false) {
-    //        int k = fieldSetIndex + F_BOX_XYWH;
-    //        float boxCenterX = NetworkUtil.sigmoid(input[k + 0]);
-    //        float boxCenterY = NetworkUtil.sigmoid(input[k + 1]);
-    //        float boxRelAnchorWidth = NetworkUtil.exp(input[k + 2]);
-    //        float boxRelAnchorHeight = NetworkUtil.exp(input[k + 3]);
-    //
-    //        output[k + 0] = boxCenterX;
-    //        output[k + 1] = boxCenterY;
-    //        output[k + 2] = boxRelAnchorWidth;
-    //        output[k + 3] = boxRelAnchorHeight;
-    //      }
-    //
-    //      {
-    //        int k = fieldSetIndex + F_CLASS_PROBABILITIES;
-    //        for (int category = 0; category < categoryCount; category++) {
-    //          float confLogit = input[k + category];
-    //          output[k + category] = NetworkUtil.sigmoid(confLogit);
-    //        }
-    //      }
-    //    }
-    //
-    //    // Copy the transformed values back to the label buffer
-    //    System.arraycopy(output, 0, input, 0, input.length);
     return transformModelInputToScredit();
   }
 
@@ -371,6 +320,7 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
       pr("conf:", b[f + YoloUtil.F_CONFIDENCE]);
     }
 
+    alert("had strange bug with negative box fields, so verifying");
     for (int i = 0; i < mFieldsPerAnchorBox; i++) {
       if (b[f + i] < 0)
         badArg("field is negative:", i, b[f + i]);

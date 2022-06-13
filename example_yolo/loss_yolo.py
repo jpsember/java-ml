@@ -12,7 +12,6 @@ class YoloLoss(nn.Module):
     super(YoloLoss, self).__init__()
     self.logger = logger
     self.network = network
-    #self.yolo = yolo
     self.num_anchors = anchor_box_count(yolo)
     self.grid_size = grid_size(yolo)
     self.grid_cell_total = self.grid_size.product()
@@ -58,27 +57,13 @@ class YoloLoss(nn.Module):
     #
     class_prob_end = F_CLASS_PROBABILITIES + y.category_count
 
-    # Determine predicted box's x,y
-    #
-    # We need to map (-inf...+inf) to (0...1); hence apply sigmoid function
-    #
-    # WE HAVE ALREADY APPLIED THE NARROWING MAPPINGS
     pred_cxcy = current[:, :, :, F_BOX_CX:F_BOX_CY + 1] * coord_mask
     self.log_tensor(".pred_cxcy")
 
-    # Determine each predicted box's w,h
-    #
-    # We need to map (-inf...+inf) to (0..+inf); hence apply the exp function
-    #
-    # WE HAVE ALREADY APPLIED THE NARROWING MAPPINGS
     pred_wh = current[:, :, :, F_BOX_W:F_BOX_H+1] * coord_mask
     verify_not_nan("loss_yolo_fwd", "pred_wh")
     self.log_tensor(".pred_wh")
 
-    # Determine each predicted box's confidence score.
-    # We need to map (-inf...+inf) to (0..1); hence apply sigmoid function
-    #
-    # WE HAVE ALREADY APPLIED THE NARROWING MAPPINGS
     pred_objectness = current[:, :, :, F_CONFIDENCE]
     self.log_tensor(".pred_objectness")
 

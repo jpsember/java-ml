@@ -41,12 +41,12 @@ class JsModel(nn.Module):
     warning("Enabling 'detect_anomaly'")
     torch.autograd.set_detect_anomaly(True)
 
+    # Until yolo stuff goes back into its subclasses, I have to duplicate this code
+    #
     self.batch_size = None
     self.num_anchors = None
     self.grid_size = None
     self.grid_cell_total = None
-    # self.yolo = None
-    # pr("set self.yolo to None in js_model")
 
 
   def verify_weights(self, message):
@@ -93,37 +93,8 @@ class JsModel(nn.Module):
       self.grid_size = grid_size(y)
       self.grid_cell_total = self.grid_size.product()
 
-
-
-
-
-
-
-
     current = x.view(self.batch_size, self.grid_cell_total, self.num_anchors, -1)  # -1 : infer remaining
 
-    # ground_cxcy = target[:, :, :, F_BOX_CX:F_BOX_CY + 1]
-    # self.log_tensor(".ground_cxcy")
-    #
-    # # true_box_wh will be the width and height of the box, relative to the anchor box
-    # #
-    # ground_wh = target[:, :, :, F_BOX_W:F_BOX_H+1]
-    # self.log_tensor(".ground_wh")
-    #
-    #
-    # # Determine number of ground truth boxes.  Clamp to minimum of 1 to avoid divide by zero.
-    # #
-    # true_box_count = torch.clamp(torch.count_nonzero(true_confidence), min=1).to(torch.float)
-    #
-    # # Add a dimension to true_confidence so it has equivalent dimensionality as ground_cxcy, ground_wh, etc
-    # # (this doesn't change its volume, only its dimensions) <-- explain?
-    # #
-    # # This produces a mask value which we apply to the xy and wh loss.
-    # coord_mask = true_confidence[..., None]
-
-    # We could have stored the true class number as an index, instead of a one-hot vector;
-    # but the symmetry of the structure of the true vs inferred data keeps things simple.
-    #
     class_prob_end = F_CLASS_PROBABILITIES + y.category_count
 
     # Determine predicted box's x,y
@@ -146,6 +117,8 @@ class JsModel(nn.Module):
     # TODO: apply narrowing to the categories
     pred_categories = current[:, :, :, F_CLASS_PROBABILITIES:class_prob_end]
 
+    # Concatenate the modified bits together into another tensor
+    # TODO: can we apply the above mappings 'in-place' to avoid this step?  
     x = torch.cat((pred_cxcy, pred_wh, pred_objectness, pred_categories), D_BOXINFO)
 
     self.debug_forward_counter += 1

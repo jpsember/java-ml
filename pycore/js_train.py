@@ -76,7 +76,7 @@ class JsTrain:
     self.recent_model_output = None
     self.image_index = 0
     JG.singleton = self
-    # TODO: refactor later
+
 
   def add_timeout(self, max_seconds=60):
     self.timeout_length = max_seconds
@@ -115,7 +115,6 @@ class JsTrain:
     self.log("PyTorch is using device:",self.device)
 
     self.model = self.define_model()
-    #self.yolo = self.model.yolo
     self.loss_fn = self.define_loss_function()
     self.optimizer = torch.optim.SGD(self.model.parameters(), lr=1e-3, momentum = 0.9)
 
