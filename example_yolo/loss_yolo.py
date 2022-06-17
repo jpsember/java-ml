@@ -64,8 +64,8 @@ class YoloLoss(nn.Module):
     pred_objectness = current[:, :, :, F_CONFIDENCE:F_CONFIDENCE+1]
     self.log_tensor(".pred_objectness")
 
-    x = (ground_cxcy - pred_cxcy).square()
-    loss_xy = x.sum() / true_box_count
+    lambda_coord = 5.0
+    loss_xy = (ground_cxcy - pred_cxcy).square() * lambda_coord
 
     self.log_tensor(".ground_wh")
     self.log_tensor(".pred_wh")
@@ -75,22 +75,31 @@ class YoloLoss(nn.Module):
     # FFS, taking sqrt of zero can cause gradient to be NaN;
     #  https://discuss.pytorch.org/t/runtimeerror-function-sqrtbackward-returned-nan-values-in-its-0th-output/48702
     #  
-    x = (torch.sqrt(ground_wh + 1e-8) - torch.sqrt(pred_wh + 1e-8)).square()
-    loss_wh = x.sum() / true_box_count
-
+    loss_wh = (torch.sqrt(ground_wh + 1e-8) - torch.sqrt(pred_wh + 1e-8)).square() * lambda_coord
     self.log_tensor(".loss_wh")
-    weighted_box_loss = y.lambda_coord * (loss_xy + loss_wh)
-    loss = weighted_box_loss
 
     todo("Should we scale the loss function (box etc) by number of anchor boxes & cells?")
 
     loss_confidence = self.construct_confidence_loss(ground_confidence, pred_objectness)
-    self.log_tensor("ground_confidence")
-    self.log_tensor("pred_objectness")
-    self.log_tensor("loss_confidence")
+    self.log_tensor(".ground_confidence")
+    self.log_tensor(".pred_objectness")
+    self.log_tensor(".loss_confidence")
     #self.log_tensor("loss_confidence")
-    loss = loss + loss_confidence
 
+    boxes_total = self.grid_cell_total + self.num_anchors
+    #pr("loss_xy")
+    #pr(loss_xy)
+    self.log_tensor("loss_xy")
+    loss_xy_sum = loss_xy.sum() / boxes_total
+    loss_wh_sum = loss_wh.sum() / boxes_total
+    loss_confidence_sum = loss_confidence.sum() / boxes_total
+
+
+    self.log_tensor("loss_xy_sum")
+    self.log_tensor("loss_wh_sum")
+    self.log_tensor("loss_confidence_sum")
+
+    loss = loss_xy_sum + loss_wh_sum + loss_confidence_sum
     return loss
 
 
@@ -142,16 +151,15 @@ class YoloLoss(nn.Module):
   def construct_confidence_loss(self, true_confidence, pred_confidence):
     self.log_tensor(".true_confidence")
     self.log_tensor(".pred_confidence")
-    noobj_weight = JG.yolo.lambda_noobj
+
     squared_diff = torch.square(true_confidence - pred_confidence)
-    self.log_tensor("squared_diff")
+    self.log_tensor(".squared_diff")
     no_obj_mask = 1.0 - true_confidence
-    self.log_tensor("no_obj_mask")
-    conf_mask = no_obj_mask * noobj_weight + true_confidence
-    self.log_tensor("conf_mask")
-    masked_diff = squared_diff * conf_mask
-    self.log_tensor("masked_diff")
-    return torch.sum(masked_diff)
+    self.log_tensor(".no_obj_mask")
+    lambda_noobj = 0.5
+    conf_mask = no_obj_mask * lambda_noobj + true_confidence
+    self.log_tensor(".conf_mask")
+    return squared_diff * conf_mask
 
 
 

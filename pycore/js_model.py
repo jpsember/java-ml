@@ -19,24 +19,28 @@ class JsModel(nn.Module):
                            out_channels=16, # out channels (# filters)
                            kernel_size=3,
                            padding=1)  # kernel size
-    self.pool1 = nn.MaxPool2d(2)   # input: 96x160, out: 48x80
-    self.conv2 = nn.Conv2d(16, 32, 3, padding=1)
-    self.pool2 = nn.MaxPool2d(2)   # input: 48x80, out 24x40
-    self.conv3 = nn.Conv2d(32, 64, 3, padding=1)
-    self.pool3 = nn.MaxPool2d(2)   # input: 24x40, out 16x20
-    self.conv4 = nn.Conv2d(64, 128, 3, padding=1)
-    self.pool4 = nn.MaxPool2d(2)   # input: 12x20, out 6x10
-    self.conv5 = nn.Conv2d(128, 256, 3, padding=1)
-    self.pool5 = nn.MaxPool2d(2)   # input: 6x10, out 3x5
-    self.conv6 = nn.Conv2d(256, 128, 3, padding=1)
-    self.conv7 = nn.Conv2d(128, 256, 3, padding=1)
-    self.conv8 = nn.Conv2d(256, 512, 3, padding=1)
-    self.conv9 = nn.Conv2d(512, 256, 3, padding=1)
-    self.conv10 = nn.Conv2d(256, 512, 3, padding=1)
-    self.conv11 = nn.Conv2d(512, 256, 3, padding=1)
-    self.conv12 = nn.Conv2d(256, 512, 3, padding=1)
+    self.pool1 = nn.MaxPool2d(kernel_size=2, stride=2)   # input: 96x160, out: 48x80
+
+    #kernel_size = 3, stride = 1, padding = 1
+    self.conv2 = nn.Conv2d(16, 32, kernel_size=3, padding=1)
+    self.pool2 = nn.MaxPool2d(kernel_size=2, stride=2)   # input: 48x80, out 24x40
+    self.conv3 = nn.Conv2d(32, 64,  kernel_size=3, padding=1)
+    self.pool3 = nn.MaxPool2d(kernel_size=2, stride=2)   # input: 24x40, out 16x20
+    self.conv4 = nn.Conv2d(64, 128,  kernel_size=3, padding=1)
+    self.pool4 = nn.MaxPool2d(kernel_size=2, stride=2)   # input: 12x20, out 6x10
+    self.conv5 = nn.Conv2d(128, 256,  kernel_size=3, padding=1)
+    self.pool5 = nn.MaxPool2d(kernel_size=2, stride=2)   # input: 6x10, out 3x5
+    self.conv6 = nn.Conv2d(256, 128,  kernel_size=3, padding=1)
+    self.conv7 = nn.Conv2d(128, 256,  kernel_size=3, padding=1)
+    self.conv8 = nn.Conv2d(256, 512,  kernel_size=3, padding=1)
+    self.conv9 = nn.Conv2d(512, 256,  kernel_size=3, padding=1)
+    self.conv10 = nn.Conv2d(256, 512,  kernel_size=3, padding=1)
+    self.conv11 = nn.Conv2d(512, 256,  kernel_size=3, padding=1)
+    self.conv12 = nn.Conv2d(256, 512,  kernel_size=3, padding=1)
     self.fc1 = nn.Linear(512 * 3 * 5, 120)
+    torch.nn.init.xavier_uniform_(self.fc1.weight)  # initialize parameters
     self.fc2 = nn.Linear(120, 3 * 5 * 6)
+    torch.nn.init.xavier_uniform_(self.fc2.weight)  # initialize parameters
 
     warning("Enabling 'detect_anomaly'")
     torch.autograd.set_detect_anomaly(True)
