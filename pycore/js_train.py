@@ -115,6 +115,8 @@ class JsTrain:
     self.log("PyTorch is using device:",self.device)
 
     self.model = self.define_model()
+    # Now that model has been constructed, prepare it for use
+    self.model.prepare()
     self.loss_fn = self.define_loss_function()
     self.optimizer = torch.optim.SGD(self.model.parameters(), lr=1e-3, momentum = 0.9)
 
@@ -324,12 +326,8 @@ class JsTrain:
       self.stat_train_loss.set_value(loss.item())
 
       # Backpropagation
-      self.model.verify_weights("before loss.backward")
       loss.backward()
-      self.model.verify_weights("after loss.backward")
-
       self.optimizer.step()
-      self.model.verify_weights("after optimizer step")
 
 
   # Perform optional calculations for the test operation; default does nothing

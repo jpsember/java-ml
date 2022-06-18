@@ -7,20 +7,35 @@ import torch.nn.functional as F
 from pycore.jg import JG
 from example_yolo.yolo_util import *
 
+
+# Enapsulates the a Neural Network model
+#
 class JsModel(nn.Module):
 
   def __init__(self, network: NeuralNetwork):
     super(JsModel, self).__init__()
+    self.network = network
+    self.prepared = False
+    self.tensors = None
+    self.layers = None
+    self.layer = None
+
+
+  # Called by JsTrain to prepare the model for use.
+  # Code that used to be run in the constructor has been moved here to allow subclass's custom initialization code
+  #
+  def prepare(self):
+    check_state(not self.prepared, "model is already prepared")
+    self.prepared = True
 
     warning("Enabling 'detect_anomaly'")
     torch.autograd.set_detect_anomaly(True)
-
 
     self.tensors = []
     self.add_size("image input")
 
     self.layer = None
-    for lyr in network.layers:
+    for lyr in self.network.layers:
       self.layer = lyr
 
       if lyr.type == "conv":
