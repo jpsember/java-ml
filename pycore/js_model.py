@@ -7,6 +7,20 @@ import torch.nn.functional as F
 from pycore.jg import JG
 from example_yolo.yolo_util import *
 
+
+class SetToConstant(nn.Module):
+
+  def __init__(self):
+    super(SetToConstant, self).__init__()
+
+  def forward(self, current):
+    x = current * 1e-8 + 0.2
+    return x
+
+
+
+
+
 class JsModel(nn.Module):
 
   def __init__(self, network: NeuralNetwork):
@@ -51,6 +65,7 @@ class JsModel(nn.Module):
     self.num_anchors = None
     self.grid_size = None
     self.grid_cell_total = None
+    self.set_to_const = SetToConstant()
 
 
   def verify_weights(self, message):
@@ -79,6 +94,10 @@ class JsModel(nn.Module):
     x = F.relu(self.conv9(x))
     x = F.relu(self.conv10(x))
     x = F.relu(self.conv11(x))
+
+    # As an experiment, set the volume to a constant to see if we get essentially the same results
+    x = self.set_to_const(x)
+
     x = F.relu(self.conv12(x))
     x = torch.flatten(x, 1)  # flatten all dimensions except batch
     x = F.relu(self.fc1(x))

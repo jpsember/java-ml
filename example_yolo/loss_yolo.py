@@ -89,15 +89,15 @@ class YoloLoss(nn.Module):
     boxes_total = self.grid_cell_total + self.num_anchors
     #pr("loss_xy")
     #pr(loss_xy)
-    self.log_tensor("loss_xy")
+    self.log_tensor(".loss_xy")
     loss_xy_sum = loss_xy.sum() / boxes_total
     loss_wh_sum = loss_wh.sum() / boxes_total
     loss_confidence_sum = loss_confidence.sum() / boxes_total
 
 
-    self.log_tensor("loss_xy_sum")
-    self.log_tensor("loss_wh_sum")
-    self.log_tensor("loss_confidence_sum")
+    self.log_tensor(".loss_xy_sum")
+    self.log_tensor(".loss_wh_sum")
+    self.log_tensor(".loss_confidence_sum")
 
     loss = loss_xy_sum + loss_wh_sum + loss_confidence_sum
     return loss
