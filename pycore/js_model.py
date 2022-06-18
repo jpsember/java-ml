@@ -6,10 +6,6 @@ from pycore.printsize import *
 import torch.nn.functional as F
 from pycore.jg import JG
 from example_yolo.yolo_util import *
-from pycore.set_to_constant_module import *
-
-
-
 
 class JsModel(nn.Module):
 
@@ -55,7 +51,6 @@ class JsModel(nn.Module):
     self.num_anchors = None
     self.grid_size = None
     self.grid_cell_total = None
-    self.set_to_const = SetToConstant()
 
 
   def verify_weights(self, message):
@@ -84,10 +79,6 @@ class JsModel(nn.Module):
     x = F.relu(self.conv9(x))
     x = F.relu(self.conv10(x))
     x = F.relu(self.conv11(x))
-
-    # As an experiment, set the volume to a constant to see if we get essentially the same results
-    x = self.set_to_const(x)
-
     x = F.relu(self.conv12(x))
     x = torch.flatten(x, 1)  # flatten all dimensions except batch
     x = F.relu(self.fc1(x))
