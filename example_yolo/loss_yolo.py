@@ -12,6 +12,7 @@ class YoloLoss(nn.Module):
     super(YoloLoss, self).__init__()
     self.logger = logger
     self.network = network
+    self.yolo = yolo
     self.num_anchors = anchor_box_count(yolo)
     self.grid_size = grid_size(yolo)
     self.grid_cell_total = self.grid_size.product()
@@ -19,10 +20,15 @@ class YoloLoss(nn.Module):
 
 
   def forward(self, current, target):
-    verify_not_nan("loss_yolo.forward", "current")
+    verify_not_nan("YoloLoss.forward", "current")
+
+    include_objectness = False
+    include_confidence = True
 
     self.log_counter += 1
-    y = JG.yolo
+    #if include_objectness and self.log_active():
+    #  self.logger.add_msg("^v;loss_yolo.py\n^d;")
+    y = self.yolo
     batch_size = current.data.size(0)
 
     # Each of these dimensions corresponds to (D_IMAGE, D_GRIDCELL, ..., D_BOXINFO)
@@ -34,15 +40,12 @@ class YoloLoss(nn.Module):
 
     ground_confidence = target[:, :, :, F_CONFIDENCE:F_CONFIDENCE+1]
 
-    # TODO: we could apply the ground_confidence mask later, after calculating difference between ground and pred
     ground_cxcy = target[:, :, :, F_BOX_CX:F_BOX_CY + 1] * ground_confidence
     self.log_tensor(".ground_cxcy")
 
     # true_box_wh will be the width and height of the box, relative to the anchor box
     #
     ground_wh = target[:, :, :, F_BOX_W:F_BOX_H+1] * ground_confidence
-    self.log_tensor(".ground_wh")
-
 
     # Determine number of ground truth boxes.  Clamp to minimum of 1 to avoid divide by zero.
     #
@@ -145,6 +148,54 @@ class YoloLoss(nn.Module):
       #     ROWS COLS
       z = z[4:7, 5:8,:]
     self.logger.add(z, name)
+
+
+  def calculate_iou(self, true_xy, true_wh, pred_xy, pred_wh):
+
+    # The _xy fields are the box midpoints, and we need to know the edge coordinates
+
+    # Calculate the min/max extents of the true boxes
+    #
+    true_offset = true_wh / 2.
+    true_box_min = true_xy - true_offset
+    true_box_max = true_xy + true_offset
+    self.log_tensor(".true_box_min:1")
+    self.log_tensor(".true_box_max:1")
+    true_area = true_wh[..., 0] * true_wh[..., 1]
+    self.log_tensor(".true_area:1")
+
+    # Calculate the min/max extents of the predicted boxes
+    #
+    pred_offset = pred_wh / 2.
+    self.log_tensor(".pred_wh:1")
+    pred_box_min = pred_xy - pred_offset
+    pred_box_max = pred_xy + pred_offset
+    self.log_tensor(".pred_box_min:1")
+    self.log_tensor(".pred_box_max:1")
+    pred_area = pred_wh[..., 0] * pred_wh[..., 1]
+    self.log_tensor(".pred_area:1")
+
+    # Determine the area of their intersection (which may be zero)
+    #
+    isect_min = torch.maximum(true_box_min, pred_box_min)
+    isect_max = torch.minimum(true_box_max, pred_box_max)
+    self.log_tensor(".isect_min:1")
+    self.log_tensor(".isect_max:1")
+
+    isect_size = torch.clamp(isect_max - isect_min, min=0.0)
+    self.log_tensor(".isect_size:1")
+    isect_area = isect_size[..., 0] * isect_size[..., 1]
+    self.log_tensor(".isect_area:1")
+
+    union_area = pred_area + true_area - isect_area
+    self.log_tensor(".union_area:1")
+
+    # For cells that have no ground truth box, the area will be zero; so to avoid a possible divide by zero
+    # (which may be harmless, but will be confusing), add an epsilon to the denominator
+    #
+    iou = torch.div(isect_area, torch.clamp(union_area, min=1e-8))
+    self.log_tensor(".iou:1")
+    return iou
 
 
 
