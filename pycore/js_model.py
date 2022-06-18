@@ -6,17 +6,7 @@ from pycore.printsize import *
 import torch.nn.functional as F
 from pycore.jg import JG
 from example_yolo.yolo_util import *
-
-
-class SetToConstant(nn.Module):
-
-  def __init__(self):
-    super(SetToConstant, self).__init__()
-
-  def forward(self, current):
-    x = current * 1e-8 + 0.2
-    return x
-
+from pycore.set_to_constant_module import *
 
 
 
