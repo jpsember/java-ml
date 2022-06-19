@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-
+from pycore.logger_module import LoggerModule
 from pycore.pytorch_util import *
 from gen.neural_network import NeuralNetwork
 from pycore.printsize import *
@@ -84,6 +84,11 @@ class JsModel(nn.Module):
   def add_layer(self, layer, size_label=None):
     if layer is not None:
       self.add_size(none_to(size_label, self.layer.type))
+      ind = len(self.tensors)
+      pr("Processing #",ind,"layer:",self.layer.type)
+      if ind == 8:
+        pr("Wrapping in logger module")
+        layer = LoggerModule(layer)
       self.tensors.append(layer)
 
 
