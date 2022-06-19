@@ -75,7 +75,6 @@ class JsTrain:
     self.recent_image_array = None
     self.recent_model_output = None
     self.image_index = 0
-    JG.singleton = self
 
 
   def add_timeout(self, max_seconds=60):
@@ -452,19 +451,13 @@ class JsTrain:
     t.family_slot = 0
 
     t.name = "image"
-    tens = self.ndarray_to_tensor(self.recent_image_array, t)
+    tens = torch.from_numpy(self.recent_image_array)
     self.logger.add(tens, t)
 
     t.name = "labels"
     t.family_slot = 1
     tens = self.recent_model_output
     self.logger.add(tens, t)
-
-
-  def ndarray_to_tensor(self, ndarr, ti:LogItemBuilder):
-    tens =  torch.from_numpy(ndarr)
-    return tens
-
 
 
   def update_timeout(self)->bool:

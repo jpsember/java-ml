@@ -213,5 +213,3 @@ class YoloLoss(nn.Module):
     return squared_diff * conf_mask
 
 
-
-

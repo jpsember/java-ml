@@ -5,7 +5,6 @@ from gen.neural_network import NeuralNetwork
 from pycore.printsize import *
 import torch.nn.functional as F
 from pycore.jg import JG
-from example_yolo.yolo_util import *
 
 
 # Enapsulates the a Neural Network model
@@ -63,7 +62,6 @@ class JsModel(nn.Module):
 
     self.stop_size_messages()
     self.layers = nn.Sequential(*self.tensors)
-
 
 
 
