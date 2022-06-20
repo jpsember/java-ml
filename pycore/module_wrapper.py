@@ -1,4 +1,6 @@
 from pycore.pytorch_util import *
+from pycore.tensor_logger import TensorLogger
+
 
 class ModuleWrapper(nn.Module):
 
@@ -21,7 +23,7 @@ class ModuleWrapper(nn.Module):
   def forward(self, x):
     if self.show_size_flag:
       self.show_size_flag = False
-      todo("Use logger to have Java print this")
       m = none_to(self.message,"<no message>")
-      pr("Input shape:",f"'{m}'".ljust(16), list(x.shape))
+      text = spr("Input shape:",f"'{m}'".ljust(16), list(x.shape))
+      TensorLogger.default_instance.add_msg(text)
     return x

@@ -12,6 +12,6 @@ class LoggerModule(nn.Module):
 
 
   def forward(self, x):
-    pr("LoggerModule forward called, calling wrapper")
+    #pr("LoggerModule forward called, calling wrapper")
     x = self.wrapped_module(x)
     return x
