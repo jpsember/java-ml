@@ -19,7 +19,6 @@ from pycore.tensor_logger import TensorLogger
 class JsTrain:
 
   def __init__(self, train_script_file):
-    self.logger = TensorLogger()
     self.signature = None
     self.verbose = False
     self.device = None
@@ -452,12 +451,12 @@ class JsTrain:
 
     t.name = "image"
     tens = torch.from_numpy(self.recent_image_array)
-    self.logger.add(tens, t)
+    TensorLogger.default_instance.add(tens, t)
 
     t.name = "labels"
     t.family_slot = 1
     tens = self.recent_model_output
-    self.logger.add(tens, t)
+    TensorLogger.default_instance.add(tens, t)
 
 
   def update_timeout(self)->bool:

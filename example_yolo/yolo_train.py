@@ -19,4 +19,4 @@ class YoloTrain(JsTrain):
 
 
   def define_loss_function(self):
-    return YoloLoss(self.network, self.logger, self.yolo)
+    return YoloLoss(self.network, self.yolo)

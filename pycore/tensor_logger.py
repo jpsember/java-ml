@@ -1,3 +1,4 @@
+from __future__ import annotations
 from numpy import ndarray
 
 from pycore.base import *
@@ -8,6 +9,7 @@ from gen.log_item import *
 
 class TensorLogger:
 
+  default_instance: TensorLogger = None
 
   def __init__(self, directory:str = "train_data"):
     self.dir = directory
@@ -94,3 +96,7 @@ class TensorLogger:
 
   def get_path(self, info:LogItem, name:str):
     return os.path.join(self.dir, f"{info.id:07d}{self.clean(name)}")
+
+
+TensorLogger.default_instance = TensorLogger()
+

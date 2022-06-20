@@ -2,7 +2,7 @@
 from pycore.logger_module import LoggerModule
 from pycore.pytorch_util import *
 from gen.neural_network import NeuralNetwork
-from pycore.printsize import *
+from pycore.module_wrapper import *
 import torch.nn.functional as F
 from pycore.jg import JG
 
@@ -60,7 +60,6 @@ class JsModel(nn.Module):
         self.process_custom_layer(lyr)
     self.layer = None
 
-    self.stop_size_messages()
     self.layers = nn.Sequential(*self.tensors)
 
 
@@ -70,16 +69,7 @@ class JsModel(nn.Module):
 
 
   def add_size(self, message):
-    self.tensors.append(PrintSize(message))
-
-
-  def stop_size_messages(self):
-    self.add_size("!stop!")
-
-
-  def exit_when_built(self):
-    self.add_size("!exit!")
-
+    self.tensors.append(ModuleWrapper().set_message(message).set_show_size_flag(True))
 
   def add_layer(self, layer, size_label=None):
     if layer is not None:

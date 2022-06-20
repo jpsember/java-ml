@@ -8,9 +8,8 @@ from .yolo_util import *
 
 class YoloLoss(nn.Module):
 
-  def __init__(self, network: NeuralNetwork, logger:TensorLogger, yolo:Yolo):
+  def __init__(self, network: NeuralNetwork, yolo:Yolo):
     super(YoloLoss, self).__init__()
-    self.logger = logger
     self.network = network
     self.yolo = yolo
     self.num_anchors = anchor_box_count(yolo)
@@ -125,7 +124,7 @@ class YoloLoss(nn.Module):
     # Construct a slice of the tensor for inspection
     z = t.detach()
     if len(z.size()) == 0:
-      self.logger.add_msg(f"{name}: {z.data:5.3}")
+      TensorLogger.default_instance.add_msg(f"{name}: {z.data:5.3}")
       return
 
 
@@ -147,7 +146,7 @@ class YoloLoss(nn.Module):
       # Zoom in on the center grid cells
       #     ROWS COLS
       z = z[4:7, 5:8,:]
-    self.logger.add(z, name)
+    TensorLogger.default_instance.add(z, name)
 
 
   def calculate_iou(self, true_xy, true_wh, pred_xy, pred_wh):
