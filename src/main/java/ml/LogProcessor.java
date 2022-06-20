@@ -4,6 +4,7 @@ import gen.CompileImagesConfig;
 import gen.DataType;
 import gen.FloatFormat;
 import gen.NeuralNetwork;
+import gen.TensorStats;
 import gen.LogItem;
 import gen.Vol;
 import js.base.BaseObject;
@@ -136,37 +137,11 @@ public class LogProcessor extends BaseObject implements Runnable {
   private void processLogItem(LogItem ti) {
     StringBuilder sb = new StringBuilder();
     if (ti.shape().length != 0) {
-      String s = formatTensor(ti);
-      sb.append(s.trim());
+      formatTensor(ti, sb);
+      //sb.append(s.trim());
     } else {
-      // Parse special sequences of the form ^x;
-      //
       String msg = ti.message().trim();
-      int cursor = 0;
-      while (cursor < msg.length()) {
-        if (msg.charAt(cursor) == '^') {
-          checkArgument(cursor + 3 <= msg.length() && msg.charAt(cursor + 2) == ';', "ill formed message:",
-              msg, CR, "cursor:", cursor, quote(msg.substring(cursor)));
-          char code = msg.charAt(cursor + 1);
-          switch (code) {
-          case 'v':
-            sb.append("\n\n\n");
-            break;
-          case 'd':
-            sb.append("-----------------------------------------------------------------------");
-            break;
-          default:
-            throw badArg("ill formed message:", msg);
-          }
-          cursor += 3;
-        } else {
-          int nextC = msg.indexOf('^', cursor);
-          if (nextC < 0)
-            nextC = msg.length();
-          sb.append(msg.substring(cursor, nextC));
-          cursor = nextC;
-        }
-      }
+      sb.append(msg);
     }
     addLF(sb);
     System.out.print(sb.toString());
@@ -402,8 +377,9 @@ public class LogProcessor extends BaseObject implements Runnable {
     return mConfig;
   }
 
-  private String formatTensor(LogItem ti) {
+  private void formatTensor(LogItem ti, StringBuilder sb) {
 
+    TensorStats stats = buildTensorStats(ti.tensorFloats());
     float[] coeff = ti.tensorFloats();
     todo("add support for byte tensors");
     String effName = ti.message();
@@ -423,7 +399,6 @@ public class LogProcessor extends BaseObject implements Runnable {
       fmt = getFloatFormatString(coeff);
     }
 
-    StringBuilder sb = new StringBuilder();
     if (nonEmpty(ti.message())) {
       sb.append(ti.message());
       sb.append('\n');
@@ -463,19 +438,83 @@ public class LogProcessor extends BaseObject implements Runnable {
     checkArgument(pages * rows * cols == coeff.length);
     int q = 0;
     for (int p = 0; p < pages; p++) {
-      for (int y = 0; y < rows; y++) {
-        sb.append("[ ");
-        for (int x = 0; x < cols; x++, q++) {
-          if (x > 0)
-            sb.append(" │ "); // Note: this is a unicode char taller than the vertical brace
-          sb.append(fmt(fmt, coeff[q]));
+
+      if (true) {
+
+        String s = //
+                " " +
+                //"░" +
+                "▘" + "▝" + "▀" + "▖" + "▌" + "▞" + "▛" + //
+                "▗" + "▚" + "▐" + "▜" + "▄" + "▙" + "▟" + "█"  ;
+       // if (rows % 2 != 0 || cols % 2 != 0) badArg("rows, cols not mult 2");
+        
+        String grayLevels = " .:-=+*#%@";
+        
+        
+        
+        
+        float range = stats.max() - stats.min();
+        if (range <= 0f)  {
+          pr("...stats range is zero:",INDENT,stats);
+          range = 1f;
         }
-        sb.append(" ]\n");
+        final int RMAX = grayLevels.length();
+        float m = (RMAX - 1) / range;
+        float b = .5f - m * stats.min();
+        pr("range:",range);
+        pr("m:",m);
+        pr("b:",b);
+        
+       
+        pr("stats:",stats);
+        for (int y = 0; y < rows; y++) {
+          sb.append("[ ");
+          for (int x = 0; x < cols; x++, q++) {
+            float f = coeff[q];
+            int r = (int)( m*f + b);
+            sb.append(grayLevels.charAt(r));
+//            if (x > 0)
+//              sb.append(" │ "); // Note: this is a unicode char taller than the vertical brace
+//            sb.append(fmt(fmt, coeff[q]));
+          }
+          sb.append(" ]\n");
+        }
+       // halt();
+      } else {
+
+        for (int y = 0; y < rows; y++) {
+          sb.append("[ ");
+          for (int x = 0; x < cols; x++, q++) {
+            if (x > 0)
+              sb.append(" │ "); // Note: this is a unicode char taller than the vertical brace
+            sb.append(fmt(fmt, coeff[q]));
+          }
+          sb.append(" ]\n");
+        }
       }
+
       if (pages > 1)
         sb.append("\n");
     }
-    return sb.toString();
+  }
+
+  private TensorStats buildTensorStats(float[] tensorFloats) {
+    if (tensorFloats.length == 0)
+      return TensorStats.DEFAULT_INSTANCE;
+    TensorStats.Builder b = TensorStats.newBuilder();
+
+    double sum = 0;
+    b.min(tensorFloats[0]).max(tensorFloats[0]);
+    for (float f : tensorFloats) {
+      sum += f;
+      if (f < b.min())
+        b.min(f);
+      if (f > b.max())
+        b.max(f);
+    }
+    b.population(tensorFloats.length);
+    b.mean((float) (sum / b.population()));
+    return b.build();
   }
 
   private static final FloatFormat buildFmt(float maxVal, String fmt, float minVal, String zero) {
