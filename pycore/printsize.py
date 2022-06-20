@@ -1,10 +1,8 @@
-from torch import nn
-
-from pycore.base import pr
+from pycore.pytorch_util import *
 
 class PrintSize(nn.Module):
 
-  suppress = True #not warning("including layer printing")
+  suppress = not warning("including layer printing")
 
   def __init__(self, message="<unknown>"):
     super(PrintSize, self).__init__()
