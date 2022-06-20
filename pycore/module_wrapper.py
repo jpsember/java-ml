@@ -12,8 +12,8 @@ class ModuleWrapper(nn.Module):
     self.show_size_flag = False
     self.message = None
     self.id = None
-    self.log_input_vol_epochs_list = None
-    self.epoch_number = 0
+    self.log_input_vol_batch_list = None
+    self.batch_number = 0
 
 
   def assign_id(self):
@@ -44,9 +44,9 @@ class ModuleWrapper(nn.Module):
       text = text + spr("Input shape:",f"'{m}'".ljust(16), list(x.shape))
       TensorLogger.default_instance.add_msg(text)
 
-    ep_list = self.log_input_vol_epochs_list
+    ep_list = self.log_input_vol_batch_list
     if ep_list is not None:
-      if self.epoch_number in ep_list:
+      if self.batch_number in ep_list:
         t = LogItem.new_builder()
         t.name = "input_vol"
         todo("assuming first dimension is image within batch")
@@ -55,10 +55,10 @@ class ModuleWrapper(nn.Module):
         tens = x[1, 1, ...]
         TensorLogger.default_instance.add(tens, t)
 
-    self.epoch_number += 1
+    self.batch_number += 1
     return x
 
 
-  def set_log_input_vol(self, epochs=[5]):
-    self.log_input_vol_epochs_list = epochs.copy()
+  def set_log_input_vol(self, batch_numbers=[5]):
+    self.log_input_vol_batch_list = batch_numbers.copy()
     return self

@@ -495,10 +495,10 @@ class JsTrain:
   def save_checkpoint(self):
     diff = self.epoch_number - self.last_checkpoint_epoch
     check_state(diff >= 0,"epoch number less than last saved")
-    # Don't save a checkpoint if we haven't done some minimum number of epochs
+    # Don't save a checkpoint if we haven't done some minimum number of batch_numbers
     if diff <= 3:
       if diff > 0:
-        pr("(...not bothering to save checkpoint for only", diff, "new epochs)")
+        pr("(...not bothering to save checkpoint for only", diff, "new batch_numbers)")
       return
 
     path = self.construct_checkpoint_path_for_epoch(self.epoch_number)

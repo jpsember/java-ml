@@ -31,8 +31,7 @@ class JsModel(nn.Module):
     torch.autograd.set_detect_anomaly(True)
 
     self.tensors = []
-    if self.display_sizes:
-      self.add_size("image input")
+    self.add_size("image input")
 
     self.layer = None
     for lyr in self.network.layers:
@@ -72,17 +71,16 @@ class JsModel(nn.Module):
   def add_size(self, message) -> ModuleWrapper:
     w = ModuleWrapper()
     w.set_message(message)
-    w.set_show_size_flag(True)
+    w.set_show_size_flag(self.display_sizes)
     self.tensors.append(w)
     return w
 
 
   def add_layer(self, layer, size_label=None):
     if layer is not None:
-      if self.display_sizes:
-        w = self.add_size(none_to(size_label, self.layer.type)).assign_id()
-        if w.id == 3:
-          w.set_log_input_vol()
+      w = self.add_size(none_to(size_label, self.layer.type)).assign_id()
+      if w.id == 3:
+        w.set_log_input_vol()
       self.tensors.append(layer)
 
 
