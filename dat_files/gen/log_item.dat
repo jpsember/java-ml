@@ -1,3 +1,5 @@
+enum gen.SpecialHandling;
+
 fields {
 
   // A unique id > 0 for ordering the items
@@ -21,9 +23,7 @@ fields {
   ?*byte tensor_bytes;
   ?*float tensor_floats;
 
-  // Any special handling to be performed by logger
-  //
-  int special_handling;
+  SpecialHandling special_handling;
 
   // True if illegal values (e.g. NaN) were found while parsing (on Java side)
   //

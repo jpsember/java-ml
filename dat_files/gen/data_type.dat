@@ -3,7 +3,3 @@ enum {
   unsigned_short,
   float32,    // To avoid problems naming it 'float'
 }
-
-
-
-

@@ -25,8 +25,6 @@ class YoloLoss(nn.Module):
     include_confidence = True
 
     self.log_counter += 1
-    #if include_objectness and self.log_active():
-    #  self.logger.add_msg("^v;loss_yolo.py\n^d;")
     y = self.yolo
     batch_size = current.data.size(0)
 

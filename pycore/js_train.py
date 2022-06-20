@@ -11,6 +11,7 @@ from gen.data_type import *
 from gen.compile_images_config import *
 from gen.train_param import *
 from gen.log_item import *
+from gen.special_handling import *
 from gen.special_option import SpecialOption
 from pycore.stats import Stats
 from pycore.tensor_logger import TensorLogger
@@ -443,8 +444,7 @@ class JsTrain:
     self.image_index = img_index
 
     t = LogItem.new_builder()
-    todo("have symbolic constants for special handling")
-    t.special_handling = 1
+    t.special_handling = SpecialHandling.SNAPSHOT
     t.family_id = img_index
     t.family_size = 2
     t.family_slot = 0

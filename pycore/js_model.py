@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-from pycore.logger_module import LoggerModule
 from pycore.pytorch_util import *
 from gen.neural_network import NeuralNetwork
 from pycore.module_wrapper import *
@@ -18,6 +17,7 @@ class JsModel(nn.Module):
     self.tensors = None
     self.layers = None
     self.layer = None
+    self.display_sizes = False
 
 
   # Called by JsTrain to prepare the model for use.
@@ -31,7 +31,8 @@ class JsModel(nn.Module):
     torch.autograd.set_detect_anomaly(True)
 
     self.tensors = []
-    self.add_size("image input")
+    if self.display_sizes:
+      self.add_size("image input")
 
     self.layer = None
     for lyr in self.network.layers:
@@ -78,10 +79,10 @@ class JsModel(nn.Module):
 
   def add_layer(self, layer, size_label=None):
     if layer is not None:
-      w = self.add_size(none_to(size_label, self.layer.type)).assign_id()
-      if w.id == 3:
-        pr("Wrapping in logger module (not really)")
-        #layer = LoggerModule(layer)
+      if self.display_sizes:
+        w = self.add_size(none_to(size_label, self.layer.type)).assign_id()
+        if w.id == 3:
+          w.set_log_input_vol()
       self.tensors.append(layer)
 
 

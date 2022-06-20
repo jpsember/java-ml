@@ -1,0 +1,5 @@
+enum {
+  none,
+  snapshot,
+  issue_42,
+}

@@ -197,14 +197,14 @@ public class LogProcessor extends BaseObject implements Runnable {
     switch (logItem.specialHandling()) {
     default:
       throw notSupported("special handling for:", INDENT, logItem);
-    case 0:
+    case NONE:
       for (LogItem itm : familySet)
         processLogItem(itm);
       break;
-    case 1:
+    case SNAPSHOT:
       processSnapshotItem(familySet);
       break;
-    case 2:
+    case ISSUE_42:
       processIssue42(familySet);
       break;
     }
