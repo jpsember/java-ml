@@ -68,17 +68,20 @@ class JsModel(nn.Module):
     die("unsupported layer type:", lyr.type)
 
 
-  def add_size(self, message):
-    self.tensors.append(ModuleWrapper().set_message(message).set_show_size_flag(True))
+  def add_size(self, message) -> ModuleWrapper:
+    w = ModuleWrapper()
+    w.set_message(message)
+    w.set_show_size_flag(True)
+    self.tensors.append(w)
+    return w
+
 
   def add_layer(self, layer, size_label=None):
     if layer is not None:
-      self.add_size(none_to(size_label, self.layer.type))
-      ind = len(self.tensors)
-      pr("Processing #",ind,"layer:",self.layer.type)
-      if ind == 8:
-        pr("Wrapping in logger module")
-        layer = LoggerModule(layer)
+      w = self.add_size(none_to(size_label, self.layer.type)).assign_id()
+      if w.id == 3:
+        pr("Wrapping in logger module (not really)")
+        #layer = LoggerModule(layer)
       self.tensors.append(layer)
 
 
