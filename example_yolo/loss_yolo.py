@@ -20,9 +20,6 @@ class YoloLoss(nn.Module):
   def forward(self, current, target):
     verify_not_nan("YoloLoss.forward", "current")
 
-    include_objectness = False
-    include_confidence = True
-
     self.log_counter += 1
     y = self.yolo
     batch_size = current.data.size(0)
@@ -44,17 +41,18 @@ class YoloLoss(nn.Module):
     #
     true_box_count = torch.clamp(torch.count_nonzero(ground_confidence), min=1).to(torch.float)
 
-
     # We could have stored the true class number as an index, instead of a one-hot vector;
     # but the symmetry of the structure of the true vs inferred data keeps things simple.
     #
     class_prob_end = F_CLASS_PROBABILITIES + y.category_count
 
-    pred_cxcy = current[:, :, :, F_BOX_CX:F_BOX_CY + 1] * ground_confidence
+    pred_cxcy = current[:, :, :, F_BOX_CX:F_BOX_CY+1] * ground_confidence
     self.log_tensor(".pred_cxcy")
 
     pred_wh = current[:, :, :, F_BOX_W:F_BOX_H+1] * ground_confidence
     self.log_tensor(".pred_wh")
+
+
 
     # Calculate generalized IoU
     #
@@ -62,36 +60,34 @@ class YoloLoss(nn.Module):
 
     # Predicted x, y, width, height
     #
-
-
-    pred_width = pred_wh[:,:,:,0]
-    pred_height = pred_wh[:,:,:,1]
+    pred_width = pred_wh[:,:,:,0:1]
+    pred_height = pred_wh[:,:,:,1:2]
 
     pred_width_half = pred_width * 0.5
     pred_height_half = pred_height * 0.5
 
-    pred_cx = pred_cxcy[:,:,:, 0]
+    pred_cx = pred_cxcy[:,:,:, 0:1]
     pred_x1 = pred_cx - pred_width_half
     pred_x2 = pred_cx + pred_width_half
 
-    pred_cy = pred_cxcy[:,:,:, 1]
+    pred_cy = pred_cxcy[:,:,:, 1:2]
     pred_y1 = pred_cy - pred_height_half
     pred_y2 = pred_cy + pred_height_half
 
 
     # Ground x, y, width, height
     #
-    ground_width = ground_wh[:, :, :, 0]
-    ground_height = ground_wh[:, :, :, 1]
+    ground_width = ground_wh[:, :, :, 0:1]
+    ground_height = ground_wh[:, :, :, 1:2]
 
     ground_width_half = ground_width * 0.5
     ground_height_half = ground_height * 0.5
 
-    ground_cx = ground_cxcy[:, :, :, 0]
+    ground_cx = ground_cxcy[:, :, :, 0:1]
     ground_x1 = ground_cx - ground_width_half
     ground_x2 = ground_cx + ground_width_half
 
-    ground_cy = ground_cxcy[:, :, :, 1]
+    ground_cy = ground_cxcy[:, :, :, 1:2]
     ground_y1 = ground_cy - ground_height_half
     ground_y2 = ground_cy + ground_height_half
 
@@ -128,11 +124,20 @@ class YoloLoss(nn.Module):
     union = pred_area + ground_area - inter
 
     iou = inter / (union + 1e-8)
+    # show_shape("iou")
 
-    giou = iou - ((ac - union) / (ac + 1e-8))
+    # Let's normalize the giou so that it is between 0 and 1
+    #
+    giou = ((1.0 + (iou - ((ac - union) / (ac + 1e-8)))) * 0.5)
+
+    # show_shape("giou")
+    # show_shape("ground_confidence")
+    giou = giou * ground_confidence
+
     self.log_tensor("giou")
 
-    loss_giou = 1.0 - giou
+    lambda_coord = 5.0
+    loss_giou = (1.0 - giou) * lambda_coord
 
 
 
@@ -140,44 +145,52 @@ class YoloLoss(nn.Module):
 
 
     pred_objectness = current[:, :, :, F_CONFIDENCE:F_CONFIDENCE+1]
+    #show_shape("pred_objectness")
     self.log_tensor(".pred_objectness")
 
-    lambda_coord = 5.0
-    loss_xy = (ground_cxcy - pred_cxcy).square() * lambda_coord
+    #show_shape("giou")
 
-    self.log_tensor(".ground_wh")
-    self.log_tensor(".pred_wh")
-    verify_non_negative("ground_wh")
-    verify_non_negative("pred_wh")
+    loss_objectness = torch.square(giou - pred_objectness)
+    #squared_diff = torch.square(true_confidence - pred_confidence)
+
+    #lambda_coord = 5.0
+    #loss_xy = (ground_cxcy - pred_cxcy).square() * lambda_coord
+
+    #self.log_tensor(".ground_wh")
+    #self.log_tensor(".pred_wh")
+    #verify_non_negative("ground_wh")
+    #verify_non_negative("pred_wh")
 
     # FFS, taking sqrt of zero can cause gradient to be NaN;
     #  https://discuss.pytorch.org/t/runtimeerror-function-sqrtbackward-returned-nan-values-in-its-0th-output/48702
     #  
-    loss_wh = (torch.sqrt(ground_wh + 1e-8) - torch.sqrt(pred_wh + 1e-8)).square() * lambda_coord
-    self.log_tensor(".loss_wh")
+    #loss_wh = (torch.sqrt(ground_wh + 1e-8) - torch.sqrt(pred_wh + 1e-8)).square() * lambda_coord
+    #self.log_tensor(".loss_wh")
 
     todo("Should we scale the loss function (box etc) by number of anchor boxes & cells?")
 
-    loss_confidence = self.construct_confidence_loss(ground_confidence, pred_objectness)
+    #loss_confidence = self.construct_confidence_loss(ground_confidence, pred_objectness)
     self.log_tensor(".ground_confidence")
     self.log_tensor(".pred_objectness")
-    self.log_tensor(".loss_confidence")
+    self.log_tensor("loss_objectness")
     #self.log_tensor("loss_confidence")
 
-    boxes_total = self.grid_cell_total + self.num_anchors
-    #pr("loss_xy")
-    #pr(loss_xy)
-    self.log_tensor(".loss_xy")
-    loss_xy_sum = loss_xy.sum() / boxes_total
-    loss_wh_sum = loss_wh.sum() / boxes_total
-    loss_confidence_sum = loss_confidence.sum() / boxes_total
+    loss = loss_giou.sum() + loss_objectness.sum()
 
-
-    self.log_tensor(".loss_xy_sum")
-    self.log_tensor(".loss_wh_sum")
-    self.log_tensor(".loss_confidence_sum")
-
-    loss = loss_xy_sum + loss_wh_sum + loss_confidence_sum
+    # boxes_total = self.grid_cell_total + self.num_anchors
+    # #pr("loss_xy")
+    # #pr(loss_xy)
+    # self.log_tensor(".loss_xy")
+    # loss_xy_sum = loss_xy.sum() / boxes_total
+    # loss_wh_sum = loss_wh.sum() / boxes_total
+    # loss_confidence_sum = loss_confidence.sum() / boxes_total
+    #
+    #
+    # self.log_tensor(".loss_xy_sum")
+    # self.log_tensor(".loss_wh_sum")
+    # self.log_tensor(".loss_confidence_sum")
+    #
+    # loss = loss_xy_sum + loss_wh_sum + loss_confidence_sum
     return loss
 
 
