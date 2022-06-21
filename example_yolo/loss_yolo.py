@@ -1,5 +1,4 @@
 from gen.yolo import Yolo
-from gen.log_item import *
 from pycore.pytorch_util import *
 from gen.neural_network import NeuralNetwork
 from pycore.tensor_logger import TensorLogger
@@ -38,11 +37,8 @@ class YoloLoss(nn.Module):
     ground_confidence = target[:, :, :, F_CONFIDENCE:F_CONFIDENCE+1]
 
     ground_cxcy = target[:, :, :, F_BOX_CX:F_BOX_CY + 1] * ground_confidence
-    self.log_tensor(".ground_cxcy")
-
-    # true_box_wh will be the width and height of the box, relative to the anchor box
-    #
     ground_wh = target[:, :, :, F_BOX_W:F_BOX_H+1] * ground_confidence
+    self.log_tensor(".ground_cxcy")
 
     # Determine number of ground truth boxes.  Clamp to minimum of 1 to avoid divide by zero.
     #
@@ -58,8 +54,90 @@ class YoloLoss(nn.Module):
     self.log_tensor(".pred_cxcy")
 
     pred_wh = current[:, :, :, F_BOX_W:F_BOX_H+1] * ground_confidence
-    verify_not_nan("loss_yolo_fwd", "pred_wh")
     self.log_tensor(".pred_wh")
+
+    # Calculate generalized IoU
+    #
+
+
+    # Predicted x, y, width, height
+    #
+
+
+    pred_width = pred_wh[:,:,:,0]
+    pred_height = pred_wh[:,:,:,1]
+
+    pred_width_half = pred_width * 0.5
+    pred_height_half = pred_height * 0.5
+
+    pred_cx = pred_cxcy[:,:,:, 0]
+    pred_x1 = pred_cx - pred_width_half
+    pred_x2 = pred_cx + pred_width_half
+
+    pred_cy = pred_cxcy[:,:,:, 1]
+    pred_y1 = pred_cy - pred_height_half
+    pred_y2 = pred_cy + pred_height_half
+
+
+    # Ground x, y, width, height
+    #
+    ground_width = ground_wh[:, :, :, 0]
+    ground_height = ground_wh[:, :, :, 1]
+
+    ground_width_half = ground_width * 0.5
+    ground_height_half = ground_height * 0.5
+
+    ground_cx = ground_cxcy[:, :, :, 0]
+    ground_x1 = ground_cx - ground_width_half
+    ground_x2 = ground_cx + ground_width_half
+
+    ground_cy = ground_cxcy[:, :, :, 1]
+    ground_y1 = ground_cy - ground_height_half
+    ground_y2 = ground_cy + ground_height_half
+
+
+    pred_area = pred_width * pred_height
+    ground_area = ground_width * ground_height
+
+    # Intersection between predicted and ground boxes
+    #
+    x1_inter = torch.maximum(pred_x1, ground_x1)
+    x2_inter = torch.minimum(pred_x2, ground_x2)
+    y1_inter = torch.maximum(pred_y1, ground_y1)
+    y2_inter = torch.minimum(pred_y2, ground_y2)
+
+    inter = torch.clamp((x2_inter - x1_inter), min=0.0) \
+            * torch.clamp((y2_inter - y1_inter), min=0.0)
+
+    # Find coordinates of smallest enclosing box Bc:
+    #
+    x1c = torch.minimum(pred_x1, ground_x1)
+    x2c = torch.maximum(pred_x2, ground_x2)
+    y1c = torch.minimum(pred_y1, ground_y1)
+    y2c = torch.maximum(pred_y2, ground_y2)
+
+    # Calculate area of Bc:
+    #
+    ac = (x2c - x1c) * (y2c - y1c)
+
+
+
+
+    # Calculate IoU
+    #
+    union = pred_area + ground_area - inter
+
+    iou = inter / (union + 1e-8)
+
+    giou = iou - ((ac - union) / (ac + 1e-8))
+    self.log_tensor("giou")
+
+    loss_giou = 1.0 - giou
+
+
+
+
+
 
     pred_objectness = current[:, :, :, F_CONFIDENCE:F_CONFIDENCE+1]
     self.log_tensor(".pred_objectness")
