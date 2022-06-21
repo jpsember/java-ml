@@ -296,25 +296,25 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
 
     // The x and y coordinates can range from 0...1.
     //
-    b[f + YoloUtil.F_BOX_XYWH + 0] = mBoxCenterInCellSpace.x;
-    b[f + YoloUtil.F_BOX_XYWH + 1] = mBoxCenterInCellSpace.y;
+    b[f + YoloUtil.F_BOX_XYWH + 0] = pos(mBoxCenterInCellSpace.x);
+    b[f + YoloUtil.F_BOX_XYWH + 1] = pos(mBoxCenterInCellSpace.y);
 
     // The width and height can range from 0...+inf.
     //
-    b[f + YoloUtil.F_BOX_XYWH + 2] = mBoxSizeRelativeToAnchorBox.x;
-    b[f + YoloUtil.F_BOX_XYWH + 3] = mBoxSizeRelativeToAnchorBox.y;
+    b[f + YoloUtil.F_BOX_XYWH + 2] = pos(mBoxSizeRelativeToAnchorBox.x);
+    b[f + YoloUtil.F_BOX_XYWH + 3] = pos(mBoxSizeRelativeToAnchorBox.y);
 
     // The ground truth values for confidence are stored as *indicator variables*, hence 0f or 1f.
     // Hence, we store 1, since a box exists here.  Actually, the confidence could
     // be < 100% (really???); so read it from the box...
     //
-    b[f + YoloUtil.F_CONFIDENCE] = MyMath.percentToParameter(ScriptUtil.confidence(box));
+    b[f + YoloUtil.F_CONFIDENCE] = pos(MyMath.percentToParameter(ScriptUtil.confidence(box)));
 
     // The class probabilities are the same; we store a one-hot indicator variable for this box's class.
     // We could just store the category number as a scalar instead of a one-hot vector, to save a bit of memory
     // and a bit of Python code, but this keeps the structure of the input and output box information the same
 
-    b[f + YoloUtil.F_CLASS_PROBABILITIES + ScriptUtil.categoryOrZero(box)] = 1;
+    b[f + YoloUtil.F_CLASS_PROBABILITIES + ScriptUtil.categoryOrZero(box)] = pos(1);
 
     if (verbose()) {
       pr("write box to fields:", box, "f:", f);
@@ -325,11 +325,33 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
       pr("conf:", b[f + YoloUtil.F_CONFIDENCE]);
     }
 
-    alert("had strange bug with negative box fields, so verifying");
-    for (int i = 0; i < mFieldsPerAnchorBox; i++) {
-      if (b[f + i] < 0)
-        badArg("field is negative:", i, b[f + i]);
+    {
+      alert("had strange bug with negative box fields, so verifying");
+      int probField = -1;
+
+      for (int i = 0; i < mFieldsPerAnchorBox; i++) {
+        if (b[f + i] < 0) {
+          probField = i;
+        }
+      }
+      if (probField >= 0) {
+        pr("write box to fields:", box, "f:", f);
+        pr("boxGridCell:", mBoxGridCell);
+        pr("anchor box:", mAnchorBox);
+        pr("box loc rel to cell:", mBoxCenterInCellSpace);
+        pr("box size rel to anc:", mBoxSizeRelativeToAnchorBox);
+        pr("conf:", b[f + YoloUtil.F_CONFIDENCE]);
+
+        badArg("field is negative:", probField, b[f + probField], "box:", box);
+
+      }
     }
+  }
+
+  private float pos(float arg) {
+    if (arg < 0)
+      throw badArg("Attempt to store negative value in field: " + arg);
+    return arg;
   }
 
   private void constructOutputLayer() {
