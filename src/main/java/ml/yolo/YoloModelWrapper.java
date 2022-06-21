@@ -276,7 +276,6 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
     int cellIndex = mBoxGridCell.x + mGridSize.x * mBoxGridCell.y;
 
     int f = mFieldsPerGridCell * cellIndex + mAnchorBox * mFieldsPerAnchorBox;
-
     // If this field is already used, do nothing else; we don't want to have to clear
     // it (its conditional probabilities) before overwriting it
 
@@ -287,6 +286,12 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
         log("field buffer already occupied:", mBoxGridCell, "anchor:", mAnchorBox);
       }
       return;
+    }
+
+    // Sometimes the fields are negative... not sure if that is leftover from some old data...
+    {
+      for (int i = 0; i < mFieldsPerAnchorBox; i++)
+        b[f + i] = 0;
     }
 
     // The x and y coordinates can range from 0...1.
