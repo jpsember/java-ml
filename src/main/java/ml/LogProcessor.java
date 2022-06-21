@@ -428,6 +428,13 @@ public class LogProcessor extends BaseObject implements Runnable {
       for (int i = 3; i < shape.length; i++) {
         cols *= shape[i];
       }
+    } else if (shape.length >= 3 && true) {
+      pages = shape[0];
+      rows = shape[1];
+      cols = shape[2];
+      for (int i = 3; i < shape.length; i++) {
+        cols *= shape[i];
+      }
     } else {
       rows = shape[0];
       cols = shape[1];
@@ -440,48 +447,26 @@ public class LogProcessor extends BaseObject implements Runnable {
     for (int p = 0; p < pages; p++) {
 
       if (true) {
-
-        String s = //
-                " " +
-                //"░" +
-                "▘" + "▝" + "▀" + "▖" + "▌" + "▞" + "▛" + //
-                "▗" + "▚" + "▐" + "▜" + "▄" + "▙" + "▟" + "█"  ;
-       // if (rows % 2 != 0 || cols % 2 != 0) badArg("rows, cols not mult 2");
-        
         String grayLevels = " .:-=+*#%@";
-        
-        
-        
-        
+
         float range = stats.max() - stats.min();
-        if (range <= 0f)  {
-          pr("...stats range is zero:",INDENT,stats);
+        if (range <= 0f) {
+          pr("...stats range is zero:", INDENT, stats);
           range = 1f;
         }
         final int RMAX = grayLevels.length();
         float m = (RMAX - 1) / range;
         float b = .5f - m * stats.min();
-        pr("range:",range);
-        pr("m:",m);
-        pr("b:",b);
-        
-       
-        pr("stats:",stats);
         for (int y = 0; y < rows; y++) {
           sb.append("[ ");
           for (int x = 0; x < cols; x++, q++) {
             float f = coeff[q];
-            int r = (int)( m*f + b);
+            int r = (int) (m * f + b);
             sb.append(grayLevels.charAt(r));
-//            if (x > 0)
-//              sb.append(" │ "); // Note: this is a unicode char taller than the vertical brace
-//            sb.append(fmt(fmt, coeff[q]));
           }
           sb.append(" ]\n");
         }
-       // halt();
       } else {
-
         for (int y = 0; y < rows; y++) {
           sb.append("[ ");
           for (int x = 0; x < cols; x++, q++) {
