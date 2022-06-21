@@ -134,7 +134,7 @@ class YoloLoss(nn.Module):
     # show_shape("ground_confidence")
     giou = giou * ground_confidence
 
-    self.log_tensor("giou")
+    self.log_tensor(".giou")
 
     lambda_coord = 5.0
     loss_giou = (1.0 - giou) * lambda_coord
@@ -145,10 +145,7 @@ class YoloLoss(nn.Module):
 
 
     pred_objectness = current[:, :, :, F_CONFIDENCE:F_CONFIDENCE+1]
-    #show_shape("pred_objectness")
     self.log_tensor(".pred_objectness")
-
-    #show_shape("giou")
 
     loss_objectness = torch.square(giou - pred_objectness)
     #squared_diff = torch.square(true_confidence - pred_confidence)
@@ -172,7 +169,7 @@ class YoloLoss(nn.Module):
     #loss_confidence = self.construct_confidence_loss(ground_confidence, pred_objectness)
     self.log_tensor(".ground_confidence")
     self.log_tensor(".pred_objectness")
-    self.log_tensor("loss_objectness")
+    self.log_tensor(".loss_objectness")
     #self.log_tensor("loss_confidence")
 
     loss = loss_giou.sum() + loss_objectness.sum()
@@ -238,52 +235,6 @@ class YoloLoss(nn.Module):
     TensorLogger.default_instance.add(z, name)
 
 
-  def calculate_iou(self, true_xy, true_wh, pred_xy, pred_wh):
-
-    # The _xy fields are the box midpoints, and we need to know the edge coordinates
-
-    # Calculate the min/max extents of the true boxes
-    #
-    true_offset = true_wh / 2.
-    true_box_min = true_xy - true_offset
-    true_box_max = true_xy + true_offset
-    self.log_tensor(".true_box_min:1")
-    self.log_tensor(".true_box_max:1")
-    true_area = true_wh[..., 0] * true_wh[..., 1]
-    self.log_tensor(".true_area:1")
-
-    # Calculate the min/max extents of the predicted boxes
-    #
-    pred_offset = pred_wh / 2.
-    self.log_tensor(".pred_wh:1")
-    pred_box_min = pred_xy - pred_offset
-    pred_box_max = pred_xy + pred_offset
-    self.log_tensor(".pred_box_min:1")
-    self.log_tensor(".pred_box_max:1")
-    pred_area = pred_wh[..., 0] * pred_wh[..., 1]
-    self.log_tensor(".pred_area:1")
-
-    # Determine the area of their intersection (which may be zero)
-    #
-    isect_min = torch.maximum(true_box_min, pred_box_min)
-    isect_max = torch.minimum(true_box_max, pred_box_max)
-    self.log_tensor(".isect_min:1")
-    self.log_tensor(".isect_max:1")
-
-    isect_size = torch.clamp(isect_max - isect_min, min=0.0)
-    self.log_tensor(".isect_size:1")
-    isect_area = isect_size[..., 0] * isect_size[..., 1]
-    self.log_tensor(".isect_area:1")
-
-    union_area = pred_area + true_area - isect_area
-    self.log_tensor(".union_area:1")
-
-    # For cells that have no ground truth box, the area will be zero; so to avoid a possible divide by zero
-    # (which may be harmless, but will be confusing), add an epsilon to the denominator
-    #
-    iou = torch.div(isect_area, torch.clamp(union_area, min=1e-8))
-    self.log_tensor(".iou:1")
-    return iou
 
 
 
