@@ -378,10 +378,7 @@ public class LogProcessor extends BaseObject implements Runnable {
   }
 
   private void formatTensor(LogItem ti, StringBuilder sb) {
-
-    TensorStats stats = buildTensorStats(ti.tensorFloats());
     float[] coeff = ti.tensorFloats();
-    todo("add support for byte tensors");
     String effName = ti.message();
     String suffix = "";
     {
@@ -428,13 +425,6 @@ public class LogProcessor extends BaseObject implements Runnable {
       for (int i = 3; i < shape.length; i++) {
         cols *= shape[i];
       }
-    } else if (shape.length >= 3 && true) {
-      pages = shape[0];
-      rows = shape[1];
-      cols = shape[2];
-      for (int i = 3; i < shape.length; i++) {
-        cols *= shape[i];
-      }
     } else {
       rows = shape[0];
       cols = shape[1];
@@ -445,45 +435,22 @@ public class LogProcessor extends BaseObject implements Runnable {
     checkArgument(pages * rows * cols == coeff.length);
     int q = 0;
     for (int p = 0; p < pages; p++) {
-
-      if (true) {
-        String grayLevels = " .:-=+*#%@";
-
-        float range = stats.max() - stats.min();
-        if (range <= 0f) {
-          pr("...stats range is zero:", INDENT, stats);
-          range = 1f;
+      for (int y = 0; y < rows; y++) {
+        sb.append("[ ");
+        for (int x = 0; x < cols; x++, q++) {
+          if (x > 0)
+            sb.append(" │ "); // Note: this is a unicode char taller than the vertical brace
+          sb.append(fmt(fmt, coeff[q]));
         }
-        final int RMAX = grayLevels.length();
-        float m = (RMAX - 1) / range;
-        float b = .5f - m * stats.min();
-        for (int y = 0; y < rows; y++) {
-          sb.append("[ ");
-          for (int x = 0; x < cols; x++, q++) {
-            float f = coeff[q];
-            int r = (int) (m * f + b);
-            sb.append(grayLevels.charAt(r));
-          }
-          sb.append(" ]\n");
-        }
-      } else {
-        for (int y = 0; y < rows; y++) {
-          sb.append("[ ");
-          for (int x = 0; x < cols; x++, q++) {
-            if (x > 0)
-              sb.append(" │ "); // Note: this is a unicode char taller than the vertical brace
-            sb.append(fmt(fmt, coeff[q]));
-          }
-          sb.append(" ]\n");
-        }
+        sb.append(" ]\n");
       }
-
-      if (pages > 1)
-        sb.append("\n");
     }
+
+    if (pages > 1)
+      sb.append("\n");
   }
 
-  private TensorStats buildTensorStats(float[] tensorFloats) {
+  /* private */ TensorStats buildTensorStats(float[] tensorFloats) {
     if (tensorFloats.length == 0)
       return TensorStats.DEFAULT_INSTANCE;
     TensorStats.Builder b = TensorStats.newBuilder();
@@ -509,8 +476,6 @@ public class LogProcessor extends BaseObject implements Runnable {
   }
 
   private static String blankField(int width) {
-    if (false)
-      return spaces(width - 1) + "◌";
     return spaces(width);
   }
 

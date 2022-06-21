@@ -49,8 +49,6 @@ class ModuleWrapper(nn.Module):
       if self.batch_number in ep_list:
         t = LogItem.new_builder()
         t.name = "input_vol"
-        todo("assuming first dimension is image within batch")
-        pr("shape:", x.shape)
         # Look only at first image, and maybe first filter?
         tens = x[1, ...]
         TensorLogger.default_instance.add(tens, t)
