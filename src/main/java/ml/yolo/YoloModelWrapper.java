@@ -104,6 +104,7 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
 
   @Override
   public float[] transformScreditToModelInput(List<ScriptElement> scriptElementList) {
+    claimLabelBuffer();
     float[] outputBuffer = labelBufferFloats();
     Arrays.fill(outputBuffer, 0);
     ScriptUtil.assertNoMixing(scriptElementList);
@@ -144,7 +145,7 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
       if (convertBoxToCell(box.bounds()))
         writeBoxToFieldsBuffer(box, outputBuffer);
     }
-
+    releaseLabelBuffer();
     return outputBuffer;
   }
 
@@ -158,6 +159,7 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
 
   @Override
   public List<ScriptElement> transformModelInputToScredit() {
+    claimLabelBuffer();
     Yolo yolo = modelConfig();
     float[] f = labelBufferFloats();
     float confidencePct = mParserConfig.confidencePct();
@@ -254,6 +256,8 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
 
     if (mParserConfig.maxIOverU() > 0)
       boxList = YoloUtil.performNonMaximumSuppression(boxList, mParserConfig.maxIOverU());
+
+    releaseLabelBuffer();
     return boxList;
   }
 

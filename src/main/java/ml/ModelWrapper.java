@@ -289,9 +289,29 @@ public abstract class ModelWrapper<T extends AbstractData> extends BaseObject {
   /**
    * Get the buffer used for storing an image's labels, as an array of floats
    */
+  @Deprecated
   public final float[] labelBufferFloats() {
     return (float[]) mOutputLayer;
   }
+
+  public final void claimLabelBuffer() {
+    if (true)
+      return;
+    if (mBufferOwner != null) {
+      badState("LabelBuffer is already clamied by thread:", mBufferOwner, "(current:", Thread.currentThread(),
+          ")");
+    }
+    mBufferOwner = Thread.currentThread();
+  }
+
+  public final void releaseLabelBuffer() {
+    if (true)
+      return;
+    checkState(mBufferOwner == Thread.currentThread());
+    mBufferOwner = null;
+  }
+
+  private Thread mBufferOwner;
 
   /**
    * Get the buffer used for storing an image's labels, as an array of bytes

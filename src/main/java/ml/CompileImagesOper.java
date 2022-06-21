@@ -227,7 +227,9 @@ public final class CompileImagesOper extends AppOper {
   // ------------------------------------------------------------------
 
   private void startLogging() {
-    lp().start(config(), model());
+    lp().start(config(),
+        // The logger runs in a different thread, so give it its own model 
+        ModelWrapper.constructFor(network(), null));
   }
 
   private void stopLogging() {
