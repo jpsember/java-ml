@@ -4,6 +4,7 @@ import torch
 from torch import nn
 from gen.vol import *
 from pycore.ipoint import IPoint
+from pycore.tensor_logger import TensorLogger
 
 
 def read_unsigned_bytes(path: str, offset: int, record_size: int, record_count: int) -> np.ndarray:
@@ -134,3 +135,7 @@ def get_name_and_tensor_pair(tensor_or_name, tensor):
   if nm.startswith("."):
     nm = None
   return nm, tensor
+
+
+def report(msg):
+  TensorLogger.default_instance.add_msg(msg)

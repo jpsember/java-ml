@@ -401,7 +401,7 @@ class JsTrain:
         if self.test_target_reached():
           done_msg = "Test accuracy reached target"
         s += "   " + self.test_report()
-      pr(s)
+      report(s)
       self.epoch_number += 1
       if self.stop_signal_received():
         done_msg = "Stop signal received"
@@ -412,7 +412,7 @@ class JsTrain:
         if self.epoch_number > 20:
           self.snapshot_epoch_interval *= 1.2
         self.snapshot_next_epoch = self.epoch_number + self.snapshot_epoch_interval
-        pr("Saving model inference snapshot")
+        report("Saving model inference snapshot")
         self.send_inference_result()
 
       current_time = time_ms()
@@ -489,7 +489,7 @@ class JsTrain:
       self.model.load_state_dict(checkpoint['model_state_dict'])
       self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
       self.epoch_number = checkpoint['epoch']
-      pr("Restored checkpoint at epoch:", self.epoch_number)
+      report(f"Restored checkpoint at epoch: {self.epoch_number}")
 
 
   def save_checkpoint(self):
