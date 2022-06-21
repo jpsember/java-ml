@@ -31,6 +31,8 @@ import ml.VolumeUtil;
 
 public final class YoloModelWrapper extends ModelWrapper<Yolo> {
 
+  public static final boolean ISSUE_49 = true && alert("ISSUE_49 in effect; ModelWrapper race condition");
+
   @Override
   public boolean processLayer(NetworkAnalyzer analyzer, Layer.Builder layer) {
     if (layer.type() != LayerType.YOLO)
@@ -104,7 +106,6 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
 
   @Override
   public float[] transformScreditToModelInput(List<ScriptElement> scriptElementList) {
-    claimLabelBuffer();
     float[] outputBuffer = labelBufferFloats();
     Arrays.fill(outputBuffer, 0);
     ScriptUtil.assertNoMixing(scriptElementList);
@@ -145,7 +146,6 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
       if (convertBoxToCell(box.bounds()))
         writeBoxToFieldsBuffer(box, outputBuffer);
     }
-    releaseLabelBuffer();
     return outputBuffer;
   }
 
@@ -159,7 +159,6 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
 
   @Override
   public List<ScriptElement> transformModelInputToScredit() {
-    claimLabelBuffer();
     Yolo yolo = modelConfig();
     float[] f = labelBufferFloats();
     float confidencePct = mParserConfig.confidencePct();
@@ -256,8 +255,6 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
 
     if (mParserConfig.maxIOverU() > 0)
       boxList = YoloUtil.performNonMaximumSuppression(boxList, mParserConfig.maxIOverU());
-
-    releaseLabelBuffer();
     return boxList;
   }
 
@@ -300,25 +297,25 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
 
     // The x and y coordinates can range from 0...1.
     //
-    b[f + YoloUtil.F_BOX_XYWH + 0] = pos(mBoxCenterInCellSpace.x);
-    b[f + YoloUtil.F_BOX_XYWH + 1] = pos(mBoxCenterInCellSpace.y);
+    b[f + YoloUtil.F_BOX_XYWH + 0] = mBoxCenterInCellSpace.x;
+    b[f + YoloUtil.F_BOX_XYWH + 1] = mBoxCenterInCellSpace.y;
 
     // The width and height can range from 0...+inf.
     //
-    b[f + YoloUtil.F_BOX_XYWH + 2] = pos(mBoxSizeRelativeToAnchorBox.x);
-    b[f + YoloUtil.F_BOX_XYWH + 3] = pos(mBoxSizeRelativeToAnchorBox.y);
+    b[f + YoloUtil.F_BOX_XYWH + 2] = mBoxSizeRelativeToAnchorBox.x;
+    b[f + YoloUtil.F_BOX_XYWH + 3] = mBoxSizeRelativeToAnchorBox.y;
 
     // The ground truth values for confidence are stored as *indicator variables*, hence 0f or 1f.
     // Hence, we store 1, since a box exists here.  Actually, the confidence could
     // be < 100% (really???); so read it from the box...
     //
-    b[f + YoloUtil.F_CONFIDENCE] = pos(MyMath.percentToParameter(ScriptUtil.confidence(box)));
+    b[f + YoloUtil.F_CONFIDENCE] = MyMath.percentToParameter(ScriptUtil.confidence(box));
 
     // The class probabilities are the same; we store a one-hot indicator variable for this box's class.
     // We could just store the category number as a scalar instead of a one-hot vector, to save a bit of memory
     // and a bit of Python code, but this keeps the structure of the input and output box information the same
 
-    b[f + YoloUtil.F_CLASS_PROBABILITIES + ScriptUtil.categoryOrZero(box)] = pos(1);
+    b[f + YoloUtil.F_CLASS_PROBABILITIES + ScriptUtil.categoryOrZero(box)] = 1;
 
     if (verbose()) {
       pr("write box to fields:", box, "f:", f);
@@ -329,33 +326,15 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
       pr("conf:", b[f + YoloUtil.F_CONFIDENCE]);
     }
 
-    {
-      alert("had strange bug with negative box fields, so verifying");
+    if (ISSUE_49) {
       int probField = -1;
-
       for (int i = 0; i < mFieldsPerAnchorBox; i++) {
-        if (b[f + i] < 0) {
+        if (b[f + i] < 0)
           probField = i;
-        }
       }
-      if (probField >= 0) {
-        pr("write box to fields:", box, "f:", f);
-        pr("boxGridCell:", mBoxGridCell);
-        pr("anchor box:", mAnchorBox);
-        pr("box loc rel to cell:", mBoxCenterInCellSpace);
-        pr("box size rel to anc:", mBoxSizeRelativeToAnchorBox);
-        pr("conf:", b[f + YoloUtil.F_CONFIDENCE]);
-
+      if (probField >= 0)
         badArg("field is negative:", probField, b[f + probField], "box:", box);
-
-      }
     }
-  }
-
-  private float pos(float arg) {
-    if (arg < 0)
-      throw badArg("Attempt to store negative value in field: " + arg);
-    return arg;
   }
 
   private void constructOutputLayer() {

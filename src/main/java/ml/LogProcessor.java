@@ -224,8 +224,6 @@ public class LogProcessor extends BaseObject implements Runnable {
         File imgPath = Files.setExtension(baseFile, ImgUtil.EXT_JPEG);
         ImgUtil.writeJPG(files(), img, imgPath, null);
 
-        mModel.claimLabelBuffer();
-
         switch (mNetwork.labelDataType()) {
         case FLOAT32: {
           float[] targetBuffer = mModel.labelBufferFloats();
@@ -251,7 +249,6 @@ public class LogProcessor extends BaseObject implements Runnable {
           pr("Model produced labels:", CR, mModel.renderLabels());
         script.items(mModel.transformModelOutputToScredit());
         ScriptUtil.write(files(), script, ScriptUtil.scriptPathForImage(imgPath));
-        mModel.releaseLabelBuffer();
       }
       if (show)
         pr("labels:", INDENT, m);
@@ -326,8 +323,6 @@ public class LogProcessor extends BaseObject implements Runnable {
       ImgUtil.writeJPG(files(), img, imgPath, null);
 
       todo("do something with the predicted labels instead?");
-      mModel.claimLabelBuffer();
-
       {
         float[] targetBuffer = mModel.labelBufferFloats();
         float[] labelSets = trainLabelsRec.tensorFloats();
@@ -339,7 +334,6 @@ public class LogProcessor extends BaseObject implements Runnable {
       Script.Builder script = Script.newBuilder();
       script.items(mModel.transformModelInputToScredit());
       ScriptUtil.write(files(), script, ScriptUtil.scriptPathForImage(imgPath));
-      mModel.releaseLabelBuffer();
     }
   }
 
