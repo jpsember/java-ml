@@ -18,7 +18,8 @@ class YoloLoss(nn.Module):
 
 
   def forward(self, current, target):
-    verify_not_nan("YoloLoss.forward", "current")
+
+    EPSILON = 1e-8
 
     self.log_counter += 1
     y = self.yolo
@@ -33,9 +34,11 @@ class YoloLoss(nn.Module):
 
     ground_confidence = target[:, :, :, F_CONFIDENCE:F_CONFIDENCE+1]
 
+    todo("Avoid masking by ground_confidence until necessary?")
     ground_cxcy = target[:, :, :, F_BOX_CX:F_BOX_CY + 1] * ground_confidence
-    ground_wh = target[:, :, :, F_BOX_W:F_BOX_H+1] * ground_confidence
-    self.log_tensor(".ground_cxcy")
+    ground_wh   = target[:, :, :, F_BOX_W:F_BOX_H + 1]   * ground_confidence
+    self.log_tensor("ground_cxcy")
+    self.log_tensor("ground_wh")
 
     # Determine number of ground truth boxes.  Clamp to minimum of 1 to avoid divide by zero.
     #
@@ -102,7 +105,7 @@ class YoloLoss(nn.Module):
     y1_inter = torch.maximum(pred_y1, ground_y1)
     y2_inter = torch.minimum(pred_y2, ground_y2)
 
-    inter = torch.clamp((x2_inter - x1_inter), min=0.0) \
+    intersection_area = torch.clamp((x2_inter - x1_inter), min=0.0) \
             * torch.clamp((y2_inter - y1_inter), min=0.0)
 
     # Find coordinates of smallest enclosing box Bc:
@@ -114,30 +117,30 @@ class YoloLoss(nn.Module):
 
     # Calculate area of Bc:
     #
-    ac = (x2c - x1c) * (y2c - y1c)
-
-
+    container_area = (x2c - x1c) * (y2c - y1c)
 
 
     # Calculate IoU
     #
-    union = pred_area + ground_area - inter
+    union_area = pred_area + ground_area - intersection_area
 
-    iou = inter / (union + 1e-8)
-    # show_shape("iou")
+    iou = intersection_area / (union_area + EPSILON)
+    self.log_tensor(".iou")
 
     # Let's normalize the giou so that it is between 0 and 1
     #
-    giou = ((1.0 + (iou - ((ac - union) / (ac + 1e-8)))) * 0.5)
-
-    # show_shape("giou")
-    # show_shape("ground_confidence")
-    giou = giou * ground_confidence
-
+    giou = iou - ((container_area - union_area) / (container_area + EPSILON))
     self.log_tensor(".giou")
 
+    norm_giou = (1.0 + giou) * 0.5
+    self.log_tensor(".norm_giou")
+
+    norm_giou = norm_giou * ground_confidence
+
+    self.log_tensor(".norm_giou")
+
     lambda_coord = 5.0
-    loss_giou = (1.0 - giou) * lambda_coord
+    loss_giou = (1.0 - norm_giou) * lambda_coord
 
 
 
@@ -147,7 +150,7 @@ class YoloLoss(nn.Module):
     pred_objectness = current[:, :, :, F_CONFIDENCE:F_CONFIDENCE+1]
     self.log_tensor(".pred_objectness")
 
-    loss_objectness = torch.square(giou - pred_objectness)
+    loss_objectness = torch.square(norm_giou - pred_objectness)
     #squared_diff = torch.square(true_confidence - pred_confidence)
 
     #lambda_coord = 5.0
@@ -173,21 +176,6 @@ class YoloLoss(nn.Module):
     #self.log_tensor("loss_confidence")
 
     loss = loss_giou.sum() + loss_objectness.sum()
-
-    # boxes_total = self.grid_cell_total + self.num_anchors
-    # #pr("loss_xy")
-    # #pr(loss_xy)
-    # self.log_tensor(".loss_xy")
-    # loss_xy_sum = loss_xy.sum() / boxes_total
-    # loss_wh_sum = loss_wh.sum() / boxes_total
-    # loss_confidence_sum = loss_confidence.sum() / boxes_total
-    #
-    #
-    # self.log_tensor(".loss_xy_sum")
-    # self.log_tensor(".loss_wh_sum")
-    # self.log_tensor(".loss_confidence_sum")
-    #
-    # loss = loss_xy_sum + loss_wh_sum + loss_confidence_sum
     return loss
 
 
