@@ -19,15 +19,15 @@
           {"type" :"leaky_relu"},
           {"type" :"maxpool"},
 
+          {"type" :"conv", "filters": 192 },
+          {"type" :"leaky_relu"},
+          {"type" :"maxpool"},
+
           {"type" :"conv", "filters": 256 },
           {"type" :"leaky_relu"},
           {"type" :"maxpool"},
 
-          {"type" :"conv", "filters": 512 },
-          {"type" :"leaky_relu"},
-          {"type" :"maxpool"},
-
-          {"type" :"conv", "filters": 512 },
+          {"type" :"conv", "filters": 128 },
           {"type" :"leaky_relu"},
 
           {"type" :"conv", "filters": 32 },
