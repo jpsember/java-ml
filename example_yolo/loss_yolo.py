@@ -22,7 +22,7 @@ class YoloLoss(nn.Module):
     EPSILON = 1e-8
 
     self.log_counter += 1
-    y = self.yolo
+    yolo = self.yolo
     batch_size = current.data.size(0)
 
     # Each of these dimensions corresponds to (D_IMAGE, D_GRIDCELL, ..., D_BOXINFO)
@@ -34,25 +34,18 @@ class YoloLoss(nn.Module):
 
     ground_confidence = target[:, :, :, F_CONFIDENCE:F_CONFIDENCE+1]
 
-    todo("Avoid masking by ground_confidence until necessary?")
-    ground_cxcy = target[:, :, :, F_BOX_CX:F_BOX_CY + 1] * ground_confidence
-    ground_wh   = target[:, :, :, F_BOX_W:F_BOX_H + 1]   * ground_confidence
-    self.log_tensor("ground_cxcy")
-    self.log_tensor("ground_wh")
+    ground_cxcy = target[:, :, :, F_BOX_CX:F_BOX_CY + 1]
+    ground_wh   = target[:, :, :, F_BOX_W:F_BOX_H + 1]
+    self.log_tensor(".ground_cxcy")
+    self.log_tensor(".ground_wh")
 
-    # Determine number of ground truth boxes.  Clamp to minimum of 1 to avoid divide by zero.
-    #
-    true_box_count = torch.clamp(torch.count_nonzero(ground_confidence), min=1).to(torch.float)
+    # TODO: classification loss
+    #class_prob_end = F_CLASS_PROBABILITIES + y.category_count
 
-    # We could have stored the true class number as an index, instead of a one-hot vector;
-    # but the symmetry of the structure of the true vs inferred data keeps things simple.
-    #
-    class_prob_end = F_CLASS_PROBABILITIES + y.category_count
-
-    pred_cxcy = current[:, :, :, F_BOX_CX:F_BOX_CY+1] * ground_confidence
+    pred_cxcy = current[:, :, :, F_BOX_CX:F_BOX_CY+1]
     self.log_tensor(".pred_cxcy")
 
-    pred_wh = current[:, :, :, F_BOX_W:F_BOX_H+1] * ground_confidence
+    pred_wh = current[:, :, :, F_BOX_W:F_BOX_H+1]
     self.log_tensor(".pred_wh")
 
 
@@ -135,47 +128,21 @@ class YoloLoss(nn.Module):
     norm_giou = (1.0 + giou) * 0.5
     self.log_tensor(".norm_giou")
 
-    norm_giou = norm_giou * ground_confidence
-
-    self.log_tensor(".norm_giou")
-
-    lambda_coord = 5.0
-    loss_giou = (1.0 - norm_giou) * lambda_coord
-
-
-
-
-
+    self.log_tensor(".iou", iou * ground_confidence)
+    self.log_tensor(".norm_giou", norm_giou * ground_confidence)
 
     pred_objectness = current[:, :, :, F_CONFIDENCE:F_CONFIDENCE+1]
     self.log_tensor(".pred_objectness")
 
-    loss_objectness = torch.square(norm_giou - pred_objectness)
-    #squared_diff = torch.square(true_confidence - pred_confidence)
+    # loss_obj is loss for inaccurately predicted ground objects
+    #
+    loss_obj = (ground_confidence * (1.0 - norm_giou)) * yolo.lambda_coord
 
-    #lambda_coord = 5.0
-    #loss_xy = (ground_cxcy - pred_cxcy).square() * lambda_coord
+    # loss_no_obj_is loss for inaccuractely predicted objects when there aren't supposed to be any
+    #
+    loss_no_obj = (1 - ground_confidence) * pred_objectness * yolo.lambda_noobj
 
-    #self.log_tensor(".ground_wh")
-    #self.log_tensor(".pred_wh")
-    #verify_non_negative("ground_wh")
-    #verify_non_negative("pred_wh")
-
-    # FFS, taking sqrt of zero can cause gradient to be NaN;
-    #  https://discuss.pytorch.org/t/runtimeerror-function-sqrtbackward-returned-nan-values-in-its-0th-output/48702
-    #  
-    #loss_wh = (torch.sqrt(ground_wh + 1e-8) - torch.sqrt(pred_wh + 1e-8)).square() * lambda_coord
-    #self.log_tensor(".loss_wh")
-
-    todo("Should we scale the loss function (box etc) by number of anchor boxes & cells?")
-
-    #loss_confidence = self.construct_confidence_loss(ground_confidence, pred_objectness)
-    self.log_tensor(".ground_confidence")
-    self.log_tensor(".pred_objectness")
-    self.log_tensor(".loss_objectness")
-    #self.log_tensor("loss_confidence")
-
-    loss = loss_giou.sum() + loss_objectness.sum()
+    loss = (loss_obj + loss_no_obj).sum() / batch_size
     return loss
 
 
@@ -221,22 +188,3 @@ class YoloLoss(nn.Module):
       #     ROWS COLS
       z = z[4:7, 5:8,:]
     TensorLogger.default_instance.add(z, name)
-
-
-
-
-
-  def construct_confidence_loss(self, true_confidence, pred_confidence):
-    self.log_tensor(".true_confidence")
-    self.log_tensor(".pred_confidence")
-
-    squared_diff = torch.square(true_confidence - pred_confidence)
-    self.log_tensor(".squared_diff")
-    no_obj_mask = 1.0 - true_confidence
-    self.log_tensor(".no_obj_mask")
-    lambda_noobj = 0.5
-    conf_mask = no_obj_mask * lambda_noobj + true_confidence
-    self.log_tensor(".conf_mask")
-    return squared_diff * conf_mask
-
-
