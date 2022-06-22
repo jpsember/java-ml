@@ -38,7 +38,7 @@ class JsModel(nn.Module):
       self.layer = lyr
 
       if lyr.type == "conv":
-        kernel_width = 5  # TODO: use lyr.kernel_width
+        kernel_width = lyr.kernel_width
         our_stride = lyr.stride.tuple()
         t = nn.Conv2d(in_channels=lyr.input_volume.depth,
                       out_channels=lyr.output_volume.depth,

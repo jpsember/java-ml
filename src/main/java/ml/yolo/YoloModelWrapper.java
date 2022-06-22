@@ -31,8 +31,6 @@ import ml.VolumeUtil;
 
 public final class YoloModelWrapper extends ModelWrapper<Yolo> {
 
-  public static final boolean ISSUE_49 = true && alert("ISSUE_49 in effect; ModelWrapper race condition");
-
   @Override
   public boolean processLayer(NetworkAnalyzer analyzer, Layer.Builder layer) {
     if (layer.type() != LayerType.YOLO)
@@ -324,16 +322,6 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
       pr("box loc rel to cell:", mBoxCenterInCellSpace);
       pr("box size rel to anc:", mBoxSizeRelativeToAnchorBox);
       pr("conf:", b[f + YoloUtil.F_CONFIDENCE]);
-    }
-
-    if (ISSUE_49) {
-      int probField = -1;
-      for (int i = 0; i < mFieldsPerAnchorBox; i++) {
-        if (b[f + i] < 0)
-          probField = i;
-      }
-      if (probField >= 0)
-        badArg("field is negative:", probField, b[f + probField], "box:", box);
     }
   }
 

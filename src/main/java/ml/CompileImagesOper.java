@@ -215,7 +215,7 @@ public final class CompileImagesOper extends AppOper {
     long curr = currentTime();
     if (mLastGeneratedFilesTime == 0)
       mLastGeneratedFilesTime = curr;
-    if (curr - mLastGeneratedFilesTime > DateTimeTools.MINUTES(5)) {
+    if (curr - mLastGeneratedFilesTime > DateTimeTools.MINUTES(15)) {
       pr("...a lot of time has elapsed since we had to generate files; assuming client is not running");
       return true;
     }

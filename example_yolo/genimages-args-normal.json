@@ -10,7 +10,7 @@
   "max_objects" : 2,
 
  "augmentation_config" : {
-      "translate_ratio_max" : 0.2,
+      "translate_ratio_max" : 0.4,
 
       "rotate_disable" : true,
 
