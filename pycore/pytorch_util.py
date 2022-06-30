@@ -139,3 +139,7 @@ def get_name_and_tensor_pair(tensor_or_name, tensor):
 
 def report(msg):
   TensorLogger.default_instance.add_msg(msg)
+
+
+def my_exp(inp:torch.Tensor) -> torch.Tensor:
+  return torch.exp(torch.clamp(inp, min = -20.0, max=9.2))

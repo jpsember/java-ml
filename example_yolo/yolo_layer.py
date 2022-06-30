@@ -35,8 +35,7 @@ class YoloLayer(nn.Module):
     #
     # Apply narrowing transformation to map (-inf...+inf) to (0..+inf): exp function
     #
-    todo("Have a 'clamped' exp to avoid exploded values")
-    pred_wh = torch.exp(current[:, :, :, F_BOX_W:F_BOX_H+1])
+    pred_wh = my_exp(current[:, :, :, F_BOX_W:F_BOX_H+1])
 
     # Determine each predicted box's confidence score.
     # Apply narrowing transformation to map (-inf...+inf) to (0..1): sigmoid function
