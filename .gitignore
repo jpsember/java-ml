@@ -49,3 +49,4 @@ example_yolo/rs.sh
 project_config
 secrets
 
+__pycache__
