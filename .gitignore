@@ -45,3 +45,7 @@ train_data
 train_info
 example_yolo/from_web
 
+example_yolo/rs.sh
+project_config
+secrets
+
