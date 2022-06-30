@@ -5,3 +5,4 @@
 
 class JG:
   placeholder = None
+  device = None

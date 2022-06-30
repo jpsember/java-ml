@@ -20,6 +20,7 @@ from pycore.tensor_logger import TensorLogger
 class JsTrain:
 
   def __init__(self, train_script_file):
+
     self.signature = None
     self.verbose = False
     self.device = None
@@ -112,10 +113,14 @@ class JsTrain:
     # Get cpu or gpu device for training.
     self.device = "cuda" if torch.cuda.is_available() else "cpu"
     self.log("PyTorch is using device:",self.device)
+    JG.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
     self.model = self.define_model()
     # Now that model has been constructed, prepare it for use
     self.model.prepare()
+    pr("attempting to send to device:", JG.device)
+    self.model.to(JG.device)
+    pr("done send to device")
     self.loss_fn = self.define_loss_function()
     self.optimizer = torch.optim.SGD(self.model.parameters(), lr=1e-3, momentum = 0.9)
 
