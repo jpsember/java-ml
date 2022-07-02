@@ -108,10 +108,10 @@ class YoloLoss(nn.Module):
     y1c = torch.minimum(pred_y1, ground_y1)
     y2c = torch.maximum(pred_y2, ground_y2)
 
-    self.log_tensor("pred_x1")
-    self.log_tensor("pred_x2")
-    self.log_tensor("pred_y1")
-    self.log_tensor("pred_y2")
+    self.log_tensor(".pred_x1")
+    self.log_tensor(".pred_x2")
+    self.log_tensor(".pred_y1")
+    self.log_tensor(".pred_y2")
 
     # Calculate area of Bc:
     #
@@ -127,8 +127,8 @@ class YoloLoss(nn.Module):
 
     # Let's normalize the giou so that it is between 0 and 1
     #
-    self.log_tensor("union_area")
-    self.log_tensor("container_area")
+    self.log_tensor(".union_area")
+    self.log_tensor(".container_area")
 
     giou = iou - ((container_area - union_area) / (container_area + EPSILON))
     self.log_tensor(".giou")

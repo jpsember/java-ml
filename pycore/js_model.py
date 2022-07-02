@@ -80,7 +80,8 @@ class JsModel(nn.Module):
   def add_layer(self, layer, size_label=None):
     if layer is not None:
       w = self.add_size(none_to(size_label, self.layer.type)).assign_id()
-      if False and w.id == 3:
+      if True and w.id == 3:
+        warning("Logging volume for layer with id:",w.id)
         w.set_log_input_vol()
       self.tensors.append(layer)
 

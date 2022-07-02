@@ -50,7 +50,15 @@ class ModuleWrapper(nn.Module):
         t = LogItem.new_builder()
         t.name = "input_vol"
         # Look only at first image, and maybe first filter?
-        tens = x[1, ...]
+        tens = x
+        tshp = tens.shape
+        pr("shape of tensor:",tshp)
+        imgnum = 0
+        _, nfilt, h, w = tshp
+        plane  = nfilt//2
+        y = h//2
+        x = w//2
+        tens = tens[imgnum:imgnum+1, plane, y-4:y+4, x-4:x+4]
         TensorLogger.default_instance.add(tens, t)
 
     self.batch_number += 1

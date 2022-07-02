@@ -123,7 +123,7 @@ class JsTrain:
     self.model = self.define_model()
     # Now that model has been constructed, prepare it for use
     self.model.prepare()
-    todo("Do we want to do something more nuanced here w.r.t. placing some tensors in the GPU?")
+    #todo("Do we want to do something more nuanced here w.r.t. placing some tensors in the GPU?")
     self.model.to(JG.device)
     self.loss_fn = self.define_loss_function()
     self.optimizer = torch.optim.SGD(self.model.parameters(), lr=1e-3, momentum = 0.9)
