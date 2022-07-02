@@ -32,16 +32,15 @@ class ModuleWrapper(nn.Module):
     return self
 
 
-  def forward(self, x):
+  def forward(self, tns):
     if self.show_size_flag:
       self.show_size_flag = False
       m = none_to(self.message,"<no message>")
-      text = ""
       if self.id is not None:
         text = f"| {self.id:02} "
       else:
         text = "|    "
-      text = text + spr("Input shape:",f"'{m}'".ljust(16), list(x.shape))
+      text = text + spr("Input shape:",f"'{m}'".ljust(16), list(tns.shape))
       TensorLogger.default_instance.add_msg(text)
 
     ep_list = self.log_input_vol_batch_list
@@ -49,20 +48,33 @@ class ModuleWrapper(nn.Module):
       if self.batch_number in ep_list:
         t = LogItem.new_builder()
         t.name = "input_vol"
-        # Look only at first image, and maybe first filter?
-        tens = x
+
+        # Look only at a single plane of a single image's input volume
+        #
+        tens = tns
         tshp = tens.shape
         pr("shape of tensor:",tshp)
         imgnum = 0
         _, nfilt, h, w = tshp
         plane  = nfilt//2
-        y = h//2
-        x = w//2
-        tens = tens[imgnum:imgnum+1, plane, y-4:y+4, x-4:x+4]
+
+        # Look at a centered subrect if the planar dimensions are larger than the desired subrect size
+        #
+        max_w = 12
+        max_h = 8
+
+        if h > max_h:
+          y = (h - max_h)//2
+          h = max_h
+        if w > max_w:
+          x = (w - max_w)//2
+          w = max_w
+
+        tens = tens[imgnum, plane, y:y+h, x:x+w]
         TensorLogger.default_instance.add(tens, t)
 
     self.batch_number += 1
-    return x
+    return tns
 
 
   def set_log_input_vol(self, batch_numbers=[5]):

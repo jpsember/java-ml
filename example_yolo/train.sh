@@ -3,6 +3,9 @@ set -eu
 
 clear
 
+echo "Deleting checkpoints"
+delcp.sh
+
 #echo "Preparing for train streamer"
 ml compileimages prepare
 
