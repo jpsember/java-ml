@@ -264,7 +264,7 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
   // For now, make it final
   //
   private final PlotInferenceResultsConfig mParserConfig = PlotInferenceResultsConfig.DEFAULT_INSTANCE //
-      .toBuilder().confidencePct(35) //
+      .toBuilder().confidencePct(10) //
       .build();
   //
 
