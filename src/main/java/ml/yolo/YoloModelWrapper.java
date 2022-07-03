@@ -23,7 +23,6 @@ import ml.NetworkAnalyzer;
 import gen.ImageSetInfo;
 import gen.Layer;
 import gen.LayerType;
-import gen.PlotInferenceResultsConfig;
 import gen.Vol;
 import gen.Yolo;
 import ml.NetworkUtil;
@@ -159,7 +158,7 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
   public List<ScriptElement> transformModelInputToScredit() {
     Yolo yolo = modelConfig();
     float[] f = labelBufferFloats();
-    float confidencePct = mParserConfig.confidencePct();
+    float confidencePct = network().confidencePct();
 
     log("Constructing YOLO result for image; confidence %", confidencePct);
 
@@ -251,8 +250,8 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
       }
     }
 
-    if (mParserConfig.maxIOverU() > 0)
-      boxList = YoloUtil.performNonMaximumSuppression(boxList, mParserConfig.maxIOverU());
+    if (network().maxIOverU() > 0)
+      boxList = YoloUtil.performNonMaximumSuppression(boxList, network().maxIOverU());
     return boxList;
   }
 
@@ -260,13 +259,6 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
   public List<ScriptElement> transformModelOutputToScredit() {
     return transformModelInputToScredit();
   }
-
-  // For now, make it final
-  //
-  private final PlotInferenceResultsConfig mParserConfig = PlotInferenceResultsConfig.DEFAULT_INSTANCE //
-      .toBuilder().confidencePct(10) //
-      .build();
-  //
 
   // ------------------------------------------------------------------
 

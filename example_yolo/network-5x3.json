@@ -53,4 +53,7 @@
 
         //"special_option" : "pixel_alignment",
 
+
+        "confidence_pct" : 5.0,
+        "max_i_over_u" : 0.6,
   }
