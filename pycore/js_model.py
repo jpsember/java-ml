@@ -48,7 +48,7 @@ class JsModel(nn.Module):
                       )
         self.add_layer(t)
       elif lyr.type == "leaky_relu":
-        self.add_layer(nn.LeakyReLU())
+        self.add_layer(nn.LeakyReLU(0.1, inplace = True))
       elif lyr.type == "maxpool":
         # I am used to thinking of a maxpool has having a stride, but they expect a kernel_size parameter
         stride = 2  # Ignoring any stride parameter in the layer!
@@ -85,7 +85,7 @@ class JsModel(nn.Module):
       # 3 is the next conv layer (after the relu+maxpool)
       # 6 is the following one
       # 9, 12, 15, 17, 19, 21 are subsequent ones
-      if True and w.id == 19:
+      if False and w.id in [0,2,4,6,8]:
         warning("Logging volume for layer with id:",w.id)
         w.set_log_input_vol([0,1,2,3,10])
       self.tensors.append(layer)

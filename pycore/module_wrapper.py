@@ -54,6 +54,8 @@ class ModuleWrapper(nn.Module):
         tens = tns
         tshp = tens.shape
         pr("shape of tensor:",tshp)
+        if len(tshp) < 4:
+          die("tensor has unexpected shape for the logging subrect stuff:", tshp)
         imgnum = 0
         _, nfilt, h, w = tshp
         plane  = nfilt//2
@@ -63,9 +65,11 @@ class ModuleWrapper(nn.Module):
         max_w = 12
         max_h = 8
 
+        y = 0
         if h > max_h:
           y = (h - max_h)//2
           h = max_h
+        x = 0
         if w > max_w:
           x = (w - max_w)//2
           w = max_w
