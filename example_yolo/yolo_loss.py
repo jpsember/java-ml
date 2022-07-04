@@ -176,7 +176,7 @@ class YoloLoss(nn.Module):
 
 
   def log_active(self) -> bool:
-    return self.log_counter < 10
+    return self.log_counter < 100
 
 
   # Send a tensor for logging.  Assumes it has the dimension D_IMAGE, D_GRIDSIZE, etc
