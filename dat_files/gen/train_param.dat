@@ -44,6 +44,15 @@ fields {
   // to slow down the output
   //
   long min_batch_time = 0;
+
+
+  // Have pytorch add extra checks for things like NaN values
+  //
+  bool detect_anomalies;
+
+  // Maximum number of tensors to display logging information for
+  //
+  int max_log_count = 20;
 }
 
 

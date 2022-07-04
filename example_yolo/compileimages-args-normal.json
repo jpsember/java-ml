@@ -16,6 +16,8 @@
 
       "train_param" : {
              "test_size" : 0,      // Get rid of test, to keep logging simple
+             "detect_anomalies" : true,
+             "max_log_count" : 100,
       },
 
         "snapshot_dir" : "snapshot",

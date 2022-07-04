@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from gen.train_param import TrainParam
 from pycore.pytorch_util import *
 from gen.neural_network import NeuralNetwork
 from pycore.module_wrapper import *
@@ -10,7 +11,7 @@ from pycore.jg import JG
 #
 class JsModel(nn.Module):
 
-  def __init__(self, network: NeuralNetwork):
+  def __init__(self, network: NeuralNetwork, train_param:TrainParam):
     super(JsModel, self).__init__()
     self.network = network
     self.prepared = False
@@ -18,6 +19,7 @@ class JsModel(nn.Module):
     self.layers = None
     self.layer = None
     self.display_sizes = False
+    self.train_param = train_param
 
 
   # Called by JsTrain to prepare the model for use.
@@ -27,7 +29,8 @@ class JsModel(nn.Module):
     check_state(not self.prepared, "model is already prepared")
     self.prepared = True
 
-    if True and warning("Enabling 'detect_anomaly'"):
+    if self.train_param.detect_anomalies:
+      warning("Enabling 'detect_anomaly'")
       torch.autograd.set_detect_anomaly(True)
 
     self.tensors = []

@@ -1,3 +1,4 @@
+from gen.train_param import TrainParam
 from gen.yolo import Yolo
 from pycore.pytorch_util import *
 from gen.neural_network import NeuralNetwork
@@ -6,9 +7,10 @@ from .yolo_util import *
 
 class YoloLoss(nn.Module):
 
-  def __init__(self, network: NeuralNetwork, yolo:Yolo):
+  def __init__(self, network: NeuralNetwork, train_param:TrainParam, yolo:Yolo):
     super(YoloLoss, self).__init__()
     self.network = network
+    self.train_param = train_param
     self.yolo = yolo
     self.num_anchors = anchor_box_count(yolo)
     self.grid_size = grid_size(yolo)
@@ -176,7 +178,7 @@ class YoloLoss(nn.Module):
 
 
   def log_active(self) -> bool:
-    return self.log_counter < 100
+    return self.log_counter < self.train_param.max_log_count
 
 
   # Send a tensor for logging.  Assumes it has the dimension D_IMAGE, D_GRIDSIZE, etc
@@ -186,9 +188,6 @@ class YoloLoss(nn.Module):
       return
     if name.startswith("."):
       return
-    # if self.logged_tensor_count >= 30:
-    #   return
-    # self.logged_tensor_count += 1
 
     # If tensor not provided, assume name refers to a local variable in the caller's scope
     #

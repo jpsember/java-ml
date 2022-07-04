@@ -40,7 +40,7 @@ class ClassifierTrain(JsTrain):
 
 
   def test_target_reached(self) -> bool:
-    return self.stat_acc.value_sm >= self.train_config.target_accuracy
+    return self.stat_acc.value_sm >= self.train_param.target_accuracy
 
 
   # Append the accuracy to the test report

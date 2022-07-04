@@ -1,3 +1,4 @@
+from gen.train_param import TrainParam
 from pycore.pytorch_util import *
 from pycore.js_model import JsModel
 from gen.neural_network import NeuralNetwork
@@ -6,8 +7,8 @@ from .yolo_util import *
 
 class YoloModel(JsModel):
 
-  def __init__(self, network: NeuralNetwork, yolo:Yolo):
-    super(YoloModel, self).__init__(network)
+  def __init__(self, network: NeuralNetwork, train_param:TrainParam, yolo:Yolo):
+    super(YoloModel, self).__init__(network, train_param)
     self.yolo = yolo
     self.num_anchors = anchor_box_count(yolo)
     self.grid_size = grid_size(yolo)
