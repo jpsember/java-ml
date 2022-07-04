@@ -143,3 +143,7 @@ def report(msg):
 
 def my_exp(inp:torch.Tensor) -> torch.Tensor:
   return torch.exp(torch.clamp(inp, min = -20.0, max=9.2))
+
+
+def squared_difference(a, b):
+  return (a - b) ** 2

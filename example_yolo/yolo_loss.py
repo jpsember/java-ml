@@ -4,10 +4,6 @@ from gen.neural_network import NeuralNetwork
 from pycore.tensor_logger import TensorLogger
 from .yolo_util import *
 
-
-def squared_difference(a, b):
-  return (a - b) ** 2
-
 class YoloLoss(nn.Module):
 
   def __init__(self, network: NeuralNetwork, yolo:Yolo):
@@ -38,6 +34,7 @@ class YoloLoss(nn.Module):
     ground_obj_t_mask = target[:, :, :, F_CONFIDENCE:F_CONFIDENCE+1]
     ground_obj_f_mask = (1.0 - ground_obj_t_mask)
     self.log_tensor("ground_obj_t_mask")
+    self.log_tensor("ground_obj_f_mask")
 
 
     ground_cxcy = target[:, :, :, F_BOX_CX:F_BOX_CY + 1]
@@ -151,8 +148,10 @@ class YoloLoss(nn.Module):
 
     # Let's add the position and dimensions error back in
 
-    loss_box_center = squared_difference(pred_cx, ground_cx) + squared_difference(pred_cy, ground_cy)
-    loss_box_size   = squared_difference(pred_width, ground_width) + squared_difference(pred_height, ground_height)
+    loss_box_center = (squared_difference(pred_cx, ground_cx) + squared_difference(pred_cy, ground_cy)) * ground_obj_t_mask
+    loss_box_size   = (squared_difference(pred_width, ground_width) + squared_difference(pred_height, ground_height)) * ground_obj_t_mask
+    self.log_tensor("loss_box_center")
+    self.log_tensor("loss_box_size")
 
     if False:
       # loss_box_pos is loss for inaccurately predicted ground object box positions
