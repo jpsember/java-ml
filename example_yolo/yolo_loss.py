@@ -141,10 +141,10 @@ class YoloLoss(nn.Module):
     self.log_tensor(".norm_giou")
 
     self.log_tensor(".iou", iou * ground_confidence)
-    self.log_tensor("norm_giou", norm_giou * ground_confidence)
+    self.log_tensor(".norm_giou", norm_giou * ground_confidence)
 
     pred_objectness = current[:, :, :, F_CONFIDENCE:F_CONFIDENCE+1]
-    self.log_tensor("pred_objectness")
+    self.log_tensor(".pred_objectness")
 
     # loss_box_pos is loss for inaccurately predicted ground object box positions
     #
@@ -157,8 +157,8 @@ class YoloLoss(nn.Module):
     loss_objectness_box = ground_confidence * squared_difference(norm_giou, pred_objectness)
     loss_objectness_nobox = (1 - ground_confidence) * pred_objectness * yolo.lambda_noobj
 
-    self.log_tensor("loss_objectness_box")
-    self.log_tensor("loss_objectness_nobox")
+    self.log_tensor(".loss_objectness_box")
+    self.log_tensor(".loss_objectness_nobox")
 
     loss = (loss_box_pos + loss_objectness_box + loss_objectness_nobox).sum() / batch_size
     return loss

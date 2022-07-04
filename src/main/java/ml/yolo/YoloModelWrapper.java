@@ -175,15 +175,11 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
     for (int cellY = 0; cellY < mGridSize.y; cellY++) {
       for (int cellX = 0; cellX < mGridSize.x; cellX++) {
         for (int anchorBox = 0; anchorBox < anchorBoxCount; anchorBox++, fieldSetIndex += fieldsPerBox) {
-          float objectness = f[fieldSetIndex + F_CONFIDENCE];
+          final float objectness = f[fieldSetIndex + F_CONFIDENCE];
 
           // Note, this check will cause us to skip a lot of computation, which
           // suggests we probably don't want to embed the sigmoid/exp postprocessing steps into the model;
           // but then again, the model probably has very optimized, parallel versions of those functions
-          if (++counter < 300) {
-            pr("counter:", counter, "objectness:", objectness, "min:", objectnessMinForResult,
-                network().confidencePct());
-          }
           if (objectness < objectnessMinForResult)
             continue;
 
