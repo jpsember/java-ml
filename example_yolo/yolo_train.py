@@ -2,7 +2,7 @@
 from gen.yolo import Yolo
 from .yolo_model import YoloModel
 from pycore.js_train import *
-from .loss_yolo import YoloLoss
+from .yolo_loss import YoloLoss
 
 
 class YoloTrain(JsTrain):

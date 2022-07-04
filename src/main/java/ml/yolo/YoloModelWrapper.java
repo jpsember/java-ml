@@ -167,9 +167,7 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
     List<ScriptElement> boxList = arrayList();
     final int anchorBoxCount = numAnchorBoxes();
     final int fieldsPerBox = YoloUtil.valuesPerAnchorBox(yolo);
-    /*final*/ float objectnessMinForResult = confidencePct / 100f;
-    if (alert("decreasing objectness"))
-      objectnessMinForResult =  0.0016f;
+    final float objectnessMinForResult = confidencePct / 100f;
     final int categoryCount = yolo.categoryCount();
 
     float highestObjectnessSeen = 0f;
