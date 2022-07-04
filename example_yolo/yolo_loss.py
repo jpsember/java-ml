@@ -15,7 +15,7 @@ class YoloLoss(nn.Module):
     self.grid_size = grid_size(yolo)
     self.grid_cell_total = self.grid_size.product()
     self.log_counter = 0
-    # self.logged_tensor_count = 0
+
 
   def forward(self, current, target):
 
@@ -173,6 +173,8 @@ class YoloLoss(nn.Module):
             + loss_objectness_box \
             + loss_objectness_nobox * yolo.lambda_noobj )\
             .sum() / batch_size
+    if loss.data > 2000:
+      die("Loss has ballooned to:", loss.data)
     return loss
 
 
