@@ -3,6 +3,10 @@
 # because Python is such a pain in the ass
 #
 
+from __future__ import annotations
+#from pycore.base import *
+from gen.train_param import TrainParam
+
 class JG:
-  placeholder = None
   device = None
+  train_param: TrainParam = None

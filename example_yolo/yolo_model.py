@@ -7,8 +7,8 @@ from .yolo_util import *
 
 class YoloModel(JsModel):
 
-  def __init__(self, network: NeuralNetwork, train_param:TrainParam, yolo:Yolo):
-    super(YoloModel, self).__init__(network, train_param)
+  def __init__(self, network: NeuralNetwork, yolo:Yolo):
+    super(YoloModel, self).__init__(network)
     self.yolo = yolo
     self.num_anchors = anchor_box_count(yolo)
     self.grid_size = grid_size(yolo)

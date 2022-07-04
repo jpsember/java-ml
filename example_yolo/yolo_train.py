@@ -15,8 +15,8 @@ class YoloTrain(JsTrain):
 
 
   def define_model(self):
-    return YoloModel(self.network, self.train_param, self.yolo).to(self.device)
+    return YoloModel(self.network, self.yolo).to(self.device)
 
 
   def define_loss_function(self):
-    return YoloLoss(self.network, self.train_param, self.yolo)
+    return YoloLoss(self.network, self.yolo)

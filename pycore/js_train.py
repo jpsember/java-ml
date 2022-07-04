@@ -40,9 +40,9 @@ class JsTrain:
     self._proj_path = os.path.dirname(script_path)
 
     t = self.proj_path("train_info")
-    self.train_param = read_object(TrainParam.default_instance, os.path.join(t, "train_param.json"))
+    JG.train_param = read_object(TrainParam.default_instance, os.path.join(t, "train_param.json"))
     self.network:NeuralNetwork = read_object(NeuralNetwork.default_instance, os.path.join(t,"network.json"))
-    self.dump_test_labels_counter = self.train_param.dump_test_labels_count
+    self.dump_test_labels_counter = JG.train_param.dump_test_labels_count
 
     t = self.network.layers[0].input_volume
     self.img_width = t.width
@@ -59,7 +59,7 @@ class JsTrain:
     self.batch_total = None
     self.checkpoint_dir = "checkpoints"
 
-    train_set_count = self.train_param.max_train_sets - 1  # Service tries to provide one more than needed
+    train_set_count = JG.train_param.max_train_sets - 1  # Service tries to provide one more than needed
     check_state(train_set_count > 1)
     self.train_set_list: [TrainSetBuilder] = [None] * train_set_count
 
@@ -96,7 +96,7 @@ class JsTrain:
       return
     self.train_info = read_object(ImageSetInfo.default_instance, os.path.join(train_dir, "image_set_info.json"))
     self.train_images = self.train_info.image_count
-    self.batch_size = min(self.train_param.batch_size, self.train_images)
+    self.batch_size = min(JG.train_param.batch_size, self.train_images)
     if self.train_images % self.batch_size != 0:
       warning("training image count", self.train_images,"is not a multiple of the batch size:", self.batch_size)
     self.batch_total = self.train_images // self.batch_size
@@ -115,12 +115,13 @@ class JsTrain:
     self.device = "cuda" if torch.cuda.is_available() else "cpu"
     self.log("PyTorch is using device:",self.device)
 
-
     JG.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     if not torch.cuda.is_available():
-      pr("************** cuda is not available")
+      import platform
+      sys = platform.system()
+      if sys != "Darwin":
+        die("CUDA is not available!  System:", sys)
 
-    warning("defining model")
     self.model = self.define_model()
     # Now that model has been constructed, prepare it for use
     self.model.prepare()
@@ -145,7 +146,7 @@ class JsTrain:
     for idx, x in enumerate(self.train_set_list):
       if x is None:
         continue
-      recycle_factor = self.train_param.recycle
+      recycle_factor = JG.train_param.recycle
       check_state(x.used <= recycle_factor)
       if x.used == recycle_factor:
         delete_directory(x.directory, "set_")
@@ -352,7 +353,7 @@ class JsTrain:
     test_images_path = os.path.join(d, "images.bin")
     test_labels_path = os.path.join(d, "labels.bin")
 
-    test_image_count = min(self.train_info.image_count, self.train_param.test_size)
+    test_image_count = min(self.train_info.image_count, JG.train_param.test_size)
 
     with torch.no_grad():
       tensor_images, tensor_labels = self.read_images(test_images_path, test_labels_path, 0, test_image_count)
@@ -376,7 +377,7 @@ class JsTrain:
 
 
   def with_test(self):
-    return self.train_param.test_size > 0
+    return JG.train_param.test_size > 0
 
 
   # Generate a report for the test results.  Default implementation includes the stat_test_loss information
@@ -403,7 +404,7 @@ class JsTrain:
         break
       self.perform_delay()
       s = f"Epoch {self.epoch_number:4}   {self.stat_train_loss.info()}"
-      if self.stat_train_loss.value_sm <= self.train_param.target_loss:
+      if self.stat_train_loss.value_sm <= JG.train_param.target_loss:
         done_msg = "Train loss reached target"
       if self.with_test():
         self.test()
@@ -534,7 +535,7 @@ class JsTrain:
 
 
   def perform_delay(self):
-    t = self.train_param.min_batch_time
+    t = JG.train_param.min_batch_time
     if t <= 0:
       return
     warning("Imposing minimum batch time:", t)
