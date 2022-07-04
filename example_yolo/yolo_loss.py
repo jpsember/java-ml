@@ -131,7 +131,8 @@ class YoloLoss(nn.Module):
     self.log_tensor(".container_area")
 
     giou = iou - ((container_area - union_area) / (container_area + EPSILON))
-    self.log_tensor(".giou")
+    self.log_tensor("giou")
+    self.log_tensor("iou")
 
     norm_giou = (1.0 + giou) * 0.5
     self.log_tensor(".norm_giou")
@@ -145,10 +146,13 @@ class YoloLoss(nn.Module):
     # loss_obj is loss for inaccurately predicted ground objects
     #
     loss_obj = (ground_confidence * (1.0 - norm_giou)) * yolo.lambda_coord
+    self.log_tensor("loss_obj")
 
     # loss_no_obj_is loss for inaccuractely predicted objects when there aren't supposed to be any
     #
-    loss_no_obj = (1 - ground_confidence) * pred_objectness * yolo.lambda_noobj
+    modified_noobj = yolo.lambda_noobj * 0.2
+    loss_no_obj = (1 - ground_confidence) * pred_objectness * modified_noobj
+    self.log_tensor("loss_no_obj")
 
     loss = (loss_obj + loss_no_obj).sum() / batch_size
     return loss
