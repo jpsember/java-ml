@@ -155,7 +155,7 @@ class YoloLoss(nn.Module):
     # loss_objectness_box :  loss for inaccurately predicting objectness when a ground box *exists*
     # loss_objectness_nobox :  loss for inaccurately predicting objectness when a ground box *doesn't exist*
     #
-    loss_objectness_box = ground_confidence * squared_difference(norm_giou, pred_objectness)
+    loss_objectness_box = ground_confidence * squared_difference(norm_giou, pred_objectness) * yolo.lambda_coord
     loss_objectness_nobox = (1 - ground_confidence) * pred_objectness * yolo.lambda_noobj
 
     self.log_tensor("loss_objectness_box")
