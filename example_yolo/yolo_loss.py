@@ -35,8 +35,10 @@ class YoloLoss(nn.Module):
     # Reshape the target to match the current's shape
     target = target.view(current.shape)
 
-    ground_confidence = target[:, :, :, F_CONFIDENCE:F_CONFIDENCE+1]
-    self.log_tensor("ground_confidence")
+    ground_obj_t_mask = target[:, :, :, F_CONFIDENCE:F_CONFIDENCE+1]
+    ground_obj_f_mask = (1.0 - ground_obj_t_mask)
+    self.log_tensor("ground_obj_t_mask")
+
 
     ground_cxcy = target[:, :, :, F_BOX_CX:F_BOX_CY + 1]
     ground_wh   = target[:, :, :, F_BOX_W:F_BOX_H + 1]
@@ -129,8 +131,6 @@ class YoloLoss(nn.Module):
     iou = intersection_area / (union_area + EPSILON)
     self.log_tensor(".iou")
 
-    # Let's normalize the giou so that it is between 0 and 1
-    #
     self.log_tensor(".union_area")
     self.log_tensor(".container_area")
 
@@ -138,30 +138,41 @@ class YoloLoss(nn.Module):
     self.log_tensor(".giou")
     self.log_tensor(".iou")
 
+    # Normalize the giou so that it is between 0 and 1
+    #
     norm_giou = (1.0 + giou) * 0.5
     self.log_tensor(".norm_giou")
-
-    self.log_tensor("iou", iou * ground_confidence)
-    self.log_tensor("norm_giou", norm_giou * ground_confidence)
+    self.log_tensor("iou", iou * ground_obj_t_mask)
+    self.log_tensor("norm_giou", norm_giou * ground_obj_t_mask)
 
     pred_objectness = current[:, :, :, F_CONFIDENCE:F_CONFIDENCE+1]
     self.log_tensor("pred_objectness")
 
-    # loss_box_pos is loss for inaccurately predicted ground object box positions
-    #
-    loss_box_pos = (ground_confidence * (1.0 - norm_giou)) * yolo.lambda_coord
-    self.log_tensor("loss_box_pos")
+
+    # Let's add the position and dimensions error back in
+
+    loss_box_center = squared_difference(pred_cx, ground_cx) + squared_difference(pred_cy, ground_cy)
+    loss_box_size   = squared_difference(pred_width, ground_width) + squared_difference(pred_height, ground_height)
+
+    if False:
+      # loss_box_pos is loss for inaccurately predicted ground object box positions
+      #
+      loss_box_pos = (ground_obj_t_mask * (1.0 - norm_giou)) * yolo.lambda_coord
+      self.log_tensor("loss_box_pos")
 
     # loss_objectness_box :  loss for inaccurately predicting objectness when a ground box *exists*
     # loss_objectness_nobox :  loss for inaccurately predicting objectness when a ground box *doesn't exist*
     #
-    loss_objectness_box = ground_confidence * squared_difference(norm_giou, pred_objectness) * yolo.lambda_coord
-    loss_objectness_nobox = (1 - ground_confidence) * pred_objectness * yolo.lambda_noobj
-
+    loss_objectness_box   = ground_obj_t_mask * squared_difference(norm_giou, pred_objectness)
+    loss_objectness_nobox = ground_obj_f_mask * pred_objectness
     self.log_tensor("loss_objectness_box")
     self.log_tensor("loss_objectness_nobox")
 
-    loss = (loss_box_pos + loss_objectness_box + loss_objectness_nobox).sum() / batch_size
+    loss = (  loss_box_center * yolo.lambda_coord \
+            + loss_box_size * yolo.lambda_coord \
+            + loss_objectness_box \
+            + loss_objectness_nobox * yolo.lambda_noobj )\
+            .sum() / batch_size
     return loss
 
 

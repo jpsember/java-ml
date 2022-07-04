@@ -27,7 +27,7 @@ class JsModel(nn.Module):
     check_state(not self.prepared, "model is already prepared")
     self.prepared = True
 
-    if False and warning("Enabling 'detect_anomaly'"):
+    if True and warning("Enabling 'detect_anomaly'"):
       torch.autograd.set_detect_anomaly(True)
 
     self.tensors = []
