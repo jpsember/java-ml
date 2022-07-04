@@ -80,7 +80,7 @@ class JsModel(nn.Module):
   def add_layer(self, layer, size_label=None):
     if layer is not None:
       w = self.add_size(none_to(size_label, self.layer.type)).assign_id()
-      pr("add layer, id:",w.id,"type:",self.layer.type)
+      #pr("add layer, id:",w.id,"type:",self.layer.type)
       # 0 is the input image conv layer;
       # 3 is the next conv layer (after the relu+maxpool)
       # 6 is the following one

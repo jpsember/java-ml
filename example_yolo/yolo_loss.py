@@ -141,10 +141,10 @@ class YoloLoss(nn.Module):
     self.log_tensor(".norm_giou")
 
     self.log_tensor(".iou", iou * ground_confidence)
-    self.log_tensor(".norm_giou", norm_giou * ground_confidence)
+    self.log_tensor("norm_giou", norm_giou * ground_confidence)
 
     pred_objectness = current[:, :, :, F_CONFIDENCE:F_CONFIDENCE+1]
-    self.log_tensor(".pred_objectness")
+    self.log_tensor("pred_objectness")
 
     # loss_box_pos is loss for inaccurately predicted ground object box positions
     #
