@@ -18,7 +18,7 @@ class YoloLoss(nn.Module):
     self.grid_size = grid_size(yolo)
     self.grid_cell_total = self.grid_size.product()
     self.log_counter = 0
-
+    self.logged_tensor_count
 
   def forward(self, current, target):
 
@@ -175,6 +175,9 @@ class YoloLoss(nn.Module):
       return
     if name.startswith("."):
       return
+    if self.logged_tensor_count >= 30:
+      return
+    self.logged_tensor_count += 1
 
     # If tensor not provided, assume name refers to a local variable in the caller's scope
     #
