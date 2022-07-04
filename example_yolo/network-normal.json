@@ -46,7 +46,7 @@
               "lambda_noobj" : 0.5,
         },
 
-        //"confidence_pct" : 5.0,
-        //"max_i_over_u" : 0.6,
+        "confidence_pct" : 5.0,
+        "max_i_over_u" : 0.6,
 
   }
