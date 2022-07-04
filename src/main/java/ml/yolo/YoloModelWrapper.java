@@ -154,6 +154,8 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
     ;
   }
 
+  static int counter;
+
   @Override
   public List<ScriptElement> transformModelInputToScredit() {
     Yolo yolo = modelConfig();
@@ -178,6 +180,10 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
           // Note, this check will cause us to skip a lot of computation, which
           // suggests we probably don't want to embed the sigmoid/exp postprocessing steps into the model;
           // but then again, the model probably has very optimized, parallel versions of those functions
+          if (++counter < 300) {
+            pr("counter:", counter, "objectness:", objectness, "min:", objectnessMinForResult,
+                network().confidencePct());
+          }
           if (objectness < objectnessMinForResult)
             continue;
 
