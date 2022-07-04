@@ -5,6 +5,9 @@ from pycore.tensor_logger import TensorLogger
 from .yolo_util import *
 
 
+def squared_difference(a, b):
+  return (a - b) ** 2
+
 class YoloLoss(nn.Module):
 
   def __init__(self, network: NeuralNetwork, yolo:Yolo):
@@ -131,8 +134,8 @@ class YoloLoss(nn.Module):
     self.log_tensor(".container_area")
 
     giou = iou - ((container_area - union_area) / (container_area + EPSILON))
-    self.log_tensor("giou")
-    self.log_tensor("iou")
+    self.log_tensor(".giou")
+    self.log_tensor(".iou")
 
     norm_giou = (1.0 + giou) * 0.5
     self.log_tensor(".norm_giou")
@@ -143,18 +146,21 @@ class YoloLoss(nn.Module):
     pred_objectness = current[:, :, :, F_CONFIDENCE:F_CONFIDENCE+1]
     self.log_tensor(".pred_objectness")
 
-    # loss_obj is loss for inaccurately predicted ground objects
+    # loss_box_pos is loss for inaccurately predicted ground object box positions
     #
-    loss_obj = (ground_confidence * (1.0 - norm_giou)) * yolo.lambda_coord
-    self.log_tensor("loss_obj")
+    loss_box_pos = (ground_confidence * (1.0 - norm_giou)) * yolo.lambda_coord
+    self.log_tensor(".loss_box_pos")
 
-    # loss_no_obj_is loss for inaccuractely predicted objects when there aren't supposed to be any
+    # loss_objectness_box :  loss for inaccurately predicting objectness when a ground box *exists*
+    # loss_objectness_nobox :  loss for inaccurately predicting objectness when a ground box *doesn't exist*
     #
-    modified_noobj = yolo.lambda_noobj * 0.2
-    loss_no_obj = (1 - ground_confidence) * pred_objectness * modified_noobj
-    self.log_tensor("loss_no_obj")
+    loss_objectness_box = ground_confidence * squared_difference(norm_giou, pred_objectness)
+    loss_objectness_nobox = (1 - ground_confidence) * pred_objectness * yolo.lambda_noobj
 
-    loss = (loss_obj + loss_no_obj).sum() / batch_size
+    self.log_tensor("loss_objectness_box")
+    self.log_tensor("loss_objectness_nobox")
+
+    loss = (loss_box_pos + loss_objectness_box + loss_objectness_nobox).sum() / batch_size
     return loss
 
 
