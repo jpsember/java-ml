@@ -205,8 +205,20 @@ class YoloLoss(nn.Module):
       y = list(z.shape)
       z = z.view(y[0],height,width,-1)
 
-    if first_page_only and width > 8:
+    if first_page_only:
+      max_width = 20
+      max_height = 16
+
+      r0 = 0
+      c0 = 0
+      if width > max_width:
+        c0 = (width - max_width) // 2
+        width = max_width
+      if height > max_height:
+        r0 = (height - max_height) // 2
+        height = max_height
+
       # Zoom in on the center grid cells
       #     ROWS COLS
-      z = z[4:7, 5:8,:]
+      z = z[r0:r0+height, c0:c0+width, :]
     TensorLogger.default_instance.add(z, name)
