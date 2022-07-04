@@ -36,6 +36,7 @@ class YoloLoss(nn.Module):
     target = target.view(current.shape)
 
     ground_confidence = target[:, :, :, F_CONFIDENCE:F_CONFIDENCE+1]
+    self.log_tensor("ground_confidence")
 
     ground_cxcy = target[:, :, :, F_BOX_CX:F_BOX_CY + 1]
     ground_wh   = target[:, :, :, F_BOX_W:F_BOX_H + 1]
