@@ -14,7 +14,7 @@ class YoloLoss(nn.Module):
     self.grid_size = grid_size(yolo)
     self.grid_cell_total = self.grid_size.product()
     self.log_counter = 0
-    self.logged_tensor_count = 0
+    # self.logged_tensor_count = 0
 
   def forward(self, current, target):
 
@@ -176,7 +176,7 @@ class YoloLoss(nn.Module):
 
 
   def log_active(self) -> bool:
-    return self.log_counter % 5 == 0
+    return self.log_counter < 10
 
 
   # Send a tensor for logging.  Assumes it has the dimension D_IMAGE, D_GRIDSIZE, etc
@@ -186,9 +186,9 @@ class YoloLoss(nn.Module):
       return
     if name.startswith("."):
       return
-    if self.logged_tensor_count >= 30:
-      return
-    self.logged_tensor_count += 1
+    # if self.logged_tensor_count >= 30:
+    #   return
+    # self.logged_tensor_count += 1
 
     # If tensor not provided, assume name refers to a local variable in the caller's scope
     #
