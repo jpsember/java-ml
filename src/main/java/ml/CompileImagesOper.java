@@ -19,8 +19,8 @@ import ml.img.ImageCompiler;
 /**
  * Compiles images into a form to be consumed by pytorch. Partitions images into
  * train and test sets; optionally generates training sets to be consumed by an
- * external training session running in parallel, and processes log files received
- * from the training session
+ * external training session running in parallel, and processes log files
+ * received from the training session
  */
 public final class CompileImagesOper extends AppOper {
 
@@ -97,6 +97,18 @@ public final class CompileImagesOper extends AppOper {
       mCompiledNetwork = analyzer.result();
     }
     return mCompiledNetwork;
+  }
+
+  /**
+   * Construct a modified version of the network for determining whether it has
+   * changed from last time. We clear out some keys that shouldn't trigger a
+   * purge of existing checkpoints
+   */
+  private NeuralNetwork getNetworkForChecksum() {
+    NeuralNetwork.Builder b = network().build().toBuilder();
+    // Delete some keys that we don't want to be included in the hash
+    b.confidencePct(0).maxIOverU(0);
+    return b;
   }
 
   private long currentTime() {
@@ -290,7 +302,7 @@ public final class CompileImagesOper extends AppOper {
   private void validateCheckpoints() {
     File networkChecksumFile = new File(checkpointDir(), "network_checksum.txt");
     String savedChecksum = Files.readString(networkChecksumFile, "");
-    String currentChecksum = "" + network().toJson().toString().hashCode();
+    String currentChecksum = "" + getNetworkForChecksum().toJson().toString().hashCode();
     if (!currentChecksum.equals(savedChecksum)) {
       SortedMap<Integer, File> epochMap = getCheckpointEpochs();
       if (!epochMap.isEmpty()) {

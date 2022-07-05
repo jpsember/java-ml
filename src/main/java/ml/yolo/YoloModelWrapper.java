@@ -267,7 +267,7 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
 
   @Override
   public List<ScriptElement> transformModelOutputToScredit() {
-    mSpecialLogging = true;
+    mSpecialLogging =  (false && alert("doing special logging"));
     List<ScriptElement> result = transformModelInputToScredit();
     mSpecialLogging = false;
     return result;
