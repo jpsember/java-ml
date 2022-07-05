@@ -69,6 +69,7 @@ class TensorLogger:
       return
     if name.startswith("."):
       return
+    self.report_count += 1
 
     # If tensor not provided, assume name refers to a local variable in the caller's scope
     #
@@ -99,7 +100,6 @@ class TensorLogger:
     #     ROWS COLS
     z = z[r0:r0+height, c0:c0+width, :]
     self.add(z, name)
-
 
 
   def store_tensor(self, ti:LogItemBuilder, tensor:torch.Tensor):
