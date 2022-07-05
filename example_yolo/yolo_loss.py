@@ -140,7 +140,7 @@ class YoloLoss(nn.Module):
     #
     norm_giou = (1.0 + giou) * 0.5
     self.log_tensor("iou", iou * ground_obj_t_mask)
-    self.log_tensor("ground_obj_t_mask",ground_obj_mask)
+    self.log_tensor("ground_obj_t_mask",ground_obj_t_mask)
     self.log_tensor("norm_giou", norm_giou * ground_obj_t_mask)
 
     pred_objectness = current[:, :, :, F_CONFIDENCE:F_CONFIDENCE+1]
