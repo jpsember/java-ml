@@ -182,53 +182,7 @@ class YoloLoss(nn.Module):
     return self.log_counter < JG.train_param.max_log_count
 
 
-  # Send a tensor for logging.  Assumes it has the dimension D_IMAGE, D_GRIDSIZE, etc
+  # Send a tensor for logging
   #
   def log_tensor(self, name, t=None):
-    if not self.log_active():
-      return
-    if name.startswith("."):
-      return
-
-    # If tensor not provided, assume name refers to a local variable in the caller's scope
-    #
-    t = get_var(t, name)
-
-    # Construct a slice of the tensor for inspection
-    z = t.detach()
-    if len(z.size()) == 0:
-      TensorLogger.default_instance.add_msg(f"{name}: {z.data:5.3}")
-      return
-
-
-    first_page_only = True
-    if False and name == "masked_diff":
-      first_page_only = False
-
-    height = self.grid_size.y
-    width = self.grid_size.x
-
-    if first_page_only:
-      z = z[0,:]
-      z = z.view(height,width,-1)
-    else:
-      y = list(z.shape)
-      z = z.view(y[0],height,width,-1)
-
-    if first_page_only:
-      max_width = 20
-      max_height = 16
-
-      r0 = 0
-      c0 = 0
-      if width > max_width:
-        c0 = (width - max_width) // 2
-        width = max_width
-      if height > max_height:
-        r0 = (height - max_height) // 2
-        height = max_height
-
-      # Zoom in on the center grid cells
-      #     ROWS COLS
-      z = z[r0:r0+height, c0:c0+width, :]
-    TensorLogger.default_instance.add(z, name)
+    TensorLogger.default_instance.report_grid(name, size=self.grid_size)

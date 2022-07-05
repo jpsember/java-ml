@@ -4,7 +4,6 @@ import torch
 from torch import nn
 from gen.vol import *
 from pycore.ipoint import IPoint
-from pycore.tensor_logger import TensorLogger
 
 
 def read_unsigned_bytes(path: str, offset: int, record_size: int, record_count: int) -> np.ndarray:
@@ -137,8 +136,6 @@ def get_name_and_tensor_pair(tensor_or_name, tensor):
   return nm, tensor
 
 
-def report(msg):
-  TensorLogger.default_instance.add_msg(msg)
 
 
 def my_exp(inp:torch.Tensor) -> torch.Tensor:
@@ -147,3 +144,15 @@ def my_exp(inp:torch.Tensor) -> torch.Tensor:
 
 def squared_difference(a, b):
   return (a - b) ** 2
+
+
+
+# The TensorLogger class relies on some functions in this file, so delay importing it until now:
+#
+# There are now some circular dependencies that I can work out later
+
+from pycore.tensor_logger import TensorLogger
+
+def report(msg):
+  TensorLogger.default_instance.add_msg(msg)
+

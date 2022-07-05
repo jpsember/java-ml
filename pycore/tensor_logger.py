@@ -1,7 +1,9 @@
 from __future__ import annotations
 from numpy import ndarray
 
+from pycore.pytorch_util import *
 from pycore.base import *
+from pycore.jg import JG
 import numpy as np
 import torch
 from torch import nn
@@ -14,7 +16,7 @@ class TensorLogger:
   def __init__(self, directory:str = "train_data"):
     self.dir = directory
     self.id = 0
-    pass
+    self.report_count = 0
 
 
   def add_msg(self, *args):
@@ -49,6 +51,55 @@ class TensorLogger:
       ti = self.new_log_item(name_or_info)
       self.store_tensor(ti, tensor)
     self.write(ti, tensor)
+
+
+
+
+
+
+
+  # Issue a report with of a tensor that has dimensions (Image, Row, Column)
+  #
+  # If maximum number of reports has already been issued, does nothing.
+  # Otherwise, extracts the first image as a plane of values
+  #
+  def report_grid(self, name, size, depth=1):
+    # Have we already issued the maximum number of reports?
+    if self.report_count >= JG.train_param.max_log_count:
+      return
+    if name.startswith("."):
+      return
+
+    # If tensor not provided, assume name refers to a local variable in the caller's scope
+    #
+    t = get_var(None, name, depth+1)
+
+    # Construct a slice of the tensor for inspection
+    z = t.detach()
+
+    height = size.y
+    width = size.x
+
+    z = z[0,:]
+    z = z.view(height,width,-1)
+
+    max_width = 20
+    max_height = 16
+
+    r0 = 0
+    c0 = 0
+    if width > max_width:
+      c0 = (width - max_width) // 2
+      width = max_width
+    if height > max_height:
+      r0 = (height - max_height) // 2
+      height = max_height
+
+    # Zoom in on the center grid cells
+    #     ROWS COLS
+    z = z[r0:r0+height, c0:c0+width, :]
+    self.add(z, name)
+
 
 
   def store_tensor(self, ti:LogItemBuilder, tensor:torch.Tensor):
