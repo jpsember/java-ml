@@ -185,4 +185,4 @@ class YoloLoss(nn.Module):
   # Send a tensor for logging
   #
   def log_tensor(self, name, t=None):
-    TensorLogger.default_instance.report_grid(name, size=self.grid_size)
+    TensorLogger.default_instance.report_grid(t, name, size=self.grid_size)
