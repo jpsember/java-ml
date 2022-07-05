@@ -38,7 +38,8 @@
               "block_size" : [32,32],
               "anchor_boxes_pixels" : [[100,100]],
               "lambda_coord" : 5.0,
-              "lambda_noobj" : 0.5,
+              // Try making this much smaller
+              "lambda_noobj" : 0.02,
         },
 
         "confidence_pct" : 5.0,
