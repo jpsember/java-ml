@@ -31,7 +31,7 @@
         "model_config" : {
               "image_size" : [416,416],
               "image_channels" : 3,
-              "category_count" : 1,
+              "category_count" : 3,
               "block_size" : [32,32],
               "anchor_boxes_pixels" : [[100,100]],
               "lambda_coord" : 5.0,

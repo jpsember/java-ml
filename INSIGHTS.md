@@ -35,3 +35,10 @@ The format of training labels (e.g. bounding boxes with categories) can take mul
 + model outputs, before applying the inverse of functions (such as logistic or exp);
 + model outputs, after applying the above inverses to recover values equivalent to the training labels
 
+
+## PyTorch quirks
+
+
+### Exploding loss function (issue 56)
+
+Sometimes the loss function suddenly gets crazy large.  I activated 'gradient clipping' and the problem went away.

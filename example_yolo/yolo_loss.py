@@ -163,6 +163,14 @@ class YoloLoss(nn.Module):
     self.log_tensor("loss_objectness_box")
     self.log_tensor("loss_objectness_nobox")
 
+
+    if yolo.category_count > 1:
+      ground_category_onehot = target[:, :, :, F_CLASS_PROBABILITIES:F_CLASS_PROBABILITIES + yolo.category_count]
+      self.log_tensor("ground_category_onehot")
+      ground_box_class = torch.argmax(ground_category_onehot, dim=3)
+      self.log_tensor("ground_box_class")
+      #_tmp = self.construct_class_loss(true_confidence, true_class_probabilities, predicted_box_class_logits)
+
     loss = (  loss_box_center * yolo.lambda_coord \
             + loss_box_size * yolo.lambda_coord \
             + loss_objectness_box \
