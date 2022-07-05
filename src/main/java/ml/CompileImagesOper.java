@@ -19,7 +19,8 @@ import ml.img.ImageCompiler;
 /**
  * Compiles images into a form to be consumed by pytorch. Partitions images into
  * train and test sets; optionally generates training sets to be consumed by an
- * external training session running in parallel
+ * external training session running in parallel, and processes log files received
+ * from the training session
  */
 public final class CompileImagesOper extends AppOper {
 

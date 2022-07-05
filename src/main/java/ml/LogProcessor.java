@@ -138,7 +138,6 @@ public class LogProcessor extends BaseObject implements Runnable {
     StringBuilder sb = new StringBuilder();
     if (ti.shape().length != 0) {
       formatTensor(ti, sb);
-      //sb.append(s.trim());
     } else {
       String msg = ti.message().trim();
       sb.append(msg);
