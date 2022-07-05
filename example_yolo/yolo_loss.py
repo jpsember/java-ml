@@ -34,8 +34,8 @@ class YoloLoss(nn.Module):
 
     ground_obj_t_mask = target[:, :, :, F_CONFIDENCE:F_CONFIDENCE+1]
     ground_obj_f_mask = (1.0 - ground_obj_t_mask)
-    self.log_tensor("ground_obj_t_mask")
-    self.log_tensor("ground_obj_f_mask")
+    self.log_tensor(".ground_obj_t_mask")
+    self.log_tensor(".ground_obj_f_mask")
 
 
     ground_cxcy = target[:, :, :, F_BOX_CX:F_BOX_CY + 1]
@@ -139,7 +139,6 @@ class YoloLoss(nn.Module):
     # Normalize the giou so that it is between 0 and 1
     #
     norm_giou = (1.0 + giou) * 0.5
-    self.log_tensor(".norm_giou")
     self.log_tensor("iou", iou * ground_obj_t_mask)
     self.log_tensor("norm_giou", norm_giou * ground_obj_t_mask)
 
