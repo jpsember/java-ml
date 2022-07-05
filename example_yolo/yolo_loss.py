@@ -127,20 +127,15 @@ class YoloLoss(nn.Module):
     union_area = pred_area + ground_area - intersection_area
 
     iou = intersection_area / (union_area + EPSILON)
-    self.log_tensor(".iou")
-
-    self.log_tensor(".union_area")
-    self.log_tensor(".container_area")
-
     giou = iou - ((container_area - union_area) / (container_area + EPSILON))
-    self.log_tensor(".giou")
-    self.log_tensor(".iou")
 
     # Normalize the giou so that it is between 0 and 1
     #
     norm_giou = (1.0 + giou) * 0.5
+
+    # If logging, we should mask out cells where there are no ground truth boxes
+    #
     self.log_tensor("iou", iou * ground_obj_t_mask)
-    self.log_tensor("ground_obj_t_mask",ground_obj_t_mask)
     self.log_tensor("norm_giou", norm_giou * ground_obj_t_mask)
 
     pred_objectness = current[:, :, :, F_CONFIDENCE:F_CONFIDENCE+1]

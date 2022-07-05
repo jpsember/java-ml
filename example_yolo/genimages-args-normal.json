@@ -2,7 +2,7 @@
       "network_path" : "network.json",
         "categories" : "A",
 
-       "image_total" :  320,
+       "image_total" :  960,
 
  "noise_factor" : 0,
   "color_limit" : 1,
