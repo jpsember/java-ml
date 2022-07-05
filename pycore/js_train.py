@@ -337,6 +337,9 @@ class JsTrain:
 
       # Backpropagation
       loss.backward()
+
+      if JG.train_param.with_gradient_norm:
+        nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=2.0, norm_type=2)
       self.optimizer.step()
 
 

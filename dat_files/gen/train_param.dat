@@ -53,6 +53,10 @@ fields {
   // Maximum number of tensors to display logging information for
   //
   int max_log_count = 20;
+
+  // Apply gradient normalization if it gets too large (https://androidkt.com/how-to-apply-gradient-clipping-in-pytorch/)
+  //
+  bool with_gradient_norm;
 }
 
 
