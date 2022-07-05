@@ -68,14 +68,13 @@ class TensorLogger:
     if self.report_count >= JG.train_param.max_log_count:
       return
 
-    # If tensor not provided, assume name refers to a local variable in the caller's scope
-    #
-    t = get_var(t, name, depth+1)
-
     if name.startswith("."):
       return
     self.report_count += 1
 
+    # If tensor not provided, assume name refers to a local variable in the caller's scope
+    #
+    t = get_var(t, name, depth+1)
 
     # Construct a slice of the tensor for inspection
     z = t.detach()
