@@ -171,6 +171,9 @@ class YoloLoss(nn.Module):
       self.log_tensor("ground_box_class")
       #_tmp = self.construct_class_loss(true_confidence, true_class_probabilities, predicted_box_class_logits)
 
+    See https://pytorch.org/docs/stable/generated/torch.nn.CrossEntropyLoss.html
+
+
     loss = (  loss_box_center * yolo.lambda_coord \
             + loss_box_size * yolo.lambda_coord \
             + loss_objectness_box \

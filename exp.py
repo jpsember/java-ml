@@ -1,41 +1,35 @@
 #!/usr/bin/env python3
 
+from pycore.base import *
 
-# Run this within a Python interactive shell by typing:
+import torch
+import torch.nn as nn
+
+
+
+input = torch.rand(3, 5)
+
+# create a tensor of shape [3] with uninitialized data
 #
-# python3
-# import exp; import importlib
-# importlib.reload(exp); exp.g()
+x = torch.empty(3, dtype = torch.long)
+
+# Fill tensor with random values 0..4
+y = x.random_(5)
+pr("y:")
+pr(y)
+
+
+target = torch.empty(3, dtype = torch.long).random_(5)
+
+# Construct a 'function'?  Is this a module?
 #
-# 1) Edit the file within PyCharm
-# 2) Use the up arrow + return to reload/run the modified script
-#
 
+loss = nn.CrossEntropyLoss()
+output = loss(input, target)
 
-from pycore.pytorch_util import *
+pr("input:", input)
+pr("target:",target)
 
-def db(label:str, obj):
-  t: torch.Tensor = obj
-
-  pr("\n\n\n")
-  dash = "==========================================="
-  pr(dash);
-  pr(label,"size:",t.size())
-  pr("\n")
-  pr(t.numpy())
-  pr(dash);
-
-
-def g():
-  pr("\n\n\n\n\n\n\n\n\n\n")
-  t = torch.IntTensor([[[1],[0]],[[0],[1]]])
-  db("t",t)
-
-
-  #db("exp",t.exp())
-
-
-  #s = torch.asarray([1,2,3])
-  #db("s",s)
-
-  #x = t.view()
+print('input:\n ', input)
+print('target:\n ', target)
+print('Cross Entropy Loss: \n', output)
