@@ -180,7 +180,7 @@ class YoloLoss(nn.Module):
 
       pred_class = current[:, :, :, F_CLASS_PROBABILITIES:F_CLASS_PROBABILITIES + yolo.category_count]
       # Note: our logging collapses some of the dimensions, so the n probabilities all appear to 'stretch out' the displayed width
-      self.log_tensor("pred_class")
+      #self.log_tensor("pred_class")
 
       if self.cross_entropy_loss is None:
         self.cross_entropy_loss = nn.CrossEntropyLoss(reduction="none")
@@ -197,12 +197,12 @@ class YoloLoss(nn.Module):
       # Reshape the loss so we again have results for each image, cell, anchor...
       #
       img_count, cell_count, anchor_count, _ = pred_class.shape
-      ce_loss = ce_loss_view.view(img_count,cell_count,anchor_count,-1)
+      classificiation_loss = ce_loss_view.view(img_count,cell_count,anchor_count,-1)
 
-      self.log_tensor("ce_loss")
+      self.log_tensor("classificiation_loss")
       #See https://pytorch.org/docs/stable/generated/torch.nn.CrossEntropyLoss.html
 
-      loss = loss + ce_loss
+      loss = loss + classificiation_loss
 
 
     loss = loss.sum() / batch_size
@@ -210,10 +210,6 @@ class YoloLoss(nn.Module):
     if loss.data > 2000:
       die("Loss has ballooned to:", loss.data)
     return loss
-
-
-  def log_active(self) -> bool:
-    return self.log_counter < JG.train_param.max_log_count
 
 
   # Send a tensor for logging
