@@ -45,7 +45,9 @@ class YoloLayer(nn.Module):
     # Determine each predicted box's class probabilities.
     # Apply narrowing transformation to map (-inf...+inf) to (0..1): sigmoid function
     #
-    pred_categories = torch.sigmoid(current[:, :, :, F_CLASS_PROBABILITIES:class_prob_end])
+    # ....actually, see issue #59; does pytorch expect 'raw' logits?
+    #pred_categories = torch.sigmoid(current[:, :, :, F_CLASS_PROBABILITIES:class_prob_end])
+    pred_categories = current[:, :, :, F_CLASS_PROBABILITIES:class_prob_end]
 
     # Concatenate the modified bits together into another tensor
     # TODO: can we apply the above mappings 'in-place' to avoid this step?
