@@ -113,6 +113,9 @@ class TensorLogger:
     elif dt == torch.uint8:
       x = torch.flatten(tensor)
       ti.set_tensor_bytes(self.to_list(x.tolist()))
+    elif dt == torch.int64:
+      x = torch.flatten(tensor)
+      ti.set_tensor_bytes(self.to_list(x.tolist()))
     #elif dt == torch.int16:
       #ti.data_type = DataType.UNSIGNED_SHORT
     else:
