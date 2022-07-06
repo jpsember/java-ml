@@ -36,8 +36,9 @@
               "anchor_boxes_pixels" : [[100,100]],
 
               // "lambda_coord" : 5.0,
-              // Try making this much smaller
-              // "lambda_noobj" : 0.02,
+
+              // Seems to get stuck unless this is smaller than the default (0.5):
+              "lambda_noobj" : 0.05,
         },
 
         // These are the defaults and can be omitted:
