@@ -169,7 +169,7 @@ class YoloLoss(nn.Module):
       self.log_tensor("ground_category_onehot")
       ground_box_class = torch.argmax(ground_category_onehot, dim=3)
       print("ground_box_class")
-      print(ground_box_class[1,:,:,:])
+      print(ground_box_class)
       #self.log_tensor("ground_box_class")
       #_tmp = self.construct_class_loss(true_confidence, true_class_probabilities, predicted_box_class_logits)
 
