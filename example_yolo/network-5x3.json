@@ -40,7 +40,9 @@
 
         //"special_option" : "pixel_alignment",
 
-
-        "confidence_pct" : 65.0,
-        "max_i_over_u" : 0.6,
+        // These are the defaults and could be omitted:
+        "options" : {
+          "confidence_pct" : 65.0,
+          "max_i_over_u" : 0.6,
+        },
   }

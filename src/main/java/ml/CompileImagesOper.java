@@ -105,10 +105,7 @@ public final class CompileImagesOper extends AppOper {
    * purge of existing checkpoints
    */
   private NeuralNetwork getNetworkForChecksum() {
-    NeuralNetwork.Builder b = network().build().toBuilder();
-    // Delete some keys that we don't want to be included in the hash
-    b.confidencePct(0).maxIOverU(0);
-    return b;
+    return network().build().toBuilder().options(null);
   }
 
   private long currentTime() {

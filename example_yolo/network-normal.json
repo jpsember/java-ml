@@ -39,7 +39,10 @@
               "lambda_noobj" : 0.02,
         },
 
-        "confidence_pct" : 65.0,
-        "max_i_over_u" : 0.6,
+        // These are the defaults and can be omitted:
+        "options" : {
+          "confidence_pct" : 65.0,
+          "max_i_over_u" : 0.6,
+        },
 
   }

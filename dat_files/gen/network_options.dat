@@ -1,0 +1,22 @@
+fields {
+
+  //--------------------------------------------------------------
+  // For transforming outputs (or inputs) to ScriptElements
+  //
+
+  // -----
+  // YOLO
+
+  //
+  float confidence_pct = 65.0;     // required confidence percentage for result to be plotted
+
+  // Factor for applying non-max suppression; if zero, filter is omitted.
+  // Otherwise, this is the maximum intersection over union
+  //
+  float max_i_over_u = 0.6;
+  // -----
+
+  //--------------------------------------------------------------
+
+}
+

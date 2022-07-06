@@ -154,23 +154,13 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
     ;
   }
 
-  private boolean mSpecialLogging;
-
-  private void slog(Object... messages) {
-    if (!mSpecialLogging)
-      return;
-    pr(insertStringToFront("(special logging:)", messages));
-  }
-
   @Override
   public List<ScriptElement> transformModelInputToScredit() {
     Yolo yolo = modelConfig();
     float[] f = labelBufferFloats();
-    float confidencePct = network().confidencePct();
+    float confidencePct = networkOptions().confidencePct();
 
     log("Constructing YOLO result for image; confidence %", confidencePct);
-    slog("YOLO transform labels to ScrEdit, confidence %", confidencePct, "max ioveru:",
-        network().maxIOverU());
 
     List<ScriptElement> boxList = arrayList();
     final int anchorBoxCount = numAnchorBoxes();
@@ -260,16 +250,15 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
       }
     }
 
-    if (network().maxIOverU() > 0)
-      boxList = YoloUtil.performNonMaximumSuppression(boxList, network().maxIOverU(), mSpecialLogging);
+    float maxIOverU = networkOptions().maxIOverU();
+    if (maxIOverU > 0)
+      boxList = YoloUtil.performNonMaximumSuppression(boxList, maxIOverU);
     return boxList;
   }
 
   @Override
   public List<ScriptElement> transformModelOutputToScredit() {
-    mSpecialLogging =  (false && alert("doing special logging"));
     List<ScriptElement> result = transformModelInputToScredit();
-    mSpecialLogging = false;
     return result;
   }
 

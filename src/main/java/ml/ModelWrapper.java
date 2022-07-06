@@ -18,6 +18,7 @@ import js.json.JSMap;
 import gen.Classifier;
 import gen.ImageSetInfo;
 import gen.Layer;
+import gen.NetworkOptions;
 import gen.NetworkProjectType;
 import gen.NeuralNetwork;
 import gen.SpecialOption;
@@ -129,6 +130,10 @@ public abstract class ModelWrapper<T extends AbstractData> extends BaseObject {
 
   public final NeuralNetwork network() {
     return mNetwork;
+  }
+
+  public final NetworkOptions networkOptions() {
+    return mNetwork.options();
   }
 
   public final Vol inputImageVolume() {
