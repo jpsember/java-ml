@@ -168,10 +168,12 @@ class YoloLoss(nn.Module):
       ground_category_onehot = target[:, :, :, F_CLASS_PROBABILITIES:F_CLASS_PROBABILITIES + yolo.category_count]
       self.log_tensor("ground_category_onehot")
       ground_box_class = torch.argmax(ground_category_onehot, dim=3)
-      self.log_tensor("ground_box_class")
+      print("ground_box_class")
+      print(ground_box_class[1,:,:,:])
+      #self.log_tensor("ground_box_class")
       #_tmp = self.construct_class_loss(true_confidence, true_class_probabilities, predicted_box_class_logits)
 
-    See https://pytorch.org/docs/stable/generated/torch.nn.CrossEntropyLoss.html
+      #See https://pytorch.org/docs/stable/generated/torch.nn.CrossEntropyLoss.html
 
 
     loss = (  loss_box_center * yolo.lambda_coord \

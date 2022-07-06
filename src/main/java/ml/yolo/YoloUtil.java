@@ -20,6 +20,8 @@ import gen.Yolo;
 
 public final class YoloUtil {
 
+  public static final boolean ONE_HOT_CLASSES = true;
+
   private static final List<IPoint> DEFAULT_ANCHOR_BOXES = IPoint.toArrayList(//
       18, 22, //
       60, 66 //
@@ -67,7 +69,10 @@ public final class YoloUtil {
   }
 
   public static int valuesPerAnchorBox(Yolo yolo) {
-    return F_CLASS_PROBABILITIES + yolo.categoryCount();
+    if (ONE_HOT_CLASSES)
+      return F_CLASS_PROBABILITIES + yolo.categoryCount();
+    else
+      return F_CLASS_PROBABILITIES + 1;
   }
 
   public static int valuesPerBlock(Yolo yolo) {
