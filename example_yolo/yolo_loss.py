@@ -15,6 +15,7 @@ class YoloLoss(nn.Module):
     self.grid_size = grid_size(yolo)
     self.grid_cell_total = self.grid_size.product()
     self.log_counter = 0
+    self.cross_entropy_loss = None
 
 
   def forward(self, current, target):
@@ -166,9 +167,35 @@ class YoloLoss(nn.Module):
 
     if yolo.category_count > 1:
       ground_category_onehot = target[:, :, :, F_CLASS_PROBABILITIES:F_CLASS_PROBABILITIES + yolo.category_count]
+      show_shape("target")
+      show_shape("ground_category_onehot")
       self.log_tensor("ground_category_onehot")
-      ground_box_class = torch.argmax(ground_category_onehot, dim=3)
-      self.log_tensor("ground_box_class")
+      #pr("ground_category_onehot")
+      #pr(ground_category_onehot)
+
+      ground_box_class = torch.argmax(ground_category_onehot, dim=3, keepdim=True)
+      show_shape("ground_box_class")
+      #pr("ground_box_class")
+      #pr(ground_box_class)
+
+      # Why does ground_box_class have dimension 3 [32, 15, 1]
+      # instead of that of category_onehot = 4     [32, 15, 1, 3]
+
+      # We need to cast to a float if we want the logger to handle it
+      #self.log_tensor("ground_box_class", ground_box_class.type(torch.FloatTensor))
+
+      pred_class = current[:, :, :, F_CLASS_PROBABILITIES:F_CLASS_PROBABILITIES + yolo.category_count]
+      self.log_tensor("pred_class")
+
+      if self.cross_entropy_loss is None:
+        self.cross_entropy_loss = nn.CrossEntropyLoss()
+      loss = self.cross_entropy_loss
+      ce_loss = self.cross_entropy_loss(pred_class, ground_box_class)
+      self.log_tensor("ce_loss")
+
+      # RuntimeError: size mismatch (got input: [32, 15, 1, 3] , target: [32, 15, 1]
+
+      todo("add ce_loss to main loss fn")
       #_tmp = self.construct_class_loss(true_confidence, true_class_probabilities, predicted_box_class_logits)
 
       #See https://pytorch.org/docs/stable/generated/torch.nn.CrossEntropyLoss.html

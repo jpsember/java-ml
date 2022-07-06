@@ -7,6 +7,24 @@ import torch.nn as nn
 
 
 
+
+
+
+
+
+a = torch.randn(3,1,4)
+pr("a:")
+pr(a)
+b = torch.argmax(a, dim=2, keepdim=True)
+pr("argmax:")
+pr(b)
+
+
+
+
+
+
+
 input = torch.rand(3, 5)
 
 # create a tensor of shape [3] with uninitialized data
