@@ -164,48 +164,49 @@ class YoloLoss(nn.Module):
     self.log_tensor("loss_objectness_box")
     self.log_tensor("loss_objectness_nobox")
 
+    loss = (  loss_box_center * yolo.lambda_coord \
+            + loss_box_size * yolo.lambda_coord \
+            + loss_objectness_box \
+            + loss_objectness_nobox * yolo.lambda_noobj )
 
+    # Include a classification loss if there is more than a single category
+    #
     if yolo.category_count > 1:
       ground_category_onehot = target[:, :, :, F_CLASS_PROBABILITIES:F_CLASS_PROBABILITIES + yolo.category_count]
-      show_shape("target")
-      show_shape("ground_category_onehot")
-      self.log_tensor("ground_category_onehot")
-      #pr("ground_category_onehot")
-      #pr(ground_category_onehot)
-
-      ground_box_class = torch.argmax(ground_category_onehot, dim=3, keepdim=True)
-      show_shape("ground_box_class")
-      #pr("ground_box_class")
-      #pr(ground_box_class)
-
-      # Why does ground_box_class have dimension 3 [32, 15, 1]
-      # instead of that of category_onehot = 4     [32, 15, 1, 3]
+      #self.log_tensor("ground_category_onehot")
 
       # We need to cast to a float if we want the logger to handle it
       #self.log_tensor("ground_box_class", ground_box_class.type(torch.FloatTensor))
 
       pred_class = current[:, :, :, F_CLASS_PROBABILITIES:F_CLASS_PROBABILITIES + yolo.category_count]
+      # Note: our logging collapses some of the dimensions, so the n probabilities all appear to 'stretch out' the displayed width
       self.log_tensor("pred_class")
 
       if self.cross_entropy_loss is None:
-        self.cross_entropy_loss = nn.CrossEntropyLoss()
-      loss = self.cross_entropy_loss
-      ce_loss = self.cross_entropy_loss(pred_class, ground_box_class)
+        self.cross_entropy_loss = nn.CrossEntropyLoss(reduction="none")
+
+      # I think we need to reshape the input and target using views
+      # so the 'minibatch' includes all the probability records, e.g.
+      # images * cells * anchors...
+
+      input_view = pred_class.view(-1, yolo.category_count)
+      target_view = ground_category_onehot.view(-1, yolo.category_count)
+
+      ce_loss_view = self.cross_entropy_loss(input_view, target_view)
+
+      # Reshape the loss so we again have results for each image, cell, anchor...
+      #
+      img_count, cell_count, anchor_count, _ = pred_class.shape
+      ce_loss = ce_loss_view.view(img_count,cell_count,anchor_count,-1)
+
       self.log_tensor("ce_loss")
-
-      # RuntimeError: size mismatch (got input: [32, 15, 1, 3] , target: [32, 15, 1]
-
-      todo("add ce_loss to main loss fn")
-      #_tmp = self.construct_class_loss(true_confidence, true_class_probabilities, predicted_box_class_logits)
-
       #See https://pytorch.org/docs/stable/generated/torch.nn.CrossEntropyLoss.html
 
+      loss = loss + ce_loss
 
-    loss = (  loss_box_center * yolo.lambda_coord \
-            + loss_box_size * yolo.lambda_coord \
-            + loss_objectness_box \
-            + loss_objectness_nobox * yolo.lambda_noobj )\
-            .sum() / batch_size
+
+    loss = loss.sum() / batch_size
+
     if loss.data > 2000:
       die("Loss has ballooned to:", loss.data)
     return loss
@@ -218,4 +219,6 @@ class YoloLoss(nn.Module):
   # Send a tensor for logging
   #
   def log_tensor(self, name, t=None):
+    if False and warning("omitting logging tensor"):
+      return
     TensorLogger.default_instance.report_grid(t, name, size=self.grid_size)
