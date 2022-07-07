@@ -61,12 +61,8 @@ public final class ProgressFile implements Closeable {
   }
 
   private File file() {
-    if (mProgressFile == null) {
-      todo("choose directory for progress file");
-      File progressDir = Files.currentDirectory();
-      checkArgument(Files.nonEmpty(progressDir));
-      mProgressFile = new File(progressDir, "progress.txt");
-    }
+    if (mProgressFile == null)
+      mProgressFile = Files.assertNonEmpty(mConfig.progressFile(), "progress_file");
     return mProgressFile;
   }
 
