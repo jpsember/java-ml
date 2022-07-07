@@ -19,6 +19,12 @@ class TensorLogger:
     self.report_count = 0
 
 
+  def add_stats(self, stats:dict):
+    ti = self.new_log_item()
+    ti.stats = stats
+    self.write(ti)
+
+
   def add_msg(self, *args):
     ti = self.new_log_item()
     ti.message = spr(*args)

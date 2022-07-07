@@ -23,6 +23,10 @@ fields {
   ?*byte tensor_bytes;
   ?*float tensor_floats;
 
+  // If exists, a map of named stats to display
+  //
+  ?JSMap stats;
+
   SpecialHandling special_handling;
 
   // True if illegal values (e.g. NaN) were found while parsing (on Java side)

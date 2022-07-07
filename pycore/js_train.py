@@ -406,6 +406,13 @@ class JsTrain:
       if self.abort_flag:
         break
       self.perform_delay()
+
+      # Try our new logging
+      TensorLogger.default_instance.add_stats({
+        "epoch":self.epoch_number,
+        "loss" : self.stat_train_loss.value
+      })
+
       s = f"Epoch {self.epoch_number:4}   {self.stat_train_loss.info()}"
       if self.stat_train_loss.value_sm <= JG.train_param.target_loss:
         done_msg = "Train loss reached target"

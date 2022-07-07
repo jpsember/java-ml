@@ -9,6 +9,7 @@ import gen.Vol;
 import js.base.BaseObject;
 import js.base.BasePrinter;
 import js.base.DateTimeTools;
+import js.data.DataUtil;
 import js.file.DirWalk;
 import js.file.Files;
 import js.geometry.IPoint;
@@ -74,10 +75,6 @@ public class LogProcessor extends BaseObject implements Runnable {
   private void prog(Object... messages) {
     String result = BasePrinter.toString(messages);
     pf().write(result);
-    if (false) {
-      // Write to stdout as well?  Maybe better handled externally by tail command
-      System.out.println(result);
-    }
   }
 
   private ProgressFile pf() {
@@ -165,9 +162,83 @@ public class LogProcessor extends BaseObject implements Runnable {
     } else {
       String msg = ti.message().trim();
       sb.append(msg);
+      addLF(sb);
+      if (ti.stats() != null)
+        parseStats(ti.stats(), sb);
     }
-    addLF(sb);
     prog(sb.toString());
+  }
+
+  private static class StatRecord {
+    public StatRecord(String name) {
+      mName = name;
+    }
+
+    public void update(float value) {
+      mValue = value;
+      if (mValueCount == 0)
+        mSmoothedValue = value;
+      else {
+        float tau = 0.1f;
+        mSmoothedValue = tau * value + (1 - tau) * mSmoothedValue;
+      }
+      mValueCount++;
+    }
+
+    public void printTo(StringBuilder sb) {
+      if (sb.length() > 0 && sb.charAt(sb.length() - 1) > ' ')
+        sb.append("  ");
+
+      String nm = DataUtil.capitalizeFirst(mName);
+      if (!isFloat()) {
+        sb.append(String.format("%s: %d", nm, Math.round(mValue)));
+      } else {
+        sb.append(String.format("%s: %5.2f (%5.2f)", nm, mValue, mSmoothedValue));
+      }
+    }
+
+    private boolean isFloat() {
+      return !mName.equals(STAT_EPOCH);
+    }
+
+    String mName;
+    float mValue;
+    float mSmoothedValue;
+    int mValueCount;
+  }
+
+  private Map<String, StatRecord> mStatRecordMap = hashMap();
+
+  private static final String STAT_EPOCH = "epoch";
+  private static final String STAT_LOSS = "loss";
+
+  private static String[] sStatOrder = { STAT_EPOCH, STAT_LOSS };
+
+  private List<StatRecord> sortStats(List<StatRecord> r) {
+    todo("sort records so epoch and loss are first");
+    return r;
+  }
+
+  private StatRecord statRecord(String name) {
+    StatRecord r = mStatRecordMap.get(name);
+    if (r == null) {
+      r = new StatRecord(name);
+      mStatRecordMap.put(name, r);
+    }
+    return r;
+  }
+
+  private void parseStats(JSMap stats, StringBuilder sb) {
+    List<StatRecord> rec = arrayList();
+    for (String key : stats.keySet()) {
+      float value = stats.getFloat(key);
+      StatRecord r = statRecord(key);
+      r.update(value);
+      rec.add(r);
+    }
+    for (StatRecord r : sortStats(rec)) {
+      r.printTo(sb);
+    }
   }
 
   private void bufferLogItem(LogItem logItem, int familySize) {
