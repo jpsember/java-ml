@@ -81,16 +81,7 @@ class JsModel(nn.Module):
 
   def add_layer(self, layer, size_label=None):
     if layer is not None:
-      w = self.add_size(none_to(size_label, self.layer.type)).assign_id()
-      todo("We can probably get rid of this logging input vol? Or would it be useful down the road?")
-      #pr("add layer, id:",w.id,"type:",self.layer.type)
-      # 0 is the input image conv layer;
-      # 3 is the next conv layer (after the relu+maxpool)
-      # 6 is the following one
-      # 9, 12, 15, 17, 19, 21 are subsequent ones
-      if False and w.id in [0,2,4,6,8]:
-        warning("Logging volume for layer with id:",w.id)
-        w.set_log_input_vol([0,1,2,3,10])
+      self.add_size(none_to(size_label, self.layer.type)).assign_id()
       self.tensors.append(layer)
 
 

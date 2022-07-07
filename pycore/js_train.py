@@ -342,7 +342,6 @@ class JsTrain:
 
 
   def run_training_session(self):
-    todo("Avoid logging loss function for every batch; report only first")
     self.restore_checkpoint()
     self.last_checkpoint_epoch = self.epoch_number
     done_msg = None
