@@ -77,7 +77,16 @@ public class LogProcessor extends BaseObject implements Runnable {
       File logDir = config().targetDirTrain();
       DirWalk w = new DirWalk(logDir).withRecurse(false).withExtensions("json");
       for (File infoFile : w.files()) {
-        LogItem ti = parseLogItem(infoFile);
+        LogItem ti = null;
+        try {
+          ti = parseLogItem(infoFile);
+        } catch (Throwable t) {
+          pr("*** failed to parseLogItem, file:", INDENT, Files.infoMap(infoFile));
+          pr("logDir:", INDENT, Files.infoMap(logDir));
+          pr("exception:", t);
+          continue;
+        }
+
         if (ti.illegalValuesFound()) {
           String formatted = prettyPrint(ti);
           if (formatted.length() > 500)
