@@ -15,7 +15,6 @@ from gen.train_param import *
 from gen.log_item import *
 from gen.special_handling import *
 from gen.special_option import SpecialOption
-from pycore.stats import Stats
 from pycore.tensor_logger import TensorLogger
 
 
@@ -29,8 +28,7 @@ class JsTrain:
     self.loss_fn = None
     self.optimizer = None
     self.abort_flag = False
-    self.stat_train_loss = Stats("Train Loss")
-    self.stat_test_loss = Stats("Test Loss")
+    self.train_loss = None
 
     self.epoch_number = 0
     self.snapshot_epoch_interval = 2.0
@@ -83,12 +81,6 @@ class JsTrain:
     self.timeout_length = max_seconds
 
 
-  def show_test_labels(self):
-    result = (self.dump_test_labels_counter > 0)
-    if result:
-      self.dump_test_labels_counter -= 1
-    return result
-
 
   def prepare_train_info(self, train_dir):
     # If train info has not been read yet, read it from the supplied training set directory
@@ -125,7 +117,6 @@ class JsTrain:
     self.model = self.define_model()
     # Now that model has been constructed, prepare it for use
     self.model.prepare()
-    #todo("Do we want to do something more nuanced here w.r.t. placing some tensors in the GPU?")
     self.model.to(JG.device)
     self.loss_fn = self.define_loss_function()
     self.optimizer = torch.optim.SGD(self.model.parameters(), lr=1e-3, momentum = 0.9)
@@ -330,10 +321,7 @@ class JsTrain:
 
       # See: https://pytorch.org/docs/stable/generated/torch.nn.CrossEntropyLoss.html
       loss = self.loss_fn(pred, tensor_labels)
-
-      # NOTE: this assumes the loss function returned is independent of the batch size
-      # Does reading the loss value mess things up?
-      self.stat_train_loss.set_value(loss.item())
+      self.train_loss = loss.item()
 
       # Backpropagation
       loss.backward()
@@ -341,30 +329,6 @@ class JsTrain:
       if JG.train_param.with_gradient_norm:
         nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=2.0, norm_type=2)
       self.optimizer.step()
-
-
-  # Perform optional calculations for the test operation; default does nothing
-  #
-  def update_test(self, pred, tensor_labels, test_image_count:int):
-    pass
-
-
-  def test(self):
-    self.model.eval()
-
-    d = self.prev_train_set_dir
-    test_images_path = os.path.join(d, "images.bin")
-    test_labels_path = os.path.join(d, "labels.bin")
-
-    test_image_count = min(self.train_info.image_count, JG.train_param.test_size)
-
-    with torch.no_grad():
-      tensor_images, tensor_labels = self.read_images(test_images_path, test_labels_path, 0, test_image_count)
-      tensor_images, tensor_labels = tensor_images.to(self.device), tensor_labels.to(self.device)
-      pred = self.model(tensor_images)
-      loss = self.loss_fn(pred, tensor_labels).item()
-      self.stat_test_loss.set_value(loss)
-      self.update_test(pred, tensor_labels, test_image_count)
 
 
   def quit_session(self, reason):
@@ -379,24 +343,8 @@ class JsTrain:
         remove_if_exists(p)
 
 
-  def with_test(self):
-    return JG.train_param.test_size > 0
-
-
-  # Generate a report for the test results.  Default implementation includes the stat_test_loss information
-  #
-  def test_report(self) -> str:
-    return f"  {self.stat_test_loss.info()}"
-
-
-  # Based upon the test results, determine if a training target has been reached.
-  # Default implementation returns False
-  #
-  def test_target_reached(self) -> bool:
-    return False
-
-
   def run_training_session(self):
+    todo("Avoid logging loss function for every batch; report only first")
     self.restore_checkpoint()
     self.last_checkpoint_epoch = self.epoch_number
     done_msg = None
@@ -410,7 +358,7 @@ class JsTrain:
       # Try our new logging
       stats_map = {
         "epoch":self.epoch_number,
-        "loss" : self.stat_train_loss.value
+        "loss" : self.train_loss,
       }
 
       # If anyone stored additional stats in JG.aux_stats, include them and clear it
@@ -420,17 +368,9 @@ class JsTrain:
         JG.aux_stats = None
       TensorLogger.default_instance.add_stats(stats_map)
 
-      s = ""
-      if self.stat_train_loss.value_sm <= JG.train_param.target_loss:
-        done_msg = "Train loss reached target"
-      if self.with_test():
-        self.test()
-        self.perform_delay()
-        if self.test_target_reached():
-          done_msg = "Test accuracy reached target"
-        s += "   " + self.test_report()
-      if s != "":
-        report(s)
+      todo("Get rid of the checking the train loss here; have the Java code handle this")
+      #if self.stat_train_loss.value_sm <= JG.train_param.target_loss:
+      #  done_msg = "Train loss reached target"
       self.epoch_number += 1
       if self.stop_signal_received():
         done_msg = "Stop signal received"

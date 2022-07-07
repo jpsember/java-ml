@@ -26,24 +26,5 @@ class ClassifierTrain(JsTrain):
     return nn.CrossEntropyLoss()
 
 
-  def update_test(self, pred, tensor_labels, test_image_count:int):
-    predicted_labels = pred.argmax(1)
-    if self.show_test_labels():
-      pr("model prediction:")
-      pr(pred)
-      pr("predicted labels:")
-      pr(predicted_labels)
-      pr("truth labels:")
-      pr(tensor_labels)
-    correct = (predicted_labels == tensor_labels).type(torch.float).sum().item()
-    self.stat_acc.set_value((100.0 * correct) / test_image_count)
 
 
-  def test_target_reached(self) -> bool:
-    return self.stat_acc.value_sm >= self.train_param.target_accuracy
-
-
-  # Append the accuracy to the test report
-  #
-  def test_report(self) -> str:
-    return super().test_report() + f"  {self.stat_acc.info(0)}"
