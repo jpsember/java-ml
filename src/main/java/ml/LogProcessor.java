@@ -28,32 +28,27 @@ import java.util.Map;
 
 public class LogProcessor extends BaseObject implements Runnable {
 
-  public void start(CompileImagesConfig c, ModelWrapper model) {
-    checkState(mState == 0);
-    mConfig = c;
+  public void start(CompileImagesConfig compileImagesConfig, ModelWrapper model) {
+    checkState(mState == STATE_READY);
+    mConfig = compileImagesConfig;
     mModel = model;
     mNetwork = model.network();
-    determineImageAndLabelInfo();
-    mState = 1;
+    mImageVolume = NetworkUtil.determineInputImageVolume(mNetwork);
+    mImageSize = VolumeUtil.spatialDimension(mImageVolume);
+    mState = STATE_RUNNING;
     mThread = new Thread(this);
     mThread.setDaemon(true);
     mThread.start();
   }
 
-  private Vol mImageVolume;
-  private IPoint mImageSize;
-
-  private void determineImageAndLabelInfo() {
-    mImageVolume = NetworkUtil.determineInputImageVolume(mNetwork);
-    mImageSize = VolumeUtil.spatialDimension(mImageVolume);
-  }
+  private static final int STATE_READY = 0, STATE_RUNNING = 1, STATE_STOPPED = 2;
 
   public void stop() {
     switch (mState) {
-    case 1:
+    case STATE_RUNNING:
       break;
     }
-    mState = 2;
+    mState = STATE_STOPPED;
   }
 
   public boolean errorFlag() {
@@ -73,7 +68,7 @@ public class LogProcessor extends BaseObject implements Runnable {
   }
 
   private void auxRun() {
-    while (mState != 2) {
+    while (mState != STATE_STOPPED) {
       File logDir = config().targetDirTrain();
       DirWalk w = new DirWalk(logDir).withRecurse(false).withExtensions("json");
       for (File infoFile : w.files()) {
@@ -517,10 +512,13 @@ public class LogProcessor extends BaseObject implements Runnable {
     return String.format(format.formatStr(), value);
   }
 
+  private Vol mImageVolume;
+  private IPoint mImageSize;
+
   private CompileImagesConfig mConfig;
   private ModelWrapper mModel;
   private NeuralNetwork mNetwork;
-  private int mState;
+  private int mState = STATE_READY;
   private Thread mThread;
   private int mPrevId;
 
