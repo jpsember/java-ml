@@ -128,6 +128,7 @@ public class LogProcessor extends BaseObject implements Runnable {
         files().deletePeacefully(infoFile);
       }
       cullFamilyBuffer();
+      pf().flush();
       DateTimeTools.sleepForRealMs(50);
     }
     log("stopping");
