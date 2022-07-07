@@ -408,10 +408,17 @@ class JsTrain:
       self.perform_delay()
 
       # Try our new logging
-      TensorLogger.default_instance.add_stats({
+      stats_map = {
         "epoch":self.epoch_number,
         "loss" : self.stat_train_loss.value
-      })
+      }
+
+      # If anyone stored additional stats in JG.aux_stats, include them and clear it
+      #
+      if JG.aux_stats is not None:
+        stats_map.update(JG.aux_stats)
+        JG.aux_stats = None
+      TensorLogger.default_instance.add_stats(stats_map)
 
       s = ""
       if self.stat_train_loss.value_sm <= JG.train_param.target_loss:

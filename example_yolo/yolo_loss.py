@@ -22,6 +22,10 @@ class YoloLoss(nn.Module):
 
     EPSILON = 1e-8
 
+    # Log some additional stats about the loss values
+    #
+    aux_stats = {}
+
     self.log_counter += 1
     yolo = self.yolo
     batch_size = current.data.size(0)
@@ -164,6 +168,14 @@ class YoloLoss(nn.Module):
     self.log_tensor("loss_objectness_box")
     self.log_tensor("loss_objectness_nobox")
 
+    # We're duplicating some code here, just for logging purposes, by summing and averaging over the batch size each of these loss
+    # components, which are included in the total loss value
+    #
+    aux_stats["loss_xy"] = (loss_box_center.sum() / batch_size).item()
+    aux_stats["loss_wh"] = (loss_box_size.sum() / batch_size).item()
+    aux_stats["loss_obj_t"] = (loss_objectness_box.sum() / batch_size).item()
+    aux_stats["loss_obj_f"] = (loss_objectness_nobox.sum() / batch_size).item()
+
     loss = (  loss_box_center * yolo.lambda_coord \
             + loss_box_size * yolo.lambda_coord \
             + loss_objectness_box \
@@ -203,9 +215,10 @@ class YoloLoss(nn.Module):
       #See https://pytorch.org/docs/stable/generated/torch.nn.CrossEntropyLoss.html
 
       loss = loss + classificiation_loss
-
+      aux_stats["loss_class"] = (classificiation_loss.sum() / batch_size).item()
 
     loss = loss.sum() / batch_size
+    JG.aux_stats = aux_stats
 
     if loss.data > 2000:
       die("Loss has ballooned to:", loss.data)
