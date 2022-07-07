@@ -30,6 +30,8 @@ import java.util.Map;
 
 public class LogProcessor extends BaseObject implements Runnable {
 
+  public static final boolean ISSUE_61 = true;
+
   public void start(CompileImagesConfig compileImagesConfig, ModelWrapper model) {
     checkState(mState == STATE_READY);
     mConfig = compileImagesConfig;
@@ -89,14 +91,26 @@ public class LogProcessor extends BaseObject implements Runnable {
       File logDir = config().targetDirTrain();
       DirWalk w = new DirWalk(logDir).withRecurse(false).withExtensions("json");
       for (File infoFile : w.files()) {
+        if (ISSUE_61) {
+          String ext = Files.getExtension(infoFile);
+          if (!ext.equals("json")) {
+            die("DirWalk is returning a file without a json ext:", Files.infoMap(infoFile));
+          }
+        }
         LogItem ti = null;
-        try {
+
+        if (ISSUE_61) {
+
+          try {
+            ti = parseLogItem(infoFile);
+          } catch (Throwable t) {
+            prog("*** failed to parseLogItem, file:", INDENT, Files.infoMap(infoFile));
+            prog("logDir:", INDENT, Files.infoMap(logDir));
+            prog("exception:", t);
+            continue;
+          }
+        } else {
           ti = parseLogItem(infoFile);
-        } catch (Throwable t) {
-          prog("*** failed to parseLogItem, file:", INDENT, Files.infoMap(infoFile));
-          prog("logDir:", INDENT, Files.infoMap(logDir));
-          prog("exception:", t);
-          continue;
         }
 
         if (ti.illegalValuesFound()) {
