@@ -1,4 +1,3 @@
-from gen.yolo import Yolo
 from pycore.pytorch_util import *
 from gen.neural_network import NeuralNetwork
 from pycore.tensor_logger import TensorLogger
@@ -44,14 +43,10 @@ class YoloLoss(nn.Module):
     self.log_tensor(".ground_obj_t_mask")
     self.log_tensor(".ground_obj_f_mask")
 
-
     ground_cxcy = target[:, :, :, F_BOX_CX:F_BOX_CY + 1]
     ground_wh   = target[:, :, :, F_BOX_W:F_BOX_H + 1]
     self.log_tensor(".ground_cxcy")
     self.log_tensor(".ground_wh")
-
-    # TODO: classification loss
-    #class_prob_end = F_CLASS_PROBABILITIES + y.category_count
 
     pred_cxcy = current[:, :, :, F_BOX_CX:F_BOX_CY+1]
     self.log_tensor(".pred_cxcy")
@@ -142,33 +137,28 @@ class YoloLoss(nn.Module):
 
     # If logging, we should mask out cells where there are no ground truth boxes
     #
-    self.log_tensor("iou", iou * ground_obj_t_mask)
-    self.log_tensor("norm_giou", norm_giou * ground_obj_t_mask)
+    if False:
+      self.log_tensor("iou", iou * ground_obj_t_mask)
+      self.log_tensor("norm_giou", norm_giou * ground_obj_t_mask)
 
     pred_objectness = current[:, :, :, F_CONFIDENCE:F_CONFIDENCE+1]
-    self.log_tensor("pred_objectness")
+    self.log_tensor(".pred_objectness")
 
 
     # Let's add the position and dimensions error back in
 
     loss_box_center = (squared_difference(pred_cx, ground_cx) + squared_difference(pred_cy, ground_cy)) * ground_obj_t_mask
     loss_box_size   = (squared_difference(pred_width, ground_width) + squared_difference(pred_height, ground_height)) * ground_obj_t_mask
-    self.log_tensor("loss_box_center")
-    self.log_tensor("loss_box_size")
-
-    if False:
-      # loss_box_pos is loss for inaccurately predicted ground object box positions
-      #
-      loss_box_pos = (ground_obj_t_mask * (1.0 - norm_giou)) * yolo.lambda_coord
-      self.log_tensor("loss_box_pos")
+    self.log_tensor(".loss_box_center")
+    self.log_tensor(".loss_box_size")
 
     # loss_objectness_box :  loss for inaccurately predicting objectness when a ground box *exists*
     # loss_objectness_nobox :  loss for inaccurately predicting objectness when a ground box *doesn't exist*
     #
     loss_objectness_box   = ground_obj_t_mask * squared_difference(norm_giou, pred_objectness)
     loss_objectness_nobox = ground_obj_f_mask * pred_objectness
-    self.log_tensor("loss_objectness_box")
-    self.log_tensor("loss_objectness_nobox")
+    self.log_tensor(".loss_objectness_box")
+    self.log_tensor(".loss_objectness_nobox")
 
     if include_aux_stats:
       # We're duplicating some code here, just for logging purposes, by summing and averaging over the batch size each of these loss
@@ -189,25 +179,16 @@ class YoloLoss(nn.Module):
     #
     if yolo.category_count > 1:
       ground_category_onehot = target[:, :, :, F_CLASS_PROBABILITIES:F_CLASS_PROBABILITIES + yolo.category_count]
-      #self.log_tensor("ground_category_onehot")
-
-      # We need to cast to a float if we want the logger to handle it
-      #self.log_tensor("ground_box_class", ground_box_class.type(torch.FloatTensor))
-
       pred_class = current[:, :, :, F_CLASS_PROBABILITIES:F_CLASS_PROBABILITIES + yolo.category_count]
-      # Note: our logging collapses some of the dimensions, so the n probabilities all appear to 'stretch out' the displayed width
-      #self.log_tensor("pred_class")
 
       if self.cross_entropy_loss is None:
         self.cross_entropy_loss = nn.CrossEntropyLoss(reduction="none")
 
-      # I think we need to reshape the input and target using views
+      # We need to reshape the input and target using views
       # so the 'minibatch' includes all the probability records, e.g.
       # images * cells * anchors...
-
       input_view = pred_class.view(-1, yolo.category_count)
       target_view = ground_category_onehot.view(-1, yolo.category_count)
-
       ce_loss_view = self.cross_entropy_loss(input_view, target_view)
 
       # Reshape the loss so we again have results for each image, cell, anchor...
@@ -215,7 +196,7 @@ class YoloLoss(nn.Module):
       img_count, cell_count, anchor_count, _ = pred_class.shape
       classificiation_loss = ce_loss_view.view(img_count,cell_count,anchor_count,-1)
 
-      self.log_tensor("classificiation_loss")
+      self.log_tensor(".classificiation_loss")
       #See https://pytorch.org/docs/stable/generated/torch.nn.CrossEntropyLoss.html
 
       loss = loss + classificiation_loss
@@ -226,6 +207,7 @@ class YoloLoss(nn.Module):
     if include_aux_stats:
       JG.aux_stats = aux_stats
 
+    todo("Have Java code handle this")
     if loss.data > 2000:
       die("Loss has ballooned to:", loss.data)
     return loss
@@ -234,6 +216,4 @@ class YoloLoss(nn.Module):
   # Send a tensor for logging
   #
   def log_tensor(self, name, t=None):
-    if False and warning("omitting logging tensor"):
-      return
     TensorLogger.default_instance.report_grid(t, name, size=self.grid_size)

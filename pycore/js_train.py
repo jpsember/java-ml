@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import time
 
 import torch.cuda
 
@@ -35,12 +34,11 @@ class JsTrain:
     self.snapshot_next_epoch = 2
 
     script_path = os.path.realpath(train_script_file)
-    self._proj_path = os.path.dirname(script_path)
+    self.cached_proj_path = os.path.dirname(script_path)
 
     t = self.proj_path("train_info")
     JG.train_param = read_object(TrainParam.default_instance, os.path.join(t, "train_param.json"))
     self.network:NeuralNetwork = read_object(NeuralNetwork.default_instance, os.path.join(t,"network.json"))
-    self.dump_test_labels_counter = JG.train_param.dump_test_labels_count
 
     t = self.network.layers[0].input_volume
     self.img_width = t.width
@@ -95,9 +93,9 @@ class JsTrain:
 
 
   def proj_path(self, rel_path : str):
-    if self._proj_path is None:
+    if self.cached_proj_path is None:
       return rel_path
-    return os.path.join(self._proj_path, rel_path)
+    return os.path.join(self.cached_proj_path, rel_path)
 
 
   def prepare_pytorch(self):

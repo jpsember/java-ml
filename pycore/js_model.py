@@ -1,9 +1,6 @@
 #!/usr/bin/env python3
-from gen.train_param import TrainParam
-from pycore.pytorch_util import *
 from gen.neural_network import NeuralNetwork
 from pycore.module_wrapper import *
-import torch.nn.functional as F
 from pycore.jg import JG
 
 
@@ -125,4 +122,3 @@ class JsModel(nn.Module):
 
   def forward(self, x):
     return self.layers(x)
-
