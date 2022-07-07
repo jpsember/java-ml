@@ -10,3 +10,4 @@ class JG:
   device = None
   train_param: TrainParam = None
   aux_stats: dict = None
+  batch_number: int = None

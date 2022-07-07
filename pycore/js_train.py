@@ -307,7 +307,7 @@ class JsTrain:
     for batch in range(self.batch_total):
       img_index = batch * self.batch_size
       self.log("batch:", batch, "image offset:", img_index)
-
+      JG.batch_number = batch
       tensor_images, tensor_labels = self.read_images(train_images_path, train_labels_path, img_index, self.batch_size)
       tensor_images, tensor_labels = tensor_images.to(self.device), tensor_labels.to(self.device)
       self.optimizer.zero_grad()
@@ -368,9 +368,6 @@ class JsTrain:
         JG.aux_stats = None
       TensorLogger.default_instance.add_stats(stats_map)
 
-      todo("Get rid of the checking the train loss here; have the Java code handle this")
-      #if self.stat_train_loss.value_sm <= JG.train_param.target_loss:
-      #  done_msg = "Train loss reached target"
       self.epoch_number += 1
       if self.stop_signal_received():
         done_msg = "Stop signal received"
