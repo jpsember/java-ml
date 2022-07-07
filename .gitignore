@@ -49,4 +49,8 @@ example_yolo/rs.sh
 project_config
 secrets
 
+
+progress.txt
+
+
 __pycache__

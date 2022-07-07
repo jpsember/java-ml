@@ -231,7 +231,7 @@ class JsTrain:
         train_set = self.train_set_list[best_cursor]
         break
 
-      if total_wait_time > 30:
+      if total_wait_time > 120:
         self.quit_session("long delay waiting for train data from streaming service")
         return None
 

@@ -35,5 +35,4 @@ fields {
   //
   File snapshot_dir;
 
-  bool log_labels;
 }

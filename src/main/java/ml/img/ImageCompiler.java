@@ -66,11 +66,6 @@ public final class ImageCompiler extends BaseObject {
 
     DataType imageDataType = model.network().imageDataType();
 
-    if (false && config().logLabels()) {
-      todo("are we transforming images correctly?");
-      pr(VERT_SP, "processing", entries().size(), "entries");
-    }
-
     for (ImageEntry entry : entries()) {
       BufferedImage img = ImgUtil.read(entry.imageFile());
       // We don't need to validate the images except on the first pass through them
@@ -139,15 +134,7 @@ public final class ImageCompiler extends BaseObject {
         throw notSupported("ImageDataType:", imageDataType);
       }
 
-      if (true && config().logLabels()) {
-        pr("Transforming ScriptElements:", image.annotations().size());
-      }
-
       model.accept(image);
-
-      if (true && config().logLabels()) {
-        pr(model.renderLabels());
-      }
 
       if (mInspector.used()) {
         // Parse the labels we generated, and write as the annotations to an inspection image

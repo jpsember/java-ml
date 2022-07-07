@@ -7,6 +7,7 @@ import gen.TensorStats;
 import gen.LogItem;
 import gen.Vol;
 import js.base.BaseObject;
+import js.base.BasePrinter;
 import js.base.DateTimeTools;
 import js.file.DirWalk;
 import js.file.Files;
@@ -35,6 +36,7 @@ public class LogProcessor extends BaseObject implements Runnable {
     mImageVolume = NetworkUtil.determineInputImageVolume(mNetwork);
     mImageSize = VolumeUtil.spatialDimension(mImageVolume);
     mState = STATE_RUNNING;
+
     mThread = new Thread(this);
     mThread.setDaemon(true);
     mThread.start();
@@ -60,10 +62,24 @@ public class LogProcessor extends BaseObject implements Runnable {
     try {
       auxRun();
     } catch (Throwable t) {
-      pr("LogProcessor caught exception:", t);
+      prog("LogProcessor caught exception:", t);
       mErrorFlag = true;
       stop();
     }
+  }
+
+  /**
+   * Append to progress file
+   */
+  private void prog(Object... messages) {
+    String result = BasePrinter.toString(messages);
+    pf().write(result);
+  }
+
+  private ProgressFile pf() {
+    if (mProgressFile == null)
+      mProgressFile = new ProgressFile(config());
+    return mProgressFile;
   }
 
   private void auxRun() {
@@ -75,9 +91,9 @@ public class LogProcessor extends BaseObject implements Runnable {
         try {
           ti = parseLogItem(infoFile);
         } catch (Throwable t) {
-          pr("*** failed to parseLogItem, file:", INDENT, Files.infoMap(infoFile));
-          pr("logDir:", INDENT, Files.infoMap(logDir));
-          pr("exception:", t);
+          prog("*** failed to parseLogItem, file:", INDENT, Files.infoMap(infoFile));
+          prog("logDir:", INDENT, Files.infoMap(logDir));
+          prog("exception:", t);
           continue;
         }
 
@@ -85,10 +101,10 @@ public class LogProcessor extends BaseObject implements Runnable {
           String formatted = prettyPrint(ti);
           if (formatted.length() > 500)
             formatted = formatted.substring(0, 500) + "...";
-          pr("======== Tensor name:", ti.message());
-          pr("Illegal values found !");
-          pr(formatted);
-          pr("======== Tensor name:", ti.message());
+          prog("======== Tensor name:", ti.message());
+          prog("Illegal values found !");
+          prog(formatted);
+          prog("======== Tensor name:", ti.message());
         }
         int tensorTypeCount = 0;
         if (ti.tensorBytes() != null)
@@ -98,7 +114,7 @@ public class LogProcessor extends BaseObject implements Runnable {
         checkArgument(tensorTypeCount <= 1, "multiple tensor types stored in message", brief(ti));
 
         if (ti.id() <= mPrevId) {
-          pr("*** log item not greater than prev:", mPrevId, INDENT, ti);
+          prog("*** log item not greater than prev:", mPrevId, INDENT, ti);
         } else {
           checkState(ti.id() > mPrevId, "LogItem ids not strictly increasing");
           mPrevId = ti.id();
@@ -146,7 +162,7 @@ public class LogProcessor extends BaseObject implements Runnable {
       sb.append(msg);
     }
     addLF(sb);
-    System.out.print(sb.toString());
+    prog(sb.toString());
   }
 
   private void bufferLogItem(LogItem logItem, int familySize) {
@@ -207,11 +223,6 @@ public class LogProcessor extends BaseObject implements Runnable {
           "is not a multiple of image volume", bytesPerImage);
       String setName = String.format("%05d_", imgRec.familyId()) + "_%02d";
 
-      final boolean show = false && alert("showing snapshot labels");
-      JSMap m = null;
-      if (show) {
-        m = map();
-      }
       for (int i = 0; i < batchSize; i++) {
         byte[] imgb = Arrays.copyOfRange(imgRec.tensorBytes(), bytesPerImage * i, bytesPerImage * (i + 1));
         if (ModelWrapper.ISSUE_42_PIXEL_ORDER) {
@@ -230,13 +241,6 @@ public class LogProcessor extends BaseObject implements Runnable {
           int imgLblLen = targetBuffer.length;
           checkArgument(batchSize * imgLblLen == labelSets.length, "label size * batch != labels length");
           System.arraycopy(labelSets, imgLblLen * i, targetBuffer, 0, imgLblLen);
-
-          if (show) {
-            StringBuilder sb = new StringBuilder();
-            for (float f : targetBuffer)
-              sb.append(String.format("%4d ", (int) (f * 100)));
-            m.put(String.format("img%02d", i), sb.toString());
-          }
         }
           break;
         default:
@@ -244,13 +248,9 @@ public class LogProcessor extends BaseObject implements Runnable {
         }
 
         Script.Builder script = Script.newBuilder();
-        if (config().logLabels())
-          pr("Model produced labels:", CR, mModel.renderLabels());
         script.items(mModel.transformModelOutputToScredit());
         ScriptUtil.write(files(), script, ScriptUtil.scriptPathForImage(imgPath));
       }
-      if (show)
-        pr("labels:", INDENT, m);
     }
       break;
     }
@@ -451,4 +451,5 @@ public class LogProcessor extends BaseObject implements Runnable {
   private File mTargetProjectDir;
   private File mTargetProjectScriptsDir;
   private boolean mErrorFlag;
+  private ProgressFile mProgressFile;
 }

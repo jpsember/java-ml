@@ -301,14 +301,12 @@ public final class CompileImagesOper extends AppOper {
     String savedChecksum = Files.readString(networkChecksumFile, "");
     String currentChecksum = "" + getNetworkForChecksum().toJson().toString().hashCode();
     if (!currentChecksum.equals(savedChecksum)) {
-      if (!alert("NOT deleting checkpoints")) {
-        SortedMap<Integer, File> epochMap = getCheckpointEpochs();
-        if (!epochMap.isEmpty()) {
-          pr("...deleting existing checkpoints, since network has changed");
-        }
-        for (File f : epochMap.values())
-          files().deleteFile(f);
+      SortedMap<Integer, File> epochMap = getCheckpointEpochs();
+      if (!epochMap.isEmpty()) {
+        pr("...deleting existing checkpoints, since network has changed");
       }
+      for (File f : epochMap.values())
+        files().deleteFile(f);
       files().writeString(networkChecksumFile, currentChecksum);
     }
   }
