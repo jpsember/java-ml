@@ -413,7 +413,7 @@ class JsTrain:
         "loss" : self.stat_train_loss.value
       })
 
-      s = f"Epoch {self.epoch_number:4}   {self.stat_train_loss.info()}"
+      s = ""
       if self.stat_train_loss.value_sm <= JG.train_param.target_loss:
         done_msg = "Train loss reached target"
       if self.with_test():
@@ -422,7 +422,8 @@ class JsTrain:
         if self.test_target_reached():
           done_msg = "Test accuracy reached target"
         s += "   " + self.test_report()
-      report(s)
+      if s != "":
+        report(s)
       self.epoch_number += 1
       if self.stop_signal_received():
         done_msg = "Stop signal received"
