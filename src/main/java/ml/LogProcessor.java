@@ -1,7 +1,6 @@
 package ml;
 
 import gen.CompileImagesConfig;
-import gen.DataType;
 import gen.FloatFormat;
 import gen.NeuralNetwork;
 import gen.TensorStats;
@@ -182,9 +181,6 @@ public class LogProcessor extends BaseObject implements Runnable {
     case SNAPSHOT:
       processSnapshotItem(familySet);
       break;
-    case ISSUE_42:
-      processIssue42(familySet);
-      break;
     }
   }
 
@@ -267,77 +263,6 @@ public class LogProcessor extends BaseObject implements Runnable {
     if (x.tensorFloats() != null)
       m.put("tensor_floats", x.tensorFloats().length);
     return m;
-  }
-
-  private void show(String message, LogItem x) {
-    pr(message, INDENT, brief(x));
-  }
-
-  private void processIssue42(LogItem[] family) {
-    if (Files.empty(config().snapshotDir()))
-      return;
-    LogItem trainImagesRec = family[0];
-    LogItem trainLabelsRec = family[1];
-    show("trainImagesRec:", trainImagesRec);
-    show("trainLabelsRec:", trainLabelsRec);
-
-    LogItem imgLossRec = family[2];
-    LogItem lblLossRec = family[3];
-    if (false && imgLossRec == null && lblLossRec == null)
-      pr("");
-
-    Vol imgVol = NetworkUtil.determineInputImageVolume(mNetwork);
-    checkArgument(mNetwork.imageDataType() == DataType.UNSIGNED_BYTE);
-    checkArgument(mNetwork.labelDataType() == DataType.FLOAT32);
-    int imgLength = trainImagesRec.tensorBytes().length;
-
-    // We have a stacked batch of images.
-    int bytesPerImage = mImageSize.product() * mImageVolume.depth();
-
-    int batchSize = imgLength / bytesPerImage;
-    checkArgument(imgLength % bytesPerImage == 0, "images length", imgLength,
-        "is not a multiple of image volume", bytesPerImage);
-    String setName = "" + trainImagesRec.familyId() + "_%02d";
-
-    byte[] imgb = new byte[bytesPerImage];
-    checkArgument(mImageVolume.depth() == 3, "not supported for channels != 3");
-
-    for (int i = 0; i < batchSize; i++) {
-      // The model wants the shape to be (image, channel, column, row)
-      // which is different from the BufferedImage (row, column, channel),
-      // so reverse this interleaving
-      //
-      // ....but what about the ordering of the rows and columns?
-      //
-      {
-        byte[] src = trainImagesRec.tensorBytes();
-        int j = bytesPerImage * i;
-        int bytesPerChannel = bytesPerImage / 3;
-        int q = 0;
-        for (int k = 0; k < bytesPerImage; k += 3, q++) {
-          imgb[k] = src[j + q];
-          imgb[k + 1] = src[j + bytesPerChannel + q];
-          imgb[k + 2] = src[j + bytesPerChannel * 2 + q];
-        }
-      }
-      BufferedImage img = ImgUtil.bytesToBGRImage(imgb, VolumeUtil.spatialDimension(imgVol));
-      File baseFile = new File(targetProjectDir(), String.format(setName, i));
-      File imgPath = Files.setExtension(baseFile, ImgUtil.EXT_JPEG);
-      ImgUtil.writeJPG(files(), img, imgPath, null);
-
-      todo("do something with the predicted labels instead?");
-      {
-        float[] targetBuffer = mModel.labelBufferFloats();
-        float[] labelSets = trainLabelsRec.tensorFloats();
-        int imgLblLen = targetBuffer.length;
-        checkArgument(batchSize * imgLblLen == labelSets.length, "label size * batch != labels length");
-        System.arraycopy(labelSets, imgLblLen * i, targetBuffer, 0, imgLblLen);
-      }
-
-      Script.Builder script = Script.newBuilder();
-      script.items(mModel.transformModelInputToScredit());
-      ScriptUtil.write(files(), script, ScriptUtil.scriptPathForImage(imgPath));
-    }
   }
 
   private File targetProjectDir() {
