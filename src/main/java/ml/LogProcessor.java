@@ -74,8 +74,10 @@ public class LogProcessor extends BaseObject implements Runnable {
   private void prog(Object... messages) {
     String result = BasePrinter.toString(messages);
     pf().write(result);
-    // Write to stdout as well
-    System.out.println(result);
+    if (false) {
+      // Write to stdout as well?  Maybe better handled externally by tail command
+      System.out.println(result);
+    }
   }
 
   private ProgressFile pf() {
