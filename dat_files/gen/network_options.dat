@@ -13,7 +13,7 @@ fields {
   // Factor for applying non-max suppression; if zero, filter is omitted.
   // Otherwise, this is the maximum intersection over union
   //
-  float max_i_over_u = 0.6;
+  float max_i_over_u = 0.4;
   // -----
 
   //--------------------------------------------------------------
