@@ -63,6 +63,7 @@ public class LogProcessor extends BaseObject implements Runnable {
   @Override
   public void run() {
     log("starting");
+    prog("Starting training session at:", DateTimeTools.humanTimeString());
     try {
       auxRun();
     } catch (Throwable t) {
