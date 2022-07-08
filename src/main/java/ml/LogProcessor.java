@@ -63,7 +63,7 @@ public class LogProcessor extends BaseObject implements Runnable {
   @Override
   public void run() {
     log("starting");
-    pf().write("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n");
+    pf().write("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n");
     prog(DASHES, CR, "Starting training session at:", DateTimeTools.humanTimeString());
     try {
       auxRun();
@@ -491,7 +491,7 @@ public class LogProcessor extends BaseObject implements Runnable {
       if (!isFloat()) {
         sb.append(String.format("%s: %d", nm, Math.round(mValue)));
       } else {
-        sb.append(String.format("%s: %5.2f", nm, mSmoothedValue));
+        sb.append(String.format("%s: %6.3f", nm, mSmoothedValue));
       }
     }
 
