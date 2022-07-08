@@ -63,8 +63,8 @@ public class LogProcessor extends BaseObject implements Runnable {
   @Override
   public void run() {
     log("starting");
-    prog("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n", DASHES, CR,
-        "Starting training session at:", DateTimeTools.humanTimeString());
+    pf().write("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n");
+    prog(DASHES, CR, "Starting training session at:", DateTimeTools.humanTimeString());
     try {
       auxRun();
     } catch (Throwable t) {
