@@ -63,7 +63,8 @@ public class LogProcessor extends BaseObject implements Runnable {
   @Override
   public void run() {
     log("starting");
-    prog("Starting training session at:", DateTimeTools.humanTimeString());
+    prog("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n", DASHES, CR,
+        "Starting training session at:", DateTimeTools.humanTimeString());
     try {
       auxRun();
     } catch (Throwable t) {
@@ -101,7 +102,6 @@ public class LogProcessor extends BaseObject implements Runnable {
         LogItem ti = null;
 
         if (ISSUE_61) {
-
           try {
             ti = parseLogItem(infoFile);
           } catch (Throwable t) {
