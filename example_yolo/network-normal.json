@@ -34,11 +34,8 @@
               "category_count" : 3,
               "block_size" : [32,32],
               "anchor_boxes_pixels" : [[100,100]],
-
               // "lambda_coord" : 5.0,
-
-              // Seems to get stuck unless this is smaller than the default (0.5):
-              "lambda_noobj" : 0.05,
+              // "lambda_noobj" : 0.5,
         },
 
         // These are the defaults and can be omitted:

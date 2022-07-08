@@ -152,7 +152,9 @@ class YoloLoss(nn.Module):
     # Let's add the position and dimensions error back in
 
     loss_box_center = (squared_difference(pred_cx, ground_cx) + squared_difference(pred_cy, ground_cy)) * ground_obj_t_mask
-    loss_box_size   = (squared_difference(pred_width, ground_width) + squared_difference(pred_height, ground_height)) * ground_obj_t_mask
+    # As in the original Yolo implementation, take square roots of dimensions to reduce weight of larger objects
+    loss_box_size   = (squared_difference(torch.sqrt(pred_width), torch.sqrt(ground_width)) \
+                       + squared_difference(torch.sqrt(pred_height), torch.sqrt(ground_height))) * ground_obj_t_mask
     self.log_tensor(".loss_box_center")
     self.log_tensor(".loss_box_size")
 
@@ -190,25 +192,27 @@ class YoloLoss(nn.Module):
       self.log_tensor(".classification_loss")
       #See https://pytorch.org/docs/stable/generated/torch.nn.CrossEntropyLoss.html
 
+    # We sum a loss tensor's components to a single (scalar) value.
+    # Give the resulting tensors the prefix 'scalar_' to denote this.
 
-    loss1_box_center = loss_box_center.sum() * yolo.lambda_coord
-    loss1_box_size = loss_box_size.sum() * yolo.lambda_coord
-    loss1_objectness_box = loss_objectness_box.sum()
-    loss1_objectness_nobox = loss_objectness_nobox.sum() * (yolo.lambda_noobj / self.boxes_per_image)
+    scalar_box_center = loss_box_center.sum() * yolo.lambda_coord
+    scalar_box_size = loss_box_size.sum() * yolo.lambda_coord
+    scalar_objectness_box = loss_objectness_box.sum()
+    scalar_objectness_nobox = loss_objectness_nobox.sum() * (yolo.lambda_noobj / self.boxes_per_image)
     if classification_loss is not None:
-      loss1_classification = classification_loss.sum()
+      scalar_classification = classification_loss.sum()
 
     if include_aux_stats:
-      self.add_aux_stat("loss_xy",loss1_box_center)
-      self.add_aux_stat("loss_wh",loss1_box_size)
-      self.add_aux_stat("loss_obj_t",loss1_objectness_box)
-      self.add_aux_stat("loss_obj_f", loss1_objectness_nobox)
-      self.add_aux_stat("loss_class", loss1_classification)
+      self.add_aux_stat("loss_xy",scalar_box_center)
+      self.add_aux_stat("loss_wh",scalar_box_size)
+      self.add_aux_stat("loss_obj_t",scalar_objectness_box)
+      self.add_aux_stat("loss_obj_f", scalar_objectness_nobox)
+      self.add_aux_stat("loss_class", scalar_classification)
 
-    loss = loss1_box_center + loss1_box_size + loss1_objectness_box  + loss1_objectness_nobox
+    scalar_loss = scalar_box_center + scalar_box_size + scalar_objectness_box  + scalar_objectness_nobox
     if classification_loss is not None:
-      loss = loss + loss1_classification
-    return loss / self.batch_size
+      scalar_loss = scalar_loss + scalar_classification
+    return scalar_loss / self.batch_size
 
 
   # Calculate loss component from a tensor and store in the aux_stats dict.
