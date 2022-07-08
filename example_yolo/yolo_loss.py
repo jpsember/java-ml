@@ -13,8 +13,11 @@ class YoloLoss(nn.Module):
     self.num_anchors = anchor_box_count(yolo)
     self.grid_size = grid_size(yolo)
     self.grid_cell_total = self.grid_size.product()
+    self.boxes_per_image = self.grid_cell_total * self.num_anchors
     self.log_counter = 0
     self.cross_entropy_loss = None
+    self.batch_size = None
+    self.aux_stats = None
 
 
   def forward(self, current, target):
@@ -25,15 +28,16 @@ class YoloLoss(nn.Module):
     #
     include_aux_stats = (JG.batch_number == 0)
     if include_aux_stats:
-      aux_stats = {}
+      self.aux_stats = {}
+      JG.aux_stats = self.aux_stats
 
     self.log_counter += 1
     yolo = self.yolo
-    batch_size = current.data.size(0)
+    self.batch_size = current.data.size(0)
 
     # Each of these dimensions corresponds to (D_IMAGE, D_GRIDCELL, ..., D_BOXINFO)
     #
-    current = current.view(batch_size, self.grid_cell_total, self.num_anchors, -1)  # -1 : infer remaining
+    current = current.view(self.batch_size, self.grid_cell_total, self.num_anchors, -1)  # -1 : infer remaining
 
     # Reshape the target to match the current's shape
     target = target.view(current.shape)
@@ -160,20 +164,7 @@ class YoloLoss(nn.Module):
     self.log_tensor(".loss_objectness_box")
     self.log_tensor(".loss_objectness_nobox")
 
-    if include_aux_stats:
-      # We're duplicating some code here, just for logging purposes, by summing and averaging over the batch size each of these loss
-      # components, which are included in the total loss value.
-      # But we are now only doing this for the first batch
-      #
-      aux_stats["loss_xy"] = (loss_box_center.sum() / batch_size).item()
-      aux_stats["loss_wh"] = (loss_box_size.sum() / batch_size).item()
-      aux_stats["loss_obj_t"] = (loss_objectness_box.sum() / batch_size).item()
-      aux_stats["loss_obj_f"] = (loss_objectness_nobox.sum() / batch_size).item()
-
-    loss = (  loss_box_center * yolo.lambda_coord \
-            + loss_box_size * yolo.lambda_coord \
-            + loss_objectness_box \
-            + loss_objectness_nobox * yolo.lambda_noobj )
+    classification_loss = None
 
     # Include a classification loss if there is more than a single category
     #
@@ -194,23 +185,38 @@ class YoloLoss(nn.Module):
       # Reshape the loss so we again have results for each image, cell, anchor...
       #
       img_count, cell_count, anchor_count, _ = pred_class.shape
-      classificiation_loss = ce_loss_view.view(img_count,cell_count,anchor_count,-1)
+      classification_loss = ce_loss_view.view(img_count,cell_count,anchor_count,-1)
 
-      self.log_tensor(".classificiation_loss")
+      self.log_tensor(".classification_loss")
       #See https://pytorch.org/docs/stable/generated/torch.nn.CrossEntropyLoss.html
 
-      loss = loss + classificiation_loss
-      if include_aux_stats:
-        aux_stats["loss_class"] = (classificiation_loss.sum() / batch_size).item()
 
-    loss = loss.sum() / batch_size
+    loss1_box_center = loss_box_center.sum() * yolo.lambda_coord
+    loss1_box_size = loss_box_size.sum() * yolo.lambda_coord
+    loss1_objectness_box = loss_objectness_box.sum()
+    loss1_objectness_nobox = loss_objectness_nobox.sum() * (yolo.lambda_noobj / self.boxes_per_image)
+    if classification_loss is not None:
+      loss1_classification = classification_loss.sum()
+
     if include_aux_stats:
-      JG.aux_stats = aux_stats
+      self.add_aux_stat("loss_xy",loss1_box_center)
+      self.add_aux_stat("loss_wh",loss1_box_size)
+      self.add_aux_stat("loss_obj_t",loss1_objectness_box)
+      self.add_aux_stat("loss_obj_f", loss1_objectness_nobox)
+      self.add_aux_stat("loss_class", loss1_classification)
 
-    todo("Have Java code handle this")
-    if loss.data > 2000:
-      die("Loss has ballooned to:", loss.data)
-    return loss
+    loss = loss1_box_center + loss1_box_size + loss1_objectness_box  + loss1_objectness_nobox
+    if classification_loss is not None:
+      loss = loss + loss1_classification
+    return loss / self.batch_size
+
+
+  # Calculate loss component from a tensor and store in the aux_stats dict.
+  # If tensor is None, does nothing
+  #
+  def add_aux_stat(self, key, tensor):
+    if tensor is not None:
+      self.aux_stats[key] = tensor.item() / self.batch_size
 
 
   # Send a tensor for logging
