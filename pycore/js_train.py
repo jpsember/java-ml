@@ -330,6 +330,7 @@ class JsTrain:
 
 
   def quit_session(self):
+    todo("clean up and simplify quit_session vs set_done_msg")
     if not self.abort_flag:
       pr("...quitting training session, reason:", self.done_msg)
       self.abort_flag = True
@@ -480,7 +481,7 @@ class JsTrain:
         if a == "checkpoint":
           self.save_checkpoint()
         elif a == "stop":
-          self.set_done_message("stop command received")
+          self.set_done_msg("stop command received")
         else:
           die("Unrecognized command:", cmd)
 
