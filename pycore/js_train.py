@@ -350,7 +350,6 @@ class JsTrain:
       self.train()
       if self.abort_flag:
         break
-      self.perform_delay()
 
       # Try our new logging
       stats_map = {
@@ -484,18 +483,6 @@ class JsTrain:
   def log(self, *args):
     if self.verbose:
       pr("(verbose:)", *args)
-
-
-  def perform_delay(self):
-    t = JG.train_param.min_batch_time
-    if t <= 0:
-      return
-    warning("Imposing minimum batch time:", t)
-    c = time_ms()
-    p = none_to(self.prev_batch_time, c)
-    self.prev_batch_time = c
-    if c - p < t:
-      time.sleep(t / 1000.0)
 
 
 # Determine if train_set is not None and not the default instance

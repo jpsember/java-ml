@@ -31,20 +31,6 @@ fields {
   //
   int batch_size = 32;
 
-  // If nonzero, dumps the computed test labels this many times
-  //
-  int dump_test_labels_count = 0;
-
-
-  // Number of images to include in the test set (zero disables test)
-  //
-  int test_size = 20;
-
-  // If nonzero, imposes a minimum duration between training (or test) batches;
-  // to slow down the output
-  //
-  long min_batch_time = 0;
-
 
   // Have pytorch add extra checks for things like NaN values
   //
