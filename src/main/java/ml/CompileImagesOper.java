@@ -25,7 +25,7 @@ import ml.img.ImageCompiler;
  */
 public final class CompileImagesOper extends AppOper {
 
-  public static final boolean ISSUE_64 = alert("ISSUE_64 in effect");
+  public static final boolean ISSUE_65 = true && alert("ISSUE_65 in effect");
 
   @Override
   public String userCommand() {
@@ -209,6 +209,9 @@ public final class CompileImagesOper extends AppOper {
 
       int recentCheckpoint = trimCheckpoints();
       addCheckpoint(recentCheckpoint);
+
+      if (trainTargetReached())
+        break;
     }
   }
 
@@ -233,6 +236,29 @@ public final class CompileImagesOper extends AppOper {
       pr("...a lot of time has elapsed since we had to generate files; assuming client is not running");
       return true;
     }
+    return false;
+  }
+
+  private boolean trainTargetReached() {
+    float targetLoss = trainParam().targetLoss();
+    if (targetLoss > 0) {
+      StatRecord loss = lp().findStat(StatRecord.LOSS);
+      if (loss != null && loss.smoothedValue() <= targetLoss) {
+        lp().log("Target loss reached, stopping training");
+        sendCommand("stop");
+        return true;
+      }
+    }
+    int targetEpoch = trainParam().targetEpoch();
+    if (targetEpoch > 0) {
+      StatRecord epoch = lp().findStat(StatRecord.EPOCH);
+      if (epoch != null && epoch.intValue() >= targetEpoch) {
+        lp().log("Target epoch reached, stopping training");
+        sendCommand("stop");
+        return true;
+      }
+    }
+
     return false;
   }
 
@@ -369,14 +395,12 @@ public final class CompileImagesOper extends AppOper {
       mLastCheckpointTime = currTime;
     }
     long msUntilSave = (mLastCheckpointTime + mCheckpointIntervalMs) - currTime;
-    if (ISSUE_64)
-      pr("ms until save:", msUntilSave);
     if (msUntilSave > 0)
       return;
 
     mCheckpointIntervalMs = Math.min((long) (mCheckpointIntervalMs * 1.2f), 10 * 60 * 1000);
     mLastCheckpointTime = currTime;
-    sendCommand(CmdItem.newBuilder().args(arrayList("checkpoint")));
+    sendCommand("checkpoint");
   }
 
   private long mLastCheckpointTime;
@@ -421,6 +445,12 @@ public final class CompileImagesOper extends AppOper {
     Files.assertDoesNotExist(tmpFile, "sendCommand temporary file");
     files().write(tmpFile, cmdItem);
     files().moveFile(tmpFile, cmdFile);
+  }
+
+  private void sendCommand(String... args) {
+    CmdItem.Builder cmdItem = CmdItem.newBuilder();
+    cmdItem.args(arrayList(args));
+    sendCommand(cmdItem);
   }
 
   private int mOutCommandId;

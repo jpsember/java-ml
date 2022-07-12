@@ -29,6 +29,7 @@ class JsTrain:
     self.optimizer = None
     self.abort_flag = False
     self.train_loss = None
+    self.done_msg:str = None
 
     self.epoch_number = 0
     self.snapshot_epoch_interval = 2.0
@@ -182,7 +183,8 @@ class JsTrain:
     total_wait_time = 0
     while True:
       if self.signature_changed():
-        self.quit_session("signature file has changed or is missing")
+        self.set_done_msg("signature file has changed or is missing")
+        self.quit_session()
 
       # Find set with furthest distance from its last usage,
       # filling in empty slots where possible
@@ -218,7 +220,8 @@ class JsTrain:
         break
 
       if total_wait_time > 120:
-        self.quit_session("long delay waiting for train data from streaming service")
+        self.set_done_msg("long delay waiting for train data from streaming service")
+        self.quit_session()
         return None
 
       self.log("...sleeping")
@@ -326,9 +329,9 @@ class JsTrain:
       self.optimizer.step()
 
 
-  def quit_session(self, reason):
+  def quit_session(self):
     if not self.abort_flag:
-      pr("...quitting training session, reason:", reason)
+      pr("...quitting training session, reason:", self.done_msg)
       self.abort_flag = True
       # If signature file exists and its content equals the value we read when training began,
       # delete it to signal that this training session has ended
@@ -338,9 +341,13 @@ class JsTrain:
         remove_if_exists(p)
 
 
+  def set_done_msg(self, msg: str):
+    if self.done_msg is None:
+      self.done_msg = msg
+
+
   def run_training_session(self):
     self.restore_checkpoint()
-    done_msg = None
 
     while not self.abort_flag:
       self.train()
@@ -362,7 +369,7 @@ class JsTrain:
 
       self.epoch_number += 1
       if self.stop_signal_received():
-        done_msg = "Stop signal received"
+        self.set_done_msg("stop signal received")
 
       next_snapshot_epoch = int(self.snapshot_next_epoch)
       if self.epoch_number >= next_snapshot_epoch:
@@ -376,11 +383,11 @@ class JsTrain:
       self.process_java_commands()
 
       if self.update_timeout():
-        done_msg = "Timeout expired"
+        self.set_done_msg("timeout expired")
 
-      if done_msg:
+      if self.done_msg is not None:
         self.save_checkpoint()
-        self.quit_session(done_msg)
+        self.quit_session()
 
 
   # Send image input, labelled output to streaming service
@@ -469,11 +476,11 @@ class JsTrain:
         path = os.path.join(self.train_data_path, f)
         cmd:CmdItem = read_object(CmdItem.default_instance, path)
 
-        pr("got command:",cmd)
-
         a = cmd.args[0]
         if a == "checkpoint":
           self.save_checkpoint()
+        elif a == "stop":
+          self.set_done_message("stop command received")
         else:
           die("Unrecognized command:", cmd)
 

@@ -10,7 +10,6 @@ import gen.Vol;
 import js.base.BaseObject;
 import js.base.BasePrinter;
 import js.base.DateTimeTools;
-import js.data.DataUtil;
 import js.file.DirWalk;
 import js.file.Files;
 import js.geometry.IPoint;
@@ -25,7 +24,6 @@ import static js.base.Tools.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 
@@ -462,79 +460,20 @@ public class LogProcessor extends BaseObject implements Runnable {
     return String.format(format.formatStr(), value);
   }
 
+  public StatRecord findStat(String name) {
+    return mStatRecordMap.get(name);
+  }
+
   // ------------------------------------------------------------------
   // Statistics bookkeeping
   // ------------------------------------------------------------------
 
-  private static final String STAT_EPOCH = "epoch";
-  private static final String STAT_LOSS = "loss";
-
-  private static String[] sStatOrder = { STAT_EPOCH, STAT_LOSS };
-
-  private static class StatRecord {
-
-    public StatRecord(String name) {
-      mName = name;
-    }
-
-    public void update(float value) {
-      mValue = value;
-      if (mValueCount == 0)
-        mSmoothedValue = value;
-      else {
-        float tau = 0.1f;
-        mSmoothedValue = tau * value + (1 - tau) * mSmoothedValue;
-      }
-      mValueCount++;
-    }
-
-    public void printTo(StringBuilder sb) {
-      if (sb.length() > 0 && sb.charAt(sb.length() - 1) > ' ')
-        sb.append("  ");
-
-      String nm = DataUtil.capitalizeFirst(mName);
-      if (!isFloat()) {
-        sb.append(String.format("%s: %d", nm, Math.round(mValue)));
-      } else {
-        sb.append(String.format("%s: %6.3f", nm, mSmoothedValue));
-      }
-    }
-
-    private boolean isFloat() {
-      return !mName.equals(STAT_EPOCH);
-    }
-
-    private int order() {
-      if (mOrder == null) {
-        int ord = 1000;
-        for (int i = 0; i < sStatOrder.length; i++) {
-          if (sStatOrder[i].equals(mName))
-            ord = i;
-        }
-        mOrder = ord;
-      }
-      return mOrder;
-    }
-
-    private String mName;
-    private float mValue;
-    private float mSmoothedValue;
-    private int mValueCount;
-    private Integer mOrder;
-
-    public static final Comparator<StatRecord> COMPARATOR = (StatRecord x, StatRecord y) -> {
-      int diff = x.order() - y.order();
-      if (diff == 0)
-        diff = x.mName.compareTo(y.mName);
-      return diff;
-    };
-
-  }
+  static String[] sStatOrder = { StatRecord.EPOCH,  StatRecord.LOSS };
 
   private Map<String, StatRecord> mStatRecordMap = hashMap();
 
   private StatRecord statRecord(String name) {
-    StatRecord r = mStatRecordMap.get(name);
+    StatRecord r = findStat(name);
     if (r == null) {
       r = new StatRecord(name);
       mStatRecordMap.put(name, r);

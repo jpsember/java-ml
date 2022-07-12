@@ -23,6 +23,9 @@ fields {
   //
   float target_loss;
 
+  // If nonzero, training stops if epoch reaches this value
+  //
+  int target_epoch;
 
   // https://arxiv.org/abs/1804.07612
   //
