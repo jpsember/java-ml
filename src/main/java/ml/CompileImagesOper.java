@@ -126,9 +126,10 @@ public final class CompileImagesOper extends AppOper {
       DirWalk w = new DirWalk(trainParam().targetDirTrain()).includeDirectories().withRecurse(false);
       for (File f : w.files()) {
         if (!f.isDirectory()) {
-          // If it is a python logging file (.json, .tmp, .dat), delete it
+          // If it is a python logging file (.json, .tmp, .dat), or a python command file, delete it
           String ext = Files.getExtension(f);
-          if (ext.equals("json") || ext.equals("tmp") || ext.equals("dat"))
+          if (ext.equals("json") || ext.equals("tmp") || ext.equals("dat") || ext.equals(PYTHON_CMD_TEMP_EXT)
+              || ext.equals(PYTHON_CMD_EXT))
             files().deleteFile(f);
           continue;
         }
@@ -171,6 +172,11 @@ public final class CompileImagesOper extends AppOper {
         break;
       }
 
+      int recentCheckpoint = trimCheckpoints();
+      addCheckpoint(recentCheckpoint);
+      if (trainTargetReached())
+        break;
+
       if (countTrainSets() >= trainParam().maxTrainSets()) {
         if (stopIfInactive())
           break;
@@ -206,12 +212,6 @@ public final class CompileImagesOper extends AppOper {
           pr("Time to generate training set:", sec, "sm:", mAvgGeneratedTimeSec);
         }
       }
-
-      int recentCheckpoint = trimCheckpoints();
-      addCheckpoint(recentCheckpoint);
-
-      if (trainTargetReached())
-        break;
     }
   }
 
@@ -243,6 +243,10 @@ public final class CompileImagesOper extends AppOper {
     float targetLoss = trainParam().targetLoss();
     if (targetLoss > 0) {
       StatRecord loss = lp().findStat(StatRecord.LOSS);
+      if (ISSUE_65) {
+        if (loss != null)
+          pr("...loss:", loss.smoothedValue());
+      }
       if (loss != null && loss.smoothedValue() <= targetLoss) {
         lp().prog("Target loss reached, stopping training").flush();
         sendCommand("stop");
@@ -436,11 +440,15 @@ public final class CompileImagesOper extends AppOper {
   // Commands sent to Python 
   // ------------------------------------------------------------------
 
+  private static final String PYTHON_CMD_EXT = "pcmd";
+  private static final String PYTHON_CMD_TEMP_EXT = "pcmd_tmp";
+
   private void sendCommand(CmdItem.Builder cmdItem) {
     mOutCommandId++;
     cmdItem.id(mOutCommandId);
-    File cmdFile = new File(trainParam().targetDirTrain(), String.format("cmd_%07d.pcmd", cmdItem.id()));
-    File tmpFile = Files.setExtension(cmdFile, "jtmp");
+    File cmdFile = new File(trainParam().targetDirTrain(),
+        String.format("cmd_%07d." + PYTHON_CMD_EXT, cmdItem.id()));
+    File tmpFile = Files.setExtension(cmdFile, PYTHON_CMD_TEMP_EXT);
     Files.assertDoesNotExist(cmdFile, "sendCommand  file");
     Files.assertDoesNotExist(tmpFile, "sendCommand temporary file");
     files().write(tmpFile, cmdItem);
