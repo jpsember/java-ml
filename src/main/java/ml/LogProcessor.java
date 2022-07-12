@@ -76,11 +76,16 @@ public class LogProcessor extends BaseObject implements Runnable {
   /**
    * Append to progress file
    */
-  public void prog(Object... messages) {
+  public LogProcessor prog(Object... messages) {
     String result = BasePrinter.toString(messages);
     pf().write(result);
+    return this;
   }
 
+  public void flush() {
+    pf().flush(); 
+  }
+  
   private ProgressFile pf() {
     if (mProgressFile == null)
       mProgressFile = new ProgressFile(config());

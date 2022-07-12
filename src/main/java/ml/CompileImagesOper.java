@@ -244,7 +244,8 @@ public final class CompileImagesOper extends AppOper {
     if (targetLoss > 0) {
       StatRecord loss = lp().findStat(StatRecord.LOSS);
       if (loss != null && loss.smoothedValue() <= targetLoss) {
-        lp().prog("Target loss reached, stopping training");
+        pr("...................... target loss reached");
+         lp().prog("Target loss reached, stopping training").flush();
         sendCommand("stop");
         return true;
       }
@@ -253,7 +254,8 @@ public final class CompileImagesOper extends AppOper {
     if (targetEpoch > 0) {
       StatRecord epoch = lp().findStat(StatRecord.EPOCH);
       if (epoch != null && epoch.intValue() >= targetEpoch) {
-        lp().prog("Target epoch reached, stopping training");
+        pr("...................... target epoch reached");
+        lp().prog("Target epoch reached, stopping training").flush();
         sendCommand("stop");
         return true;
       }
