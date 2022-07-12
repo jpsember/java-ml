@@ -157,6 +157,7 @@ public final class CompileImagesOper extends AppOper {
     //
     File tempDir = new File(trainParam().targetDirTrain(), "_temp_");
     Files.assertDoesNotExist(tempDir, "Found old directory; need to prepare?");
+    long startServiceTime = System.currentTimeMillis();
 
     checkpointDir();
 
@@ -213,6 +214,7 @@ public final class CompileImagesOper extends AppOper {
         }
       }
     }
+    pr("Elapsed time training:", DateTimeTools.humanDuration(System.currentTimeMillis() - startServiceTime));
   }
 
   /**

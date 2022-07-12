@@ -49,6 +49,10 @@ fields {
   // Apply gradient normalization if it gets too large (https://androidkt.com/how-to-apply-gradient-clipping-in-pytorch/)
   //
   bool with_gradient_norm;
+
+  // Disable batch normalization (to see effect on training)?
+  //
+  bool disable_batch_norm;
 }
 
 

@@ -16,8 +16,8 @@
 
       "train_param" : {
 
-          "target_epoch" : 300,
-          "target_loss" : 0.210,
+          //"target_epoch" : 300,
+          "target_loss" : 0.050,
 
 
              //"detect_anomalies" : true,
