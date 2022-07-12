@@ -162,7 +162,7 @@ public final class CompileImagesOper extends AppOper {
     startLogging();
     while (true) {
       if (lp().errorFlag()) {
-        sendStopCommand();
+        sendStopCommand("Error in LogProcessor");
         break;
       }
 
@@ -254,8 +254,7 @@ public final class CompileImagesOper extends AppOper {
     if (targetLoss > 0) {
       StatRecord loss = lp().findStat(StatRecord.LOSS);
       if (loss != null && loss.smoothedValue() <= targetLoss) {
-        lp().prog("Target loss reached, stopping training").flush();
-        sendStopCommand();
+        sendStopCommand("Target loss reached, stopping training");
         return true;
       }
     }
@@ -263,8 +262,7 @@ public final class CompileImagesOper extends AppOper {
     if (targetEpoch > 0) {
       StatRecord epoch = lp().findStat(StatRecord.EPOCH);
       if (epoch != null && epoch.intValue() >= targetEpoch) {
-        lp().prog("Target epoch reached, stopping training").flush();
-        sendStopCommand();
+        sendStopCommand("Target epoch reached, stopping training");
         return true;
       }
     }
@@ -272,7 +270,9 @@ public final class CompileImagesOper extends AppOper {
     return false;
   }
 
-  private void sendStopCommand() {
+  private void sendStopCommand(String optionalMessage) {
+    if (nonEmpty(optionalMessage))
+      lp().prog(optionalMessage).flush();
     sendCommand("stop");
   }
 
