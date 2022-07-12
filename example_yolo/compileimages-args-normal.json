@@ -15,7 +15,11 @@
            },
 
       "train_param" : {
-             "test_size" : 0,      // Get rid of test, to keep logging simple
+
+          "target_epoch" : 12,
+          "target_loss" : 0.5,
+
+
              //"detect_anomalies" : true,
              //"max_log_count" : 100,
              "with_gradient_norm" : true,
