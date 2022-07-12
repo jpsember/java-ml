@@ -64,17 +64,11 @@ class JsTrain:
     self.last_id_generated = 100 # Set to something nonzero, as the differences are what's important
     self.prev_train_set_dir = None  # directory to be used for testing model
 
-    self.timeout_length = None
     self.start_time = time_ms()
     self.prev_batch_time = None
     self.recent_image_array = None
     self.recent_model_output = None
     self.image_index = 0
-
-
-  def add_timeout(self, max_seconds=60):
-    self.timeout_length = max_seconds
-
 
 
   def prepare_train_info(self, train_dir):
@@ -152,11 +146,6 @@ class JsTrain:
     return os.path.join(self.train_data_path,"sig.txt")
 
 
-  # def stop_signal_received(self):
-  #   x = os.path.join(self.train_data_path,"stop.txt")
-  #   return os.path.isfile(x)
-
-
   # Look for a directory that we haven't processed yet; return TrainSetBuilder representing it, or None
   #
   def find_unclaimed_obj(self):
@@ -192,14 +181,14 @@ class JsTrain:
       best_cursor = -1
 
       for i, cursor_object in enumerate(self.train_set_list):
-        if train_set_undefined(cursor_object):
+        if not train_set_defined(cursor_object):
           obj = self.find_unclaimed_obj()
           if train_set_defined(obj):
             self.train_set_list[i] = obj
             cursor_object = obj
             self.log("found unclaimed directory:", obj)
 
-        if train_set_undefined(cursor_object):
+        if not train_set_defined(cursor_object):
           continue
 
         # This can't be the one we last used
@@ -359,9 +348,6 @@ class JsTrain:
       TensorLogger.default_instance.add_stats(stats_map)
 
       self.epoch_number += 1
-      # if self.stop_signal_received():
-      #   self.set_done_msg("stop signal received")
-      #   break
 
       next_snapshot_epoch = int(self.snapshot_next_epoch)
       if self.epoch_number >= next_snapshot_epoch:
@@ -373,10 +359,6 @@ class JsTrain:
         self.send_inference_result()
 
       self.process_java_commands()
-
-      todo("is timeout still required?")
-      if self.update_timeout():
-        self.set_done_msg("timeout expired")
 
     self.save_checkpoint()
 
@@ -405,12 +387,6 @@ class JsTrain:
     t.family_slot = 1
     tens = self.recent_model_output
     TensorLogger.default_instance.add(tens, t)
-
-
-  def update_timeout(self)->bool:
-    if self.timeout_length is None:
-      return False
-    return time_ms() >= self.start_time + self.timeout_length * 1000
 
 
   def most_recent_checkpoint(self):
@@ -485,7 +461,3 @@ class JsTrain:
 def train_set_defined(train_set:TrainSet):
   return train_set is not None and train_set.directory != ""
 
-# Negation of train_set_defined
-#
-def train_set_undefined(train_set:TrainSet):
-  return not train_set_defined(train_set)
