@@ -27,7 +27,6 @@ class JsTrain:
     self.model = None
     self.loss_fn = None
     self.optimizer = None
-    self.abort_flag = False
     self.train_loss = None
     self.done_msg:str = None
 
@@ -184,7 +183,7 @@ class JsTrain:
     while True:
       if self.signature_changed():
         self.set_done_msg("signature file has changed or is missing")
-        self.quit_session()
+        return None
 
       # Find set with furthest distance from its last usage,
       # filling in empty slots where possible
@@ -221,7 +220,6 @@ class JsTrain:
 
       if total_wait_time > 120:
         self.set_done_msg("long delay waiting for train data from streaming service")
-        self.quit_session()
         return None
 
       self.log("...sleeping")
@@ -291,7 +289,7 @@ class JsTrain:
 
   def train(self):
     train_set_dir = self.select_data_set()
-    if not train_set_dir:       # Are we still waiting for the stream service?
+    if not train_set_dir:       # Are we still waiting for the stream service, or quit flag set?
       return
 
     self.prepare_train_info(train_set_dir)
@@ -329,30 +327,22 @@ class JsTrain:
       self.optimizer.step()
 
 
-  def quit_session(self):
-    todo("clean up and simplify quit_session vs set_done_msg")
-    if not self.abort_flag:
-      pr("...quitting training session, reason:", self.done_msg)
-      self.abort_flag = True
-      # If signature file exists and its content equals the value we read when training began,
-      # delete it to signal that this training session has ended
-      p = self.signature_path()
-      current_content = txt_read(p, "")
-      if current_content == self.signature:
-        remove_if_exists(p)
+
+  def done_flag_set(self):
+    return self.done_msg is not None
 
 
   def set_done_msg(self, msg: str):
-    if self.done_msg is None:
+    if not self.done_flag_set():
       self.done_msg = msg
 
 
   def run_training_session(self):
     self.restore_checkpoint()
 
-    while not self.abort_flag:
+    while not self.done_flag_set():
       self.train()
-      if self.abort_flag:
+      if self.done_flag_set():
         break
 
       # Try our new logging
@@ -371,6 +361,7 @@ class JsTrain:
       self.epoch_number += 1
       if self.stop_signal_received():
         self.set_done_msg("stop signal received")
+        break
 
       next_snapshot_epoch = int(self.snapshot_next_epoch)
       if self.epoch_number >= next_snapshot_epoch:
@@ -383,12 +374,11 @@ class JsTrain:
 
       self.process_java_commands()
 
+      todo("is timeout still required?")
       if self.update_timeout():
         self.set_done_msg("timeout expired")
 
-      if self.done_msg is not None:
-        self.save_checkpoint()
-        self.quit_session()
+    self.save_checkpoint()
 
 
   # Send image input, labelled output to streaming service
