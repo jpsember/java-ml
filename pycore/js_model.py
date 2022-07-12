@@ -46,7 +46,7 @@ class JsModel(nn.Module):
                       padding=kernel_width//2, # half padding
                       )
         self.add_layer(t)
-        if lyr.batch_norm and not JG.train_param.skip_batch_norm:
+        if lyr.batch_norm and not JG.train_param.disable_batch_norm:
           bn = nn.BatchNorm2d(lyr.output_volume.depth)
           self.add_layer(bn)
       elif lyr.type == "leaky_relu":
