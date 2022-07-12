@@ -64,10 +64,6 @@ class JsTrain:
     self.last_id_generated = 100 # Set to something nonzero, as the differences are what's important
     self.prev_train_set_dir = None  # directory to be used for testing model
 
-    self.last_checkpoint_epoch = None   # epoch last saved as checkpoint
-    self.checkpoint_interval_ms = None  # interval between checkpoints; increases nonlinearly up to a max value
-    self.checkpoint_last_time_ms = None # time last checkpoint was written
-
     self.timeout_length = None
     self.start_time = time_ms()
     self.prev_batch_time = None
@@ -295,7 +291,6 @@ class JsTrain:
     if not train_set_dir:       # Are we still waiting for the stream service?
       return
 
-    self.process_java_commands()
     self.prepare_train_info(train_set_dir)
     self.prev_train_set_dir = train_set_dir
 
@@ -345,7 +340,6 @@ class JsTrain:
 
   def run_training_session(self):
     self.restore_checkpoint()
-    self.last_checkpoint_epoch = self.epoch_number
     done_msg = None
 
     while not self.abort_flag:
@@ -379,15 +373,7 @@ class JsTrain:
         report("Saving model inference snapshot")
         self.send_inference_result()
 
-      current_time = time_ms()
-      if not self.checkpoint_last_time_ms:
-        self.checkpoint_interval_ms = 30000
-        self.checkpoint_last_time_ms = current_time
-
-      ms_until_save = (self.checkpoint_last_time_ms + self.checkpoint_interval_ms) - current_time
-      if ms_until_save <= 0:
-        self.save_checkpoint()
-        self.send_inference_result()
+      self.process_java_commands()
 
       if self.update_timeout():
         done_msg = "Timeout expired"
@@ -457,16 +443,9 @@ class JsTrain:
 
 
   def save_checkpoint(self):
-    diff = self.epoch_number - self.last_checkpoint_epoch
-    check_state(diff >= 0,"epoch number less than last saved")
-    # Don't save a checkpoint if we haven't done some minimum number of batch_numbers
-    if diff <= 3:
-      if diff > 0:
-        pr("(...not bothering to save checkpoint for only", diff, "new batch_numbers)")
-      return
-
     path = self.construct_checkpoint_path_for_epoch(self.epoch_number)
-    check_state(not os.path.exists(path), "checkpoint already exists")
+    if os.path.exists(path):
+      return
     pr("Saving checkpoint:",path)
     # Save to a temporary file and rename afterward, to avoid leaving partially written files around in
     # case user quits program or something
@@ -477,9 +456,6 @@ class JsTrain:
                 'optimizer_state_dict': self.optimizer.state_dict()
                 }, path_tmp)
     os.rename(path_tmp, path)
-    self.last_checkpoint_epoch = self.epoch_number
-    self.checkpoint_last_time_ms = time_ms()
-    self.checkpoint_interval_ms = min(int(self.checkpoint_interval_ms * 1.2), 10 * 60 * 1000)
 
 
   def log(self, *args):
@@ -491,8 +467,16 @@ class JsTrain:
     for f in os.listdir(self.train_data_path):
       if f.endswith(".pcmd"):
         path = os.path.join(self.train_data_path, f)
-        cmd = read_object(CmdItem.default_instance, path)
+        cmd:CmdItem = read_object(CmdItem.default_instance, path)
+
         pr("got command:",cmd)
+
+        a = cmd.args[0]
+        if a == "checkpoint":
+          self.save_checkpoint()
+        else:
+          die("Unrecognized command:", cmd)
+
         os.remove(path)
 
 

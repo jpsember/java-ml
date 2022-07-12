@@ -25,6 +25,8 @@ import ml.img.ImageCompiler;
  */
 public final class CompileImagesOper extends AppOper {
 
+  public static final boolean ISSUE_64 = alert("ISSUE_64 in effect");
+
   @Override
   public String userCommand() {
     return "compileimages";
@@ -367,7 +369,8 @@ public final class CompileImagesOper extends AppOper {
       mLastCheckpointTime = currTime;
     }
     long msUntilSave = (mLastCheckpointTime + mCheckpointIntervalMs) - currTime;
-    pr("ms until save:",msUntilSave);
+    if (ISSUE_64)
+      pr("ms until save:", msUntilSave);
     if (msUntilSave > 0)
       return;
 
