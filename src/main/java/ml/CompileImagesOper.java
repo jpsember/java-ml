@@ -25,8 +25,6 @@ import ml.img.ImageCompiler;
  */
 public final class CompileImagesOper extends AppOper {
 
-  public static final boolean ISSUE_65 = true && alert("ISSUE_65 in effect");
-
   @Override
   public String userCommand() {
     return "compileimages";
@@ -245,10 +243,6 @@ public final class CompileImagesOper extends AppOper {
     float targetLoss = trainParam().targetLoss();
     if (targetLoss > 0) {
       StatRecord loss = lp().findStat(StatRecord.LOSS);
-      if (ISSUE_65) {
-        if (loss != null)
-          pr("...loss:", loss.smoothedValue());
-      }
       if (loss != null && loss.smoothedValue() <= targetLoss) {
         lp().prog("Target loss reached, stopping training").flush();
         sendCommand("stop");

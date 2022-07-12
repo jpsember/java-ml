@@ -23,6 +23,7 @@
              //"detect_anomalies" : true,
              //"max_log_count" : 100,
              "with_gradient_norm" : true,
+             "disable_batch_norm" : true,
       },
 
         "snapshot_dir" : "snapshot",
