@@ -42,3 +42,14 @@ The format of training labels (e.g. bounding boxes with categories) can take mul
 ### Exploding loss function (issue 56)
 
 Sometimes the loss function suddenly gets crazy large.  I activated 'gradient clipping' and the problem went away.
+
+
+## Performance tuning
+
+### Batch normalization
+
+Adding batch normalization to the YOLO model reduces training time significantly.  Without normalization, training until loss reached 0.05 took 2h8m32s (epoch 3532).  With normalization, it took 1h24m25s (epoch 2304).
+
+Checkpoint size for with    is
+Checkpoint size for without is 124243793
+
