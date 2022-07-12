@@ -126,7 +126,7 @@ public final class CompileImagesOper extends AppOper {
         if (!f.isDirectory()) {
           // If it is a python logging file (.json, .tmp, .dat), or a python command file, delete it
           String ext = Files.getExtension(f);
-          if (ext.equals(Files.EXT_JSON) || ext.equals(Files.EXT_JSON) || ext.equals("dat")  
+          if (ext.equals(Files.EXT_JSON) || ext.equals(Files.EXT_JSON) || ext.equals("dat")
               || ext.equals(PYTHON_CMD_EXT))
             files().deleteFile(f);
           continue;
@@ -162,7 +162,7 @@ public final class CompileImagesOper extends AppOper {
     startLogging();
     while (true) {
       if (lp().errorFlag()) {
-        files().writeString(stopSignalFile(), "");
+        sendStopCommand();
         break;
       }
 
@@ -174,6 +174,8 @@ public final class CompileImagesOper extends AppOper {
       int recentCheckpoint = trimCheckpoints();
       addCheckpoint(recentCheckpoint);
       if (trainTargetReached())
+        break;
+      if (stopFlagFound())
         break;
 
       if (countTrainSets() >= trainParam().maxTrainSets()) {
@@ -215,6 +217,14 @@ public final class CompileImagesOper extends AppOper {
     pr("Elapsed time training:", DateTimeTools.humanDuration(System.currentTimeMillis() - startServiceTime));
   }
 
+  private boolean stopFlagFound() {
+    if (stopSignalFile().exists()) {
+      sendStopCommand();
+      return true;
+    }
+    return false;
+  }
+
   /**
    * Count the number of subdirectories with prefix "set_"
    */
@@ -245,7 +255,7 @@ public final class CompileImagesOper extends AppOper {
       StatRecord loss = lp().findStat(StatRecord.LOSS);
       if (loss != null && loss.smoothedValue() <= targetLoss) {
         lp().prog("Target loss reached, stopping training").flush();
-        sendCommand("stop");
+        sendStopCommand();
         return true;
       }
     }
@@ -254,12 +264,16 @@ public final class CompileImagesOper extends AppOper {
       StatRecord epoch = lp().findStat(StatRecord.EPOCH);
       if (epoch != null && epoch.intValue() >= targetEpoch) {
         lp().prog("Target epoch reached, stopping training").flush();
-        sendCommand("stop");
+        sendStopCommand();
         return true;
       }
     }
 
     return false;
+  }
+
+  private void sendStopCommand() {
+    sendCommand("stop");
   }
 
   // ------------------------------------------------------------------

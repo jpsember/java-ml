@@ -152,9 +152,9 @@ class JsTrain:
     return os.path.join(self.train_data_path,"sig.txt")
 
 
-  def stop_signal_received(self):
-    x = os.path.join(self.train_data_path,"stop.txt")
-    return os.path.isfile(x)
+  # def stop_signal_received(self):
+  #   x = os.path.join(self.train_data_path,"stop.txt")
+  #   return os.path.isfile(x)
 
 
   # Look for a directory that we haven't processed yet; return TrainSetBuilder representing it, or None
@@ -359,9 +359,9 @@ class JsTrain:
       TensorLogger.default_instance.add_stats(stats_map)
 
       self.epoch_number += 1
-      if self.stop_signal_received():
-        self.set_done_msg("stop signal received")
-        break
+      # if self.stop_signal_received():
+      #   self.set_done_msg("stop signal received")
+      #   break
 
       next_snapshot_epoch = int(self.snapshot_next_epoch)
       if self.epoch_number >= next_snapshot_epoch:
