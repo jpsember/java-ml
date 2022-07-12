@@ -219,6 +219,7 @@ public final class CompileImagesOper extends AppOper {
 
   private boolean stopFlagFound() {
     if (stopSignalFile().exists()) {
+      files().deletePeacefully(stopSignalFile());
       sendStopCommand("Stop signal detected");
       return true;
     }

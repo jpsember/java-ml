@@ -13,7 +13,7 @@ fields {
   //
   int recycle = 3;
 
-  int max_checkpoints = 5;
+  int max_checkpoints = 3;
 
   // For certain project types (e.g. classification)
   //
