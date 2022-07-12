@@ -1,0 +1,10 @@
+// Commands sent from Java to Python
+
+fields {
+
+  // A unique id > 0 for ordering the items
+  //
+  int id;
+
+  * string args;
+}

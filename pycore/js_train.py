@@ -2,6 +2,7 @@
 
 import torch.cuda
 
+from gen.cmd_item import CmdItem
 from pycore.jg import JG
 from pycore.pytorch_util import *
 import os
@@ -294,6 +295,7 @@ class JsTrain:
     if not train_set_dir:       # Are we still waiting for the stream service?
       return
 
+    self.process_java_commands()
     self.prepare_train_info(train_set_dir)
     self.prev_train_set_dir = train_set_dir
 
@@ -483,6 +485,17 @@ class JsTrain:
   def log(self, *args):
     if self.verbose:
       pr("(verbose:)", *args)
+
+
+  def process_java_commands(self):
+    for f in os.listdir(self.train_data_path):
+      if f.endswith(".pcmd"):
+        path = os.path.join(self.train_data_path, f)
+        cmd = read_object(CmdItem.default_instance, path)
+        pr("got command:",cmd)
+        os.remove(path)
+
+
 
 
 # Determine if train_set is not None and not the default instance

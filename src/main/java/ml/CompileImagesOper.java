@@ -6,6 +6,7 @@ import java.io.File;
 import java.util.List;
 import java.util.SortedMap;
 
+import gen.CmdItem;
 import gen.CompileImagesConfig;
 import gen.NeuralNetwork;
 import gen.TrainParam;
@@ -204,6 +205,8 @@ public final class CompileImagesOper extends AppOper {
         }
       }
 
+      if (alert("experimental command"))
+        sendCommand(CmdItem.newBuilder().args(arrayList("hello", "this", "is", "a", "test")));
       updateCheckpoints();
     }
   }
@@ -371,6 +374,23 @@ public final class CompileImagesOper extends AppOper {
     }
     return map;
   }
+
+  // ------------------------------------------------------------------
+  // Commands sent to Python 
+  // ------------------------------------------------------------------
+
+  private void sendCommand(CmdItem.Builder cmdItem) {
+    mOutCommandId++;
+    cmdItem.id(mOutCommandId);
+    File cmdFile = new File(trainParam().targetDirTrain(), String.format("cmd_%07d.pcmd", cmdItem.id()));
+    File tmpFile = Files.setExtension(cmdFile, "jtmp");
+    Files.assertDoesNotExist(cmdFile, "sendCommand  file");
+    Files.assertDoesNotExist(tmpFile, "sendCommand temporary file");
+    files().write(tmpFile, cmdItem);
+    files().moveFile(tmpFile, cmdFile);
+  }
+
+  private int mOutCommandId;
 
   // ------------------------------------------------------------------
 
