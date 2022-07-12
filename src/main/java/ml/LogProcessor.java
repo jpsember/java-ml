@@ -4,6 +4,7 @@ import gen.CompileImagesConfig;
 import gen.FloatFormat;
 import gen.NeuralNetwork;
 import gen.TensorStats;
+import gen.TrainParam;
 import gen.LogItem;
 import gen.Vol;
 import js.base.BaseObject;
@@ -90,7 +91,7 @@ public class LogProcessor extends BaseObject implements Runnable {
 
   private void auxRun() {
     while (mState != STATE_STOPPED) {
-      File logDir = config().targetDirTrain();
+      File logDir = trainParam().targetDirTrain();
       DirWalk w = new DirWalk(logDir).withRecurse(false).withExtensions("json");
       for (File infoFile : w.files()) {
         if (ISSUE_61) {
@@ -323,6 +324,10 @@ public class LogProcessor extends BaseObject implements Runnable {
 
   private CompileImagesConfig config() {
     return mConfig;
+  }
+
+  private TrainParam trainParam() {
+    return config().trainParam();
   }
 
   private void formatTensor(LogItem ti, StringBuilder sb) {

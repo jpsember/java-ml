@@ -64,7 +64,7 @@ public final class CompileImagesOper extends AppOper {
       if (config().trainService())
         performTrainService(imageCompiler);
       else
-        imageCompiler.compileTrainSet(config().targetDirTrain());
+        imageCompiler.compileTrainSet(trainParam().targetDirTrain());
 
       insp.flush();
     } finally {
@@ -119,8 +119,8 @@ public final class CompileImagesOper extends AppOper {
     files().deletePeacefully(stopSignalFile());
 
     // Delete existing training set subdirectories, or any temporary file associated with them
-    if (config().targetDirTrain().isDirectory()) {
-      DirWalk w = new DirWalk(config().targetDirTrain()).includeDirectories().withRecurse(false);
+    if (trainParam().targetDirTrain().isDirectory()) {
+      DirWalk w = new DirWalk(trainParam().targetDirTrain()).includeDirectories().withRecurse(false);
       for (File f : w.files()) {
         if (!f.isDirectory()) {
           // If it is a python logging file (.json, .tmp, .dat), delete it
@@ -151,7 +151,7 @@ public final class CompileImagesOper extends AppOper {
 
     // Choose a temporary filename that can be atomically renamed when it is complete
     //
-    File tempDir = new File(config().targetDirTrain(), "_temp_");
+    File tempDir = new File(trainParam().targetDirTrain(), "_temp_");
     Files.assertDoesNotExist(tempDir, "Found old directory; need to prepare?");
 
     checkpointDir();
@@ -183,7 +183,7 @@ public final class CompileImagesOper extends AppOper {
       //
       File newDir = null;
       while (true) {
-        newDir = new File(config().targetDirTrain(), STREAM_PREFIX + mNextStreamSetNumber);
+        newDir = new File(trainParam().targetDirTrain(), STREAM_PREFIX + mNextStreamSetNumber);
         mNextStreamSetNumber++;
         checkState(!newDir.exists(), "Stream directory already exists; need to prepare?", newDir);
         break;
@@ -213,7 +213,7 @@ public final class CompileImagesOper extends AppOper {
    */
   private int countTrainSets() {
     int count = 0;
-    DirWalk w = new DirWalk(config().targetDirTrain()).includeDirectories().withRecurse(false);
+    DirWalk w = new DirWalk(trainParam().targetDirTrain()).includeDirectories().withRecurse(false);
     for (File f : w.files()) {
       if (f.isDirectory() && f.getName().startsWith(STREAM_PREFIX))
         count++;
@@ -263,11 +263,11 @@ public final class CompileImagesOper extends AppOper {
   }
 
   private File sigFile() {
-    return new File(config().targetDirTrain(), "sig.txt");
+    return new File(trainParam().targetDirTrain(), "sig.txt");
   }
 
   private File stopSignalFile() {
-    return new File(config().targetDirTrain(), "stop.txt");
+    return new File(trainParam().targetDirTrain(), "stop.txt");
   }
 
   //------------------------------------------------------------------
@@ -280,7 +280,7 @@ public final class CompileImagesOper extends AppOper {
    */
   private File checkpointDir() {
     if (mCheckpointDir == null) {
-      File d = Files.assertNonEmpty(config().targetDirCheckpoint());
+      File d = Files.assertNonEmpty(trainParam().targetDirCheckpoint());
       if (config().prepare())
         files().mkdirs(d);
       else

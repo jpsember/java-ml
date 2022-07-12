@@ -45,7 +45,7 @@ class JsTrain:
     self.img_height = t.height
     self.img_channels = t.depth
 
-    self.train_data_path = self.proj_path("train_data")
+    self.train_data_path = self.proj_path(JG.train_param.target_dir_train)
 
     # This information is not available until we have a training set to examine:
     #
@@ -53,7 +53,7 @@ class JsTrain:
     self.train_images = None
     self.batch_size = None
     self.batch_total = None
-    self.checkpoint_dir = "checkpoints"
+    self.checkpoint_dir = self.proj_path(JG.train_param.target_dir_checkpoint)
 
     train_set_count = JG.train_param.max_train_sets - 1  # Service tries to provide one more than needed
     check_state(train_set_count > 1)

@@ -1,5 +1,8 @@
 fields {
 
+  File target_dir_train = "train_data";
+  File target_dir_checkpoint = "checkpoints";
+
   // Streaming service attempts to maintain this many
   // sets in the directory; this should be one more than the number that
   // the training code needs
