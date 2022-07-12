@@ -669,6 +669,10 @@ def set_extension(path, new_ext):
   return prefix
 
 
+def temp_version(name:str):
+  return name + ".tmp"
+
+
 def clamp(value, min_val, max_val):
   if value < min_val:
     return min_val

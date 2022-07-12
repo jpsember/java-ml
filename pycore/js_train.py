@@ -457,7 +457,7 @@ class JsTrain:
     pr("Saving checkpoint:",path)
     # Save to a temporary file and rename afterward, to avoid leaving partially written files around in
     # case user quits program or something
-    path_tmp = path + ".tmp"
+    path_tmp = temp_version(path)
     torch.save({
                 'epoch': self.epoch_number,
                 'model_state_dict': self.model.state_dict(),

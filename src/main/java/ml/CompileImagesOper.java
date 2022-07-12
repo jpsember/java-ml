@@ -126,7 +126,7 @@ public final class CompileImagesOper extends AppOper {
         if (!f.isDirectory()) {
           // If it is a python logging file (.json, .tmp, .dat), or a python command file, delete it
           String ext = Files.getExtension(f);
-          if (ext.equals("json") || ext.equals("tmp") || ext.equals("dat") || ext.equals(PYTHON_CMD_TEMP_EXT)
+          if (ext.equals(Files.EXT_JSON) || ext.equals(Files.EXT_JSON) || ext.equals("dat")  
               || ext.equals(PYTHON_CMD_EXT))
             files().deleteFile(f);
           continue;
@@ -427,6 +427,7 @@ public final class CompileImagesOper extends AppOper {
     SortedMap<Integer, File> map = treeMap();
     for (File file : new DirWalk(checkpointDir()).withRecurse(false).withExtensions("pt").files()) {
       int key = Integer.parseInt(Files.basename(file));
+      checkArgument(key > 0, "unexpected checkpoint:", file);
       map.put(key, file);
     }
     return map;
@@ -437,15 +438,14 @@ public final class CompileImagesOper extends AppOper {
   // ------------------------------------------------------------------
 
   private static final String PYTHON_CMD_EXT = "pcmd";
-  private static final String PYTHON_CMD_TEMP_EXT = "pcmd_tmp";
 
   private void sendCommand(CmdItem.Builder cmdItem) {
     mOutCommandId++;
     cmdItem.id(mOutCommandId);
     File cmdFile = new File(trainParam().targetDirTrain(),
         String.format("cmd_%07d." + PYTHON_CMD_EXT, cmdItem.id()));
-    File tmpFile = Files.setExtension(cmdFile, PYTHON_CMD_TEMP_EXT);
-    Files.assertDoesNotExist(cmdFile, "sendCommand  file");
+    File tmpFile = Files.addTempSuffix(cmdFile);
+    Files.assertDoesNotExist(cmdFile, "sendCommand file");
     Files.assertDoesNotExist(tmpFile, "sendCommand temporary file");
     files().write(tmpFile, cmdItem);
     files().moveFile(tmpFile, cmdFile);

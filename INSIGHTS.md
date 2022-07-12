@@ -50,6 +50,6 @@ Sometimes the loss function suddenly gets crazy large.  I activated 'gradient cl
 
 Adding batch normalization to the YOLO model reduces training time significantly.  Without normalization, training until loss reached 0.05 took 2h8m32s (epoch 3532).  With normalization, it took 1h24m25s (epoch 2304).
 
-Checkpoint size for with    is
+Checkpoint size for with    is 124274579   (not significantly larger)
 Checkpoint size for without is 124243793
 

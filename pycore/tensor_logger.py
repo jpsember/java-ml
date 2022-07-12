@@ -128,12 +128,10 @@ class TensorLogger:
     if tensor is not None:
       info = info.to_builder()
       self.store_tensor(info, tensor)
-
-    #check_state(info.id != 0,"no id in LogItem")
     p = self.get_path(info, ".json")
-    p_temp = self.temp_version(p)
+    p_temp = temp_version(p)
+    check_state(not os.path.exists(p_temp))
 
-    #pr("writing log item id:",info.id,"to:",p)
     # This writes the byte and float arrays using standard json, which is quite inefficient, but who cares
     txt_write(p_temp, info.to_string(False))
     os.rename(p_temp, p)
@@ -141,13 +139,6 @@ class TensorLogger:
 
   def clean(self, name:str):
     return name.replace(" ","_")
-
-
-  def temp_version(self, name:str):
-    result = name + ".tmp"
-    if os.path.exists(result):
-      die("path already exists:", result)
-    return result
 
 
   def get_path(self, info:LogItem, name:str):
