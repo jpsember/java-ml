@@ -205,9 +205,8 @@ public final class CompileImagesOper extends AppOper {
         }
       }
 
-      if (alert("experimental command"))
-        sendCommand(CmdItem.newBuilder().args(arrayList("hello", "this", "is", "a", "test")));
-      updateCheckpoints();
+      int recentCheckpoint = trimCheckpoints();
+      addCheckpoint(recentCheckpoint);
     }
   }
 
@@ -314,7 +313,11 @@ public final class CompileImagesOper extends AppOper {
     }
   }
 
-  private void updateCheckpoints() {
+  /**
+   * Trim checkpoints to reasonable size; return most recent checkpoint epoch
+   * (or -1 if there are none)
+   */
+  private int trimCheckpoints() {
     SortedMap<Integer, File> epochMap = getCheckpointEpochs();
     List<Integer> epochs = arrayList();
     epochs.addAll(epochMap.keySet());
@@ -347,7 +350,34 @@ public final class CompileImagesOper extends AppOper {
       files().deleteFile(checkpointFile);
       log("after trim checkpoints:", INDENT, epochs);
     }
+
+    int mostRecentCheckpoint = -1;
+    if (!epochs.isEmpty())
+      mostRecentCheckpoint = last(epochs);
+    return mostRecentCheckpoint;
   }
+
+  /**
+   * Instruct Python code to store a new checkpoint if appropriate
+   */
+  private void addCheckpoint(int recentCheckpoint) {
+    long currTime = System.currentTimeMillis();
+    if (mCheckpointIntervalMs == 0L) {
+      mCheckpointIntervalMs = 30000;
+      mLastCheckpointTime = currTime;
+    }
+    long msUntilSave = (mLastCheckpointTime + mCheckpointIntervalMs) - currTime;
+    pr("ms until save:",msUntilSave);
+    if (msUntilSave > 0)
+      return;
+
+    mCheckpointIntervalMs = Math.min((long) (mCheckpointIntervalMs * 1.2f), 10 * 60 * 1000);
+    mLastCheckpointTime = currTime;
+    sendCommand(CmdItem.newBuilder().args(arrayList("checkpoint")));
+  }
+
+  private long mLastCheckpointTime;
+  private long mCheckpointIntervalMs;
 
   /**
    * Calculate coefficient for a particular epoch, where max has 1.0
