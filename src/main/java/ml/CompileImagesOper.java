@@ -210,11 +210,12 @@ public final class CompileImagesOper extends AppOper {
         mAvgGeneratedTimeSec = (0.1f * sec) + (1 - 0.1f) * mAvgGeneratedTimeSec;
         if (mAvgReportedCounter < 20) {
           mAvgReportedCounter++;
-          pr("Time to generate training set:", sec, "sm:", mAvgGeneratedTimeSec);
+          lp().println("Time to generate training set:", sec, "sm:", mAvgGeneratedTimeSec);
         }
       }
     }
-    pr("Elapsed time training:", DateTimeTools.humanDuration(System.currentTimeMillis() - startServiceTime));
+    lp().println("Elapsed time training:",
+        DateTimeTools.humanDuration(System.currentTimeMillis() - startServiceTime));
   }
 
   private boolean stopFlagFound() {
@@ -244,7 +245,8 @@ public final class CompileImagesOper extends AppOper {
     if (mLastGeneratedFilesTime == 0)
       mLastGeneratedFilesTime = curr;
     if (curr - mLastGeneratedFilesTime > DateTimeTools.MINUTES(15)) {
-      pr("...a lot of time has elapsed since we had to generate files; assuming client is not running");
+      lp().println(
+          "...a lot of time has elapsed since we had to generate files; assuming client is not running");
       return true;
     }
     return false;
@@ -273,7 +275,7 @@ public final class CompileImagesOper extends AppOper {
 
   private void sendStopCommand(String optionalMessage) {
     if (nonEmpty(optionalMessage))
-      lp().prog(optionalMessage).flush();
+      lp().println(optionalMessage);
     sendCommand("stop");
   }
 
@@ -348,7 +350,7 @@ public final class CompileImagesOper extends AppOper {
     if (!currentChecksum.equals(savedChecksum)) {
       SortedMap<Integer, File> epochMap = getCheckpointEpochs();
       if (!epochMap.isEmpty()) {
-        pr("...deleting existing checkpoints, since network has changed");
+        lp().println("...deleting existing checkpoints, since network has changed");
       }
       for (File f : epochMap.values())
         files().deleteFile(f);

@@ -1,7 +1,6 @@
 package ml;
 
 import js.file.Files;
-import js.json.JSMap;
 
 import static js.base.Tools.*;
 
@@ -16,22 +15,23 @@ import gen.CompileImagesConfig;
 public final class ProgressFile implements Closeable {
 
   public ProgressFile(CompileImagesConfig config) {
+    loadTools();
     mConfig = config;
   }
 
   /**
-   * Write a string to the progress file
+   * Write a string to the progress file. Thread safe
    */
-  public void write(String content) {
+  public synchronized void write(String content) {
     writer().println(content);
   }
 
-  public void flush() {
+  public synchronized void flush() {
     writer().flush();
   }
 
   @Override
-  public void close() {
+  public synchronized void close() {
     if (mProgressFile == null)
       return;
     try {
@@ -40,24 +40,6 @@ public final class ProgressFile implements Closeable {
       mProgressFile = null;
       mPrintWriter = null;
     }
-  }
-
-  public void displayMessage(JSMap m) {
-    String content = m.get("text");
-    write(content);
-    pr(content);
-    flush();
-  }
-
-  private void append(Object msg) {
-    sb().append(msg);
-  }
-
-  /* private */ void append(String msg, int minWidth) {
-    int padding = minWidth - msg.length();
-    if (padding > 0)
-      append(spaces(padding));
-    append(msg);
   }
 
   private File file() {
@@ -77,13 +59,8 @@ public final class ProgressFile implements Closeable {
     return mPrintWriter;
   }
 
-  private StringBuilder sb() {
-    return mStringBuilder;
-  }
-
-  /* private */ final CompileImagesConfig mConfig;
+  private final CompileImagesConfig mConfig;
   private File mProgressFile;
   private PrintWriter mPrintWriter;
-  private final StringBuilder mStringBuilder = new StringBuilder();
 
 }

@@ -76,16 +76,23 @@ public class LogProcessor extends BaseObject implements Runnable {
   /**
    * Append to progress file
    */
-  public LogProcessor prog(Object... messages) {
+  private void prog(Object... messages) {
     String result = BasePrinter.toString(messages);
     pf().write(result);
-    return this;
   }
 
-  public void flush() {
-    pf().flush(); 
+  /**
+   * Append to progress file with flush
+   */
+  public void println(Object... messages) {
+    prog(messages);
+    flush();
   }
-  
+
+  private void flush() {
+    pf().flush();
+  }
+
   private ProgressFile pf() {
     if (mProgressFile == null)
       mProgressFile = new ProgressFile(config());
@@ -156,14 +163,17 @@ public class LogProcessor extends BaseObject implements Runnable {
    */
   private LogItem parseLogItem(File file) {
     String content = Files.readString(file);
-    boolean hasNan = content.contains("NaN");
-    LogItem result;
-    if (hasNan) {
+    LogItem result = null;
+    try {
+      result = Files.parseAbstractData(LogItem.DEFAULT_INSTANCE, new JSMap(content));
+    } catch (Throwable t) {
+      boolean hasNan = content.contains("NaN");
+      if (!hasNan)
+        throw t;
       content = content.replace("NaN", "-999");
+      result = Files.parseAbstractData(LogItem.DEFAULT_INSTANCE, new JSMap(content)).toBuilder()
+          .illegalValuesFound(true).build();
     }
-    result = Files.parseAbstractData(LogItem.DEFAULT_INSTANCE, new JSMap(content));
-    if (hasNan)
-      result = result.toBuilder().illegalValuesFound(true).build();
     return result;
   }
 
@@ -186,11 +196,10 @@ public class LogProcessor extends BaseObject implements Runnable {
       if (ti.stats() != null)
         parseStats(ti.stats(), sb);
     }
-    prog(sb.toString());
+    pf().write(sb.toString());
   }
 
   private void bufferLogItem(LogItem logItem, int familySize) {
-    log("processing labelled image:", logItem);
     int key = logItem.familyId();
     LogItem[] familySet = mFamilyMap.get(key);
     if (familySet == null) {
@@ -473,7 +482,7 @@ public class LogProcessor extends BaseObject implements Runnable {
   // Statistics bookkeeping
   // ------------------------------------------------------------------
 
-  static String[] sStatOrder = { StatRecord.EPOCH,  StatRecord.LOSS };
+  static String[] sStatOrder = { StatRecord.EPOCH, StatRecord.LOSS };
 
   private Map<String, StatRecord> mStatRecordMap = hashMap();
 
