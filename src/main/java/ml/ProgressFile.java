@@ -17,6 +17,7 @@ public final class ProgressFile implements Closeable {
   public ProgressFile(CompileImagesConfig config) {
     loadTools();
     mConfig = config;
+    pr("config file:",config);
   }
 
   /**
@@ -43,8 +44,10 @@ public final class ProgressFile implements Closeable {
   }
 
   private File file() {
-    if (mProgressFile == null)
+    if (mProgressFile == null) {
+     pr("progress file:",mConfig.progressFile());
       mProgressFile = Files.assertNonEmpty(mConfig.progressFile(), "progress_file");
+    }
     return mProgressFile;
   }
 
