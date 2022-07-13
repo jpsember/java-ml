@@ -51,17 +51,16 @@ public final class CompileImagesOper extends AppOper {
 
   @Override
   public void perform() {
-    if (config().prepare()) {
-      prepareTrainService();
-      return;
-    }
-
-    writeModelData();
-    ImageCompiler imageCompiler = new ImageCompiler(config(), model(), files());
-    Inspector insp = Inspector.build(config().inspectionDir());
-    imageCompiler.setInspector(insp);
-
     try {
+      if (config().prepare()) {
+        prepareTrainService();
+        return;
+      }
+      writeModelData();
+      ImageCompiler imageCompiler = new ImageCompiler(config(), model(), files());
+      Inspector insp = Inspector.build(config().inspectionDir());
+      imageCompiler.setInspector(insp);
+
       if (config().trainService())
         performTrainService(imageCompiler);
       else
@@ -114,6 +113,7 @@ public final class CompileImagesOper extends AppOper {
   }
 
   private void prepareTrainService() {
+    startLogging();
     // Delete any existing signature file, or 'stop' signal file;
     // If either exists, then pause a bit afterward to try to avoid race conditions
     files().deletePeacefully(sigFile());

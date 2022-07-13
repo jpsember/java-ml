@@ -31,8 +31,13 @@ public class LogProcessor extends BaseObject implements Runnable {
 
   public static final boolean ISSUE_61 = true;
 
+  private void assertState(int state) {
+    if (state != mState)
+      badState("Expected state:", state, "but is:", mState);
+  }
+
   public void start(CompileImagesConfig compileImagesConfig, ModelWrapper model) {
-    checkState(mState == STATE_READY);
+    assertState(STATE_READY);
     mConfig = compileImagesConfig;
     mModel = model;
     mNetwork = model.network();
@@ -94,8 +99,10 @@ public class LogProcessor extends BaseObject implements Runnable {
   }
 
   private ProgressFile pf() {
-    if (mProgressFile == null)
+    if (mProgressFile == null) {
+      assertState(STATE_RUNNING);
       mProgressFile = new ProgressFile(config());
+    }
     return mProgressFile;
   }
 
