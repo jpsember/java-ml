@@ -53,6 +53,10 @@ fields {
   // Disable batch normalization (to see effect on training)?
   //
   bool disable_batch_norm;
+
+  // If true, periodically generates snapshots of training images and the model's output
+  //
+  bool generate_snapshots;
 }
 
 

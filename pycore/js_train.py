@@ -31,8 +31,8 @@ class JsTrain:
     self.done_msg:str = None
 
     self.epoch_number = 0
-    self.snapshot_epoch_interval = 2.0
-    self.snapshot_next_epoch = 2
+    self.snapshot_epoch_interval: float = None
+    self.snapshot_next_epoch: int = None
 
     script_path = os.path.realpath(train_script_file)
     self.cached_proj_path = os.path.dirname(script_path)
@@ -348,19 +348,25 @@ class JsTrain:
       TensorLogger.default_instance.add_stats(stats_map)
 
       self.epoch_number += 1
-
-      next_snapshot_epoch = int(self.snapshot_next_epoch)
-      if self.epoch_number >= next_snapshot_epoch:
-        # Early on, generate more frequent snapshots
-        if self.epoch_number > 20:
-          self.snapshot_epoch_interval *= 1.2
-        self.snapshot_next_epoch = self.epoch_number + self.snapshot_epoch_interval
-        report("Saving model inference snapshot")
-        self.send_inference_result()
+      self.update_snapshots()
 
       self.process_java_commands()
 
     self.save_checkpoint()
+
+
+  def update_snapshots(self):
+    if not JG.train_param.generate_snapshots:
+      return
+    if self.snapshot_next_epoch is None:
+      self.snapshot_epoch_interval = 2.0
+      self.snapshot_next_epoch = 2
+    next_snapshot_epoch = int(self.snapshot_next_epoch)
+    if self.epoch_number >= next_snapshot_epoch:
+      self.snapshot_epoch_interval *= 1.2
+      self.snapshot_next_epoch = self.epoch_number + self.snapshot_epoch_interval
+      report("Saving model inference snapshot")
+      self.send_inference_result()
 
 
   # Send image input, labelled output to streaming service

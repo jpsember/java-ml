@@ -51,6 +51,7 @@ public final class CompileImagesOper extends AppOper {
 
   @Override
   public void perform() {
+    // The logger runs in a separate thread, so this adds some complexity
     try {
       if (config().prepare()) {
         prepareTrainService();
