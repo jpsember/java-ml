@@ -25,7 +25,6 @@ class App:
     return "[project <name>]"
 
   def perform_train(self):
-    pr("...running train operation")
     while handling_args():
       self.select_project()
 
