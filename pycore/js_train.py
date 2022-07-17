@@ -17,7 +17,6 @@ from gen.special_handling import *
 from gen.special_option import SpecialOption
 from pycore.tensor_logger import TensorLogger
 
-ISSUE_42_PIXEL_ORDER = False
 
 class JsTrain:
 
@@ -243,14 +242,10 @@ class JsTrain:
 
     # Convert the numpy array to a pytorch tensor
 
-    if not ISSUE_42_PIXEL_ORDER:
-      # The model wants images with shape (channel, height, width), but Java standard images have
-      # shape (height, width, channel), so reshape accordingly
-      images = images.reshape((img_count, self.img_height, self.img_width,  self.img_channels))
-      images = np.ascontiguousarray(images.transpose(0, 3, 1, 2))
-      #images = np.copy(images.transpose(0, 3, 1, 2), order='C')
-    else:
-      images = images.reshape((img_count, self.img_channels, self.img_height, self.img_width))
+    # The model wants images with shape (channel, height, width), but Java standard images have
+    # shape (height, width, channel), so reshape accordingly
+    images = images.reshape((img_count, self.img_height, self.img_width,  self.img_channels))
+    images = np.ascontiguousarray(images.transpose(0, 3, 1, 2))
 
     images = torch.from_numpy(images)
     if self.network.special_option == SpecialOption.PIXEL_ALIGNMENT:

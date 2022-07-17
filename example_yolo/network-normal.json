@@ -44,5 +44,5 @@
           "max_i_over_u" : 0.6,
         },
 
-        "special_option" : "pixel_alignment",
+        // "special_option" : "pixel_alignment",
   }

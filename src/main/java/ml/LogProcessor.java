@@ -17,7 +17,6 @@ import js.graphics.ImgUtil;
 import js.graphics.ScriptUtil;
 import js.graphics.gen.Script;
 import js.json.JSMap;
-import ml.img.ImageCompiler;
 
 import static js.base.Tools.*;
 
@@ -265,10 +264,6 @@ public class LogProcessor extends BaseObject implements Runnable {
 
       for (int i = 0; i < batchSize; i++) {
         byte[] imgb = Arrays.copyOfRange(imgRec.tensorBytes(), bytesPerImage * i, bytesPerImage * (i + 1));
-        if (ModelWrapper.ISSUE_42_PIXEL_ORDER) {
-          imgb = ImageCompiler.pixelCYXtoYXC(mImageSize, imgb);
-        }
-
         BufferedImage img = ImgUtil.bytesToBGRImage(imgb, VolumeUtil.spatialDimension(imgVol));
         File baseFile = new File(targetProjectDir(), String.format(setName, i));
         File imgPath = Files.setExtension(baseFile, ImgUtil.EXT_JPEG);

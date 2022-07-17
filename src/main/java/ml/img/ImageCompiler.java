@@ -124,9 +124,6 @@ public final class ImageCompiler extends BaseObject {
           notSupported("adjust_brightness is not supported for data type", imageDataType);
         checkArgument(model.inputImageChannels() == 3, "not supported yet for channels != 3");
         byte[] bgrPixels = ImgUtil.bgrPixels(targetImage);
-        if (ModelWrapper.ISSUE_42_PIXEL_ORDER) {
-          bgrPixels = pixelYXCtoCYX(model.inputImagePlanarSize(), bgrPixels);
-        }
         image.setPixels(bgrPixels);
       }
         break;
