@@ -17,6 +17,7 @@ from gen.special_handling import *
 from gen.special_option import SpecialOption
 from pycore.tensor_logger import TensorLogger
 
+ISSUE_42_PIXEL_ORDER = False
 
 class JsTrain:
 
@@ -234,6 +235,7 @@ class JsTrain:
       self.recent_image_array = images
     elif dt == DataType.UNSIGNED_BYTE:
       bytes_per_image = self.train_info.image_length_bytes
+      pr("bytes_per_image:",bytes_per_image,"img ind:",img_index,"img_count:",img_count)
       images = read_unsigned_bytes(images_path, bytes_per_image * img_index, bytes_per_image, img_count)
       self.recent_image_array = images
       images = convert_unsigned_bytes_to_floats(images)
@@ -242,7 +244,15 @@ class JsTrain:
 
     # Convert the numpy array to a pytorch tensor
 
-    images = images.reshape((img_count, self.img_channels, self.img_height, self.img_width))
+    if not ISSUE_42_PIXEL_ORDER:
+      # The model wants images with shape (channel, height, width), but Java standard images have
+      # shape (height, width, channel), so reshape accordingly
+      images = images.reshape((img_count, self.img_height, self.img_width,  self.img_channels))
+      images = np.ascontiguousarray(images.transpose(0, 3, 1, 2))
+      #images = np.copy(images.transpose(0, 3, 1, 2), order='C')
+    else:
+      images = images.reshape((img_count, self.img_channels, self.img_height, self.img_width))
+
     images = torch.from_numpy(images)
     if self.network.special_option == SpecialOption.PIXEL_ALIGNMENT:
       pr("Performing special option: PIXEL_ALIGNMENT")
@@ -423,6 +433,10 @@ class JsTrain:
 
 
   def save_checkpoint(self):
+    if self.epoch_number <= 0:
+      warning("ignoring attempt to save epoch:",self.epoch_number)
+      return
+    
     path = self.construct_checkpoint_path_for_epoch(self.epoch_number)
     if os.path.exists(path):
       return

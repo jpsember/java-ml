@@ -33,7 +33,7 @@ import gen.Yolo;
 public abstract class ModelWrapper<T extends AbstractData> extends BaseObject {
 
   // Generate compiled images that have the order (image, channel, y, x) instead of (image, y, x, channel)?
-  public static final boolean ISSUE_42_PIXEL_ORDER = true;
+  public static final boolean ISSUE_42_PIXEL_ORDER = false;
 
   /**
    * Construct an appropriate concrete ModelWrapper for a network
