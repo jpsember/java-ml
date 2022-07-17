@@ -38,7 +38,7 @@
               "lambda_noobj" : 0.5
         },
 
-        "special_option" : "pixel_alignment",
+        //"special_option" : "pixel_alignment",
 
         // These are the defaults and could be omitted:
         "options" : {

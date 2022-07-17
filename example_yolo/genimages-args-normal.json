@@ -2,7 +2,7 @@
       "network_path" : "network.json",
         "categories" : "AOM",
 
-       "image_total" :  960,
+       "image_total" :  96, //960,
 
  //"noise_factor" : 0,
   //"color_limit" : 1,
