@@ -6,10 +6,10 @@ clear
 touch progress.txt
 
 #echo "Preparing for train streamer"
-ml compileimages prepare
+ml compileimages oper prepare_train
 
 #echo "Starting train streamer in separate process"
-ml compileimages train_service &
+ml compileimages oper train_service &
 
 #echo "Starting python training in separate process"
 ../driver.py train project yolo &

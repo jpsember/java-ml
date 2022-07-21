@@ -1,0 +1,14 @@
+enum {
+
+  unknown,
+
+  // Prepares for train service (write signature file, discard old sets), and exit
+  //
+  prepare_train,
+
+  // If true, loop forever (or until training criteria reached),
+  // generating subdirectories within the
+  // target_train_dir containing additional images and labels
+  //
+  train_service,
+}

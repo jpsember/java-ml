@@ -8,6 +8,7 @@ import java.util.SortedMap;
 
 import gen.CmdItem;
 import gen.CompileImagesConfig;
+import gen.CompileOper;
 import gen.NeuralNetwork;
 import gen.TrainParam;
 import js.app.AppOper;
@@ -16,12 +17,15 @@ import js.file.DirWalk;
 import js.file.Files;
 import js.graphics.Inspector;
 import ml.img.ImageCompiler;
+import static gen.CompileOper.*;
 
 /**
  * Compiles images into a form to be consumed by pytorch. Partitions images into
  * train and test sets; optionally generates training sets to be consumed by an
  * external training session running in parallel, and processes log files
- * received from the training session
+ * received from the training session.
+ * 
+ * Actually, performs one of several operations related to these tasks
  */
 public final class CompileImagesOper extends AppOper {
 
@@ -45,6 +49,10 @@ public final class CompileImagesOper extends AppOper {
     return super.config();
   }
 
+  private boolean oper(CompileOper oper) {
+    return config().oper() == oper;
+  }
+
   private TrainParam trainParam() {
     return config().trainParam();
   }
@@ -53,23 +61,22 @@ public final class CompileImagesOper extends AppOper {
   public void perform() {
     // The logger runs in a separate thread, so this adds some complexity
     try {
-      if (config().prepare()) {
-        prepareTrainService();
-        return;
-      }
-      writeModelData();
-      ImageCompiler imageCompiler = new ImageCompiler(config(), model(), files());
-      Inspector insp = Inspector.build(config().inspectionDir());
-      imageCompiler.setInspector(insp);
-
-      if (config().trainService())
-        performTrainService(imageCompiler);
-      else
-        imageCompiler.compileTrainSet(trainParam().targetDirTrain());
-
-      insp.flush();
+      performSubOperation();
     } finally {
       stopLogging();
+    }
+  }
+
+  private void performSubOperation() {
+    switch (config().oper()) {
+    default:
+      throw notSupported("operation not supported:", config().oper());
+    case PREPARE_TRAIN:
+      prepareTrainService();
+      break;
+    case TRAIN_SERVICE:
+      performTrainService();
+      break;
     }
   }
 
@@ -142,7 +149,11 @@ public final class CompileImagesOper extends AppOper {
     validateCheckpoints();
   }
 
-  private void performTrainService(ImageCompiler imageCompiler) {
+  private void performTrainService() {
+    writeModelData();
+    ImageCompiler imageCompiler = new ImageCompiler(config(), model(), files());
+    Inspector insp = Inspector.build(config().inspectionDir());
+    imageCompiler.setInspector(insp);
     String signature = readSignature();
     checkState(nonEmpty(signature), "No signature file found; need to prepare?");
 
@@ -211,6 +222,7 @@ public final class CompileImagesOper extends AppOper {
     }
     lp().println("Elapsed time training:",
         DateTimeTools.humanDuration(System.currentTimeMillis() - startServiceTime));
+    insp.flush();
   }
 
   private boolean stopFlagFound() {
@@ -323,7 +335,7 @@ public final class CompileImagesOper extends AppOper {
   private File checkpointDir() {
     if (mCheckpointDir == null) {
       File d = Files.assertNonEmpty(trainParam().targetDirCheckpoint());
-      if (config().prepare())
+      if (oper(PREPARE_TRAIN))
         files().mkdirs(d);
       else
         Files.assertDirectoryExists(d, "No checkpoint directory found; need to prepare?");

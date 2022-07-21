@@ -1,4 +1,8 @@
+enum gen.CompileOper;
+
 fields {
+
+  CompileOper oper;
 
   ? NeuralNetwork network;
   File network_path;
@@ -13,15 +17,6 @@ fields {
 
   File target_dir_model = "train_info";
   File inspection_dir;
-
-  // If true, loops forever, generating subdirectories within the
-  // target_train_dir containing additional images and labels
-  //
-  bool train_service;
-
-  // Prepares for train service (write signature file, discard old sets), and exit
-  //
-  bool prepare;
 
   TrainParam train_param;
 
