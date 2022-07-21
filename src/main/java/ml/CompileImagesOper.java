@@ -132,12 +132,6 @@ public final class CompileImagesOper extends AppOper {
             files().deleteFile(f);
           continue;
         }
-
-        if (config().retainExistingTrainingSets() && f.getName().startsWith(STREAM_PREFIX)) {
-          alert("Retaining existing training sets");
-          continue;
-        }
-
         if (f.getName().equals("_temp_") || f.getName().startsWith(STREAM_PREFIX))
           files().deleteDirectory(f);
       }
