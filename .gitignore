@@ -43,6 +43,7 @@ generated_images
 inspection
 train_data
 train_info
+inference
 example_yolo/from_web
 
 example_yolo/rs.sh

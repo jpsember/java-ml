@@ -13,6 +13,7 @@ import java.util.Random;
 
 import gen.AugmentationConfig;
 import gen.CompileImagesConfig;
+import gen.CompileOper;
 import gen.DataType;
 import gen.TransformWrapper;
 import js.base.BaseObject;
@@ -25,9 +26,9 @@ import js.graphics.ImgUtil;
 import js.graphics.Inspector;
 import js.graphics.ScriptElement;
 import js.graphics.ScriptUtil;
-import ml.GenerateImageSetOper;
 import ml.LabelledImage;
 import ml.ModelWrapper;
+import static gen.CompileOper.*;
 
 /**
  * Used by CompileImagesOper to process images
@@ -48,15 +49,7 @@ public final class ImageCompiler extends BaseObject {
     mInspector = Inspector.orNull(inspector);
   }
 
-  public void compileInferenceSet(File targetDir) {
-    compileSet(targetDir, false);
-  }
-
-  public void compileTrainSet(File targetDir) {
-    compileSet(targetDir, true);
-  }
-
-  public void compileSet(File targetDir, boolean training) {
+  public void compileSet(File targetDir) {
     ModelWrapper model = model();
     files().remakeDirs(targetDir);
     File imagePath = new File(targetDir, "images.bin");
@@ -64,16 +57,14 @@ public final class ImageCompiler extends BaseObject {
     model.imageSetInfo().imageCount(entries().size());
     File labelsPath = new File(targetDir, "labels.bin");
 
-    
     DataOutputStream imagesStream = new DataOutputStream(files().outputStream(imagePath));
     model.setImageStream(imagesStream);
     DataOutputStream labelsStream = null;
-    if (training) {
+    if (oper(TRAIN_SERVICE)) {
       labelsStream = new DataOutputStream(files().outputStream(labelsPath));
       model.setLabelStream(labelsStream);
     }
 
-    
     float[] imageFloats = null;
 
     DataType imageDataType = model.network().imageDataType();
@@ -117,6 +108,7 @@ public final class ImageCompiler extends BaseObject {
       mInspector.create("tfm").image(targetImage).elements(annotations);
 
       LabelledImage image = new LabelledImage(model);
+      if (oper(TRAIN_SERVICE))
       image.setAnnotations(annotations);
 
       switch (imageDataType) {
@@ -167,13 +159,14 @@ public final class ImageCompiler extends BaseObject {
       DirWalk w = new DirWalk(imageDir).withRecurse(false).withExtensions(ImgUtil.EXT_JPEG);
       for (File f : w.files())
         ents.add(new ImageEntry(f));
-      checkArgument(ents.size() > 3, "insufficient images:", ents.size());
-      if (GenerateImageSetOper.YOLO_DEV) {
-        mEntries = ents;
-        alert("not permuting for now, while working on Yolo");
-        return mEntries;
-      }
+      if (oper(TRAIN_SERVICE)) 
+        checkArgument(ents.size() > 3, "insufficient images:", ents.size());
+      
       MyMath.permute(ents, random());
+      if (oper(COMPILE_INFERENCE_IMAGES)) {
+        if (config().maxImageCount() > 0)
+          removeAllButFirstN(ents,  config().maxImageCount());
+      }
       mEntries = ents;
     }
     return mEntries;
@@ -181,6 +174,10 @@ public final class ImageCompiler extends BaseObject {
 
   private CompileImagesConfig config() {
     return mConfig;
+  }
+
+  private boolean oper(CompileOper oper) {
+    return config().oper() == oper;
   }
 
   private Files files() {
@@ -347,4 +344,5 @@ public final class ImageCompiler extends BaseObject {
     }
     return pixOut;
   }
+
 }

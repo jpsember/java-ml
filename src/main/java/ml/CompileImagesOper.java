@@ -128,7 +128,7 @@ public final class CompileImagesOper extends AppOper {
     ImageCompiler imageCompiler = new ImageCompiler(config(), model(), files());
     File inferenceDir = Files.assertNonEmpty(config().inferenceDir(), "inference_dir");
     files().remakeDirs(inferenceDir);
-    imageCompiler.compileTrainSet(inferenceDir);
+    imageCompiler.compileSet(inferenceDir);
   }
 
   private void prepareTrainService() {
@@ -203,8 +203,7 @@ public final class CompileImagesOper extends AppOper {
       }
 
       long startTime = System.currentTimeMillis();
-
-      imageCompiler.compileTrainSet(tempDir);
+      imageCompiler.compileSet(tempDir);
 
       // Choose a name for the new set
       //

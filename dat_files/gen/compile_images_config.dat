@@ -29,4 +29,8 @@ fields {
   // --- Oper COMPILE_INFERENCE_IMAGES only
   //
   File inference_dir = "inference";
+
+  // Maximum number of images to compile for
+  //
+  int max_image_count = 32;
 }

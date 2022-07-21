@@ -184,12 +184,17 @@ public abstract class ModelWrapper<T extends AbstractData> extends BaseObject {
 
   /**
    * Process an image and its annotations, converting to form suitable for
-   * training
+   * training (or inference)
+   * 
+   * If LabelledImage actually includes labels, transforms and writes labels as
+   * well
    */
   public final void accept(LabelledImage labelledImage) {
     writeImage(labelledImage);
-    transformScreditToModelInput(labelledImage.annotations());
-    writeLabels();
+    if (labelledImage.hasAnnotations()) {
+      transformScreditToModelInput(labelledImage.annotations());
+      writeLabels();
+    }
   }
 
   /**

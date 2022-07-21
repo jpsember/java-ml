@@ -37,8 +37,6 @@ import static gen.SpecialOption.*;
 
 public class GenerateImageSetOper extends AppOper {
 
-  public static final boolean YOLO_DEV = false && alert("YOLO_DEV in effect");
-
   @Override
   public String userCommand() {
     return "genimages";
@@ -51,8 +49,6 @@ public class GenerateImageSetOper extends AppOper {
 
   @Override
   public void perform() {
-    if (YOLO_DEV)
-      die("temporarily disabled to work with known YOLO images");
     mModel = ModelWrapper.constructFor(config().network(), config().networkPath());
 
     switch (projectType()) {

@@ -44,6 +44,10 @@ public final class LabelledImage {
     mAnnotations = annotations;
   }
 
+  public boolean hasAnnotations() {
+    return mAnnotations != null;
+  }
+
   /**
    * Parse annotations from the model's label buffer
    */
