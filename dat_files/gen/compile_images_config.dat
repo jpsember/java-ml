@@ -25,4 +25,8 @@ fields {
   File snapshot_dir;
 
   File progress_file = "progress.txt";
+
+  // --- Oper COMPILE_INFERENCE_IMAGES only
+  //
+  File inference_dir = "inference";
 }

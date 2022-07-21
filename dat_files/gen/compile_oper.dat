@@ -11,4 +11,8 @@ enum {
   // target_train_dir containing additional images and labels
   //
   train_service,
+
+  // Compile a directory of images into a binary file for Python to process
+  //
+  compile_inference_images,
 }

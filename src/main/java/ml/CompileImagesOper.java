@@ -77,6 +77,9 @@ public final class CompileImagesOper extends AppOper {
     case TRAIN_SERVICE:
       performTrainService();
       break;
+    case COMPILE_INFERENCE_IMAGES:
+      compileInferenceImages();
+      break;
     }
   }
 
@@ -116,8 +119,16 @@ public final class CompileImagesOper extends AppOper {
     return network().build().toBuilder().options(null);
   }
 
-  private long currentTime() {
+  private static long currentTime() {
     return System.currentTimeMillis();
+  }
+
+  private void compileInferenceImages() {
+    writeModelData();
+    ImageCompiler imageCompiler = new ImageCompiler(config(), model(), files());
+    File inferenceDir = Files.assertNonEmpty(config().inferenceDir(), "inference_dir");
+    files().remakeDirs(inferenceDir);
+    imageCompiler.compileTrainSet(inferenceDir);
   }
 
   private void prepareTrainService() {

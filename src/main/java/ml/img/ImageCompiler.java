@@ -48,20 +48,32 @@ public final class ImageCompiler extends BaseObject {
     mInspector = Inspector.orNull(inspector);
   }
 
+  public void compileInferenceSet(File targetDir) {
+    compileSet(targetDir, false);
+  }
+
   public void compileTrainSet(File targetDir) {
+    compileSet(targetDir, true);
+  }
+
+  public void compileSet(File targetDir, boolean training) {
     ModelWrapper model = model();
     files().remakeDirs(targetDir);
     File imagePath = new File(targetDir, "images.bin");
-    File labelsPath = new File(targetDir, "labels.bin");
     File infoPath = new File(targetDir, "image_set_info.json");
     model.imageSetInfo().imageCount(entries().size());
+    File labelsPath = new File(targetDir, "labels.bin");
 
+    
     DataOutputStream imagesStream = new DataOutputStream(files().outputStream(imagePath));
-    DataOutputStream labelsStream = new DataOutputStream(files().outputStream(labelsPath));
-
     model.setImageStream(imagesStream);
-    model.setLabelStream(labelsStream);
+    DataOutputStream labelsStream = null;
+    if (training) {
+      labelsStream = new DataOutputStream(files().outputStream(labelsPath));
+      model.setLabelStream(labelsStream);
+    }
 
+    
     float[] imageFloats = null;
 
     DataType imageDataType = model.network().imageDataType();
