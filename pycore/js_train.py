@@ -20,7 +20,7 @@ from pycore.tensor_logger import TensorLogger
 
 class JsTrain:
 
-  def __init__(self, train_script_file):
+  def __init__(self, model_specific_script_file):
     self.signature = None
     self.verbose = False
     self.device = None
@@ -34,7 +34,7 @@ class JsTrain:
     self.snapshot_epoch_interval: float = None
     self.snapshot_next_epoch: int = None
 
-    script_path = os.path.realpath(train_script_file)
+    script_path = os.path.realpath(model_specific_script_file)
     self.cached_proj_path = os.path.dirname(script_path)
 
     t = self.proj_path("train_info")

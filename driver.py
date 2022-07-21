@@ -40,6 +40,25 @@ class App:
 
   #-------------------------------------------------------------------------------------
 
+  def help_inference(self):
+    return "[project <name>]"
+
+  def perform_inference(self):
+    while handling_args():
+      self.select_project()
+
+    die("load inference class, not train class here") 
+    if self.project == "yolo":
+      c = YoloTrain()
+    else:
+      die("Project not supported:", self.project)
+
+    c.prepare_pytorch()
+    c.run_training_session()
+
+
+  #-------------------------------------------------------------------------------------
+
   def select_project(self):
     self.project = next_arg_if("project", "yolo")
 
