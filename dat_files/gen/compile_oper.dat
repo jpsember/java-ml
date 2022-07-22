@@ -15,4 +15,8 @@ enum {
   // Compile a directory of images into a binary file for Python to process
   //
   compile_inference_images,
+
+  // Process inference result
+  //
+  process_inference_result,
 }

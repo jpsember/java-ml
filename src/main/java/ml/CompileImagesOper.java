@@ -16,6 +16,7 @@ import js.base.DateTimeTools;
 import js.file.DirWalk;
 import js.file.Files;
 import js.graphics.Inspector;
+import js.json.JSList;
 import ml.img.ImageCompiler;
 import static gen.CompileOper.*;
 
@@ -80,6 +81,9 @@ public final class CompileImagesOper extends AppOper {
     case COMPILE_INFERENCE_IMAGES:
       compileInferenceImages();
       break;
+    case PROCESS_INFERENCE_RESULT:
+      processInferenceResult();
+      break;
     }
   }
 
@@ -129,6 +133,15 @@ public final class CompileImagesOper extends AppOper {
     File inferenceDir = Files.assertNonEmpty(config().inferenceDir(), "inference_dir");
     files().remakeDirs(inferenceDir);
     imageCompiler.compileSet(inferenceDir);
+  }
+
+  private void processInferenceResult() {
+    File inferenceDir = config().inferenceDir();
+    File resultsFile = new File(inferenceDir, "results.bin");
+    Files.assertExists(resultsFile);
+    float[] results = Files.readFloatsLittleEndian(resultsFile, "inference results");
+    todo("interpret resuts, produce scripts");
+    pr(JSList.with(results));
   }
 
   private void prepareTrainService() {
