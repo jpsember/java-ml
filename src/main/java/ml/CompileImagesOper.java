@@ -2,6 +2,7 @@ package ml;
 
 import static js.base.Tools.*;
 
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.util.List;
 import java.util.SortedMap;
@@ -9,14 +10,17 @@ import java.util.SortedMap;
 import gen.CmdItem;
 import gen.CompileImagesConfig;
 import gen.CompileOper;
+import gen.ImageSetInfo;
 import gen.NeuralNetwork;
 import gen.TrainParam;
 import js.app.AppOper;
 import js.base.DateTimeTools;
 import js.file.DirWalk;
 import js.file.Files;
+import js.graphics.ImgUtil;
 import js.graphics.Inspector;
-import js.json.JSList;
+import js.graphics.ScriptUtil;
+import js.graphics.gen.Script;
 import ml.img.ImageCompiler;
 import static gen.CompileOper.*;
 
@@ -132,16 +136,89 @@ public final class CompileImagesOper extends AppOper {
     ImageCompiler imageCompiler = new ImageCompiler(config(), model(), files());
     File inferenceDir = Files.assertNonEmpty(config().inferenceDir(), "inference_dir");
     files().remakeDirs(inferenceDir);
-    imageCompiler.compileSet(inferenceDir);
+    files().remakeDirs(inferenceInspectionDir());
+    imageCompiler.compileSet(inferenceDir, (x) -> writeInferenceImage(x));
   }
+
+  /**
+   * Write BufferedImage (produced by ImageCompiler) to inference inspection
+   * directory
+   */
+  private void writeInferenceImage(BufferedImage image) {
+    File imgFile = nextInferenceImageName(inferenceInspectionDir(), ImgUtil.EXT_JPEG);
+    ImgUtil.writeImage(files(), image, imgFile);
+  }
+
+  private File nextInferenceImageName(File directory, String ext) {
+    String result = String.format("%04d.%s", mInfImageNumber++, ext);
+    return new File(directory, result);
+  }
+
+  private int mInfImageNumber;
 
   private void processInferenceResult() {
     File inferenceDir = config().inferenceDir();
     File resultsFile = new File(inferenceDir, "results.bin");
     Files.assertExists(resultsFile);
-    float[] results = Files.readFloatsLittleEndian(resultsFile, "inference results");
-    todo("interpret results, produce scripts");
-    pr(JSList.with(results));
+
+    ImageSetInfo imageSetInfo = Files.parseAbstractData(ImageSetInfo.DEFAULT_INSTANCE,
+        new File(inferenceDir, "image_set_info.json"));
+
+    //      switch (network().imageDataType()) {
+    //      default:
+    //        throw notSupported("network.image_data_type", mNetwork.imageDataType());
+    //      case UNSIGNED_BYTE: {
+    //        checkNotNull(imgRec.tensorBytes(), "no bytes in tensor");
+    //        int imgLength = imgRec.tensorBytes().length;
+    //
+    //        // We have a stacked batch of images.
+    //        int bytesPerImage = mImageSize.product() * mImageVolume.depth();
+    //
+    //        int batchSize = imgLength / bytesPerImage;
+    //        checkArgument(imgLength % bytesPerImage == 0, "images length", imgLength,
+    //            "is not a multiple of image volume", bytesPerImage);
+    //        String setName = String.format("%05d_", imgRec.familyId()) + "_%02d";
+
+    //       for (int i = 0; i < imageSetInfo.imageCount(); i++) {
+    //          byte[] imgb = Arrays.copyOfRange(imgRec.tensorBytes(), bytesPerImage * i, bytesPerImage * (i + 1));
+    //          BufferedImage img = ImgUtil.bytesToBGRImage(imgb, VolumeUtil.spatialDimension(imgVol));
+    //          File baseFile = new File(targetProjectDir(), String.format(setName, i));
+    //          File imgPath = Files.setExtension(baseFile, ImgUtil.EXT_JPEG);
+    todo("when generating inference info, write images to a results subdirectory");
+
+    //          ImgUtil.writeJPG(files(), img, imgPath, null);
+
+    switch (network().labelDataType()) {
+    case FLOAT32: {
+      float[] results = Files.readFloatsLittleEndian(resultsFile, "inference_results");
+      int ic = imageSetInfo.imageCount();
+      int labelCount = model().imageSetInfo().labelLengthBytes() * Float.BYTES;
+      checkArgument(ic * labelCount == results.length, "label size * batch != labels length");
+
+      File scriptDir = ScriptUtil.scriptDirForProject(inferenceInspectionDir());
+
+      for (int i = 0; i < ic; i++) {
+        float[] targetBuffer = model().labelBufferFloats();
+        int imgLblLen = targetBuffer.length;
+        System.arraycopy(results, imgLblLen * i, targetBuffer, 0, imgLblLen);
+
+        Script.Builder script = Script.newBuilder();
+        script.items(model().transformModelOutputToScredit());
+        ScriptUtil.write(files(), script, nextInferenceImageName(scriptDir, Files.EXT_JSON));
+      }
+    }
+      break;
+    default:
+      throw notSupported("label data type:", network().labelDataType());
+    }
+
+  }
+
+  private File inferenceInspectionDir() {
+    if (mInferenceInspectionDir == null) {
+      mInferenceInspectionDir = new File("inference_results");
+    }
+    return mInferenceInspectionDir;
   }
 
   private void prepareTrainService() {
@@ -216,7 +293,7 @@ public final class CompileImagesOper extends AppOper {
       }
 
       long startTime = System.currentTimeMillis();
-      imageCompiler.compileSet(tempDir);
+      imageCompiler.compileSet(tempDir, null);
 
       // Choose a name for the new set
       //
@@ -516,5 +593,5 @@ public final class CompileImagesOper extends AppOper {
   private int mAvgReportedCounter;
   private NeuralNetwork mCompiledNetwork;
   private ModelWrapper mModel;
-
+  private File mInferenceInspectionDir;
 }

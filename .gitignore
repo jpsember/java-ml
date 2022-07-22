@@ -44,6 +44,7 @@ inspection
 train_data
 train_info
 inference
+inference_results
 example_yolo/from_web
 
 example_yolo/rs.sh

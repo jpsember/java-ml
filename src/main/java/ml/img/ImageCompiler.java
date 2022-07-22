@@ -10,6 +10,7 @@ import java.io.File;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.function.Consumer;
 
 import gen.AugmentationConfig;
 import gen.CompileImagesConfig;
@@ -49,7 +50,7 @@ public final class ImageCompiler extends BaseObject {
     mInspector = Inspector.orNull(inspector);
   }
 
-  public void compileSet(File targetDir) {
+  public void compileSet(File targetDir, Consumer<BufferedImage> imageListener) {
     ModelWrapper model = model();
     files().remakeDirs(targetDir);
     File imagePath = new File(targetDir, "images.bin");
@@ -137,6 +138,9 @@ public final class ImageCompiler extends BaseObject {
 
       model.accept(image);
 
+      if (imageListener != null)
+        imageListener.accept(targetImage);
+            
       if (mInspector.used()) {
         // Parse the labels we generated, and write as the annotations to an inspection image
         mInspector.create("parsed").image(targetImage);
