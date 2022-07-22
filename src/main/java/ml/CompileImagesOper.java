@@ -140,7 +140,7 @@ public final class CompileImagesOper extends AppOper {
     File resultsFile = new File(inferenceDir, "results.bin");
     Files.assertExists(resultsFile);
     float[] results = Files.readFloatsLittleEndian(resultsFile, "inference results");
-    todo("interpret resuts, produce scripts");
+    todo("interpret results, produce scripts");
     pr(JSList.with(results));
   }
 
