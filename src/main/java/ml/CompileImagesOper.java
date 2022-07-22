@@ -146,14 +146,14 @@ public final class CompileImagesOper extends AppOper {
    */
   private void writeInferenceImage(BufferedImage image) {
     File imgFile = nextInferenceImageName(inferenceInspectionDir(), ImgUtil.EXT_JPEG);
-    alert("something weird was going on with compiled images, but it went away");
+    //alert("something weird was going on with compiled images, but it went away");
     // ImageCompiler.dump(image);
     ImgUtil.writeImage(files(), image, imgFile);
   }
 
   private File nextInferenceImageName(File directory, String ext) {
     File output = new File(directory, String.format("%04d.%s", mInfImageNumber++, ext));
-    pr("next inf file:", output);
+    // pr("next inf file:", output);
     return output;
   }
 
