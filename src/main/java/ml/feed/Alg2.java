@@ -7,7 +7,7 @@ public class Alg2 extends FeedAlg {
     // Find obj with furthest distance from its last usage, 
     // filling in empty slots where possible
     int slots = config().consumeSetSize();
-    int maxDist = -1;
+      int maxDist = -1;
     int bestCursor = -1;
     for (int i = 0; i < slots; i++) {
       setCursor(cursor() + 1);

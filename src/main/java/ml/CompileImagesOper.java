@@ -146,12 +146,15 @@ public final class CompileImagesOper extends AppOper {
    */
   private void writeInferenceImage(BufferedImage image) {
     File imgFile = nextInferenceImageName(inferenceInspectionDir(), ImgUtil.EXT_JPEG);
+    alert("something weird was going on with compiled images, but it went away");
+    // ImageCompiler.dump(image);
     ImgUtil.writeImage(files(), image, imgFile);
   }
 
   private File nextInferenceImageName(File directory, String ext) {
-    String result = String.format("%04d.%s", mInfImageNumber++, ext);
-    return new File(directory, result);
+    File output = new File(directory, String.format("%04d.%s", mInfImageNumber++, ext));
+    pr("next inf file:", output);
+    return output;
   }
 
   private int mInfImageNumber;
@@ -164,36 +167,14 @@ public final class CompileImagesOper extends AppOper {
     ImageSetInfo imageSetInfo = Files.parseAbstractData(ImageSetInfo.DEFAULT_INSTANCE,
         new File(inferenceDir, "image_set_info.json"));
 
-    //      switch (network().imageDataType()) {
-    //      default:
-    //        throw notSupported("network.image_data_type", mNetwork.imageDataType());
-    //      case UNSIGNED_BYTE: {
-    //        checkNotNull(imgRec.tensorBytes(), "no bytes in tensor");
-    //        int imgLength = imgRec.tensorBytes().length;
-    //
-    //        // We have a stacked batch of images.
-    //        int bytesPerImage = mImageSize.product() * mImageVolume.depth();
-    //
-    //        int batchSize = imgLength / bytesPerImage;
-    //        checkArgument(imgLength % bytesPerImage == 0, "images length", imgLength,
-    //            "is not a multiple of image volume", bytesPerImage);
-    //        String setName = String.format("%05d_", imgRec.familyId()) + "_%02d";
-
-    //       for (int i = 0; i < imageSetInfo.imageCount(); i++) {
-    //          byte[] imgb = Arrays.copyOfRange(imgRec.tensorBytes(), bytesPerImage * i, bytesPerImage * (i + 1));
-    //          BufferedImage img = ImgUtil.bytesToBGRImage(imgb, VolumeUtil.spatialDimension(imgVol));
-    //          File baseFile = new File(targetProjectDir(), String.format(setName, i));
-    //          File imgPath = Files.setExtension(baseFile, ImgUtil.EXT_JPEG);
-    todo("when generating inference info, write images to a results subdirectory");
-
-    //          ImgUtil.writeJPG(files(), img, imgPath, null);
-
     switch (network().labelDataType()) {
     case FLOAT32: {
       float[] results = Files.readFloatsLittleEndian(resultsFile, "inference_results");
       int ic = imageSetInfo.imageCount();
-      int labelCount = model().imageSetInfo().labelLengthBytes() * Float.BYTES;
-      checkArgument(ic * labelCount == results.length, "label size * batch != labels length");
+      int labelCount = model().imageSetInfo().labelLengthBytes() / Float.BYTES;
+      if (ic * labelCount != results.length)
+        badArg("label size * batch != labels length", "image count:", ic, "label count:", labelCount,
+            "results.length:", results.length);
 
       File scriptDir = ScriptUtil.scriptDirForProject(inferenceInspectionDir());
 

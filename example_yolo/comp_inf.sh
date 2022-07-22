@@ -2,4 +2,4 @@
 set -eu
 
 echo "Compiling inference images"
-ml compileimages oper compile_inference_images
+ml compileimages oper compile_inference_images # inspection_dir inspection

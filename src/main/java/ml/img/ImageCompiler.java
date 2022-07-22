@@ -46,6 +46,13 @@ public final class ImageCompiler extends BaseObject {
     mRandom = new Random(seed);
   }
 
+  public static void dump(BufferedImage img) {
+    if (alert("wtf is going on with compiled images")) {
+      ImgUtil.writeImage(Files.S, img, new File("wtf.png"));
+      halt("have a look");
+    }
+  }
+
   public void setInspector(Inspector inspector) {
     mInspector = Inspector.orNull(inspector);
   }
@@ -104,13 +111,15 @@ public final class ImageCompiler extends BaseObject {
       }
       AffineTransformOp op = new AffineTransformOp(imageTfm, AffineTransformOp.TYPE_BILINEAR);
       op.filter(img, targetImage);
+      if (imageListener != null)
+        imageListener.accept(targetImage);
 
       annotations = ScriptUtil.transform(annotations, scriptTransform);
       mInspector.create("tfm").image(targetImage).elements(annotations);
 
       LabelledImage image = new LabelledImage(model);
       if (oper(TRAIN_SERVICE))
-      image.setAnnotations(annotations);
+        image.setAnnotations(annotations);
 
       switch (imageDataType) {
       case FLOAT32: {
@@ -138,9 +147,6 @@ public final class ImageCompiler extends BaseObject {
 
       model.accept(image);
 
-      if (imageListener != null)
-        imageListener.accept(targetImage);
-            
       if (mInspector.used()) {
         // Parse the labels we generated, and write as the annotations to an inspection image
         mInspector.create("parsed").image(targetImage);
@@ -163,13 +169,13 @@ public final class ImageCompiler extends BaseObject {
       DirWalk w = new DirWalk(imageDir).withRecurse(false).withExtensions(ImgUtil.EXT_JPEG);
       for (File f : w.files())
         ents.add(new ImageEntry(f));
-      if (oper(TRAIN_SERVICE)) 
+      if (oper(TRAIN_SERVICE))
         checkArgument(ents.size() > 3, "insufficient images:", ents.size());
-      
+
       MyMath.permute(ents, random());
       if (oper(COMPILE_INFERENCE_IMAGES)) {
         if (config().maxImageCount() > 0)
-          removeAllButFirstN(ents,  config().maxImageCount());
+          removeAllButFirstN(ents, config().maxImageCount());
       }
       mEntries = ents;
     }
