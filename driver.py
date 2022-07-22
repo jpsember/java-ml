@@ -7,6 +7,7 @@
 from pycore.base import *
 from example_classifier.classifier_train import ClassifierTrain
 from example_yolo.yolo_train import YoloTrain
+from example_yolo.yolo_inference import YoloInference
 
 
 class App:
@@ -47,14 +48,13 @@ class App:
     while handling_args():
       self.select_project()
 
-    die("load inference class, not train class here") 
     if self.project == "yolo":
-      c = YoloTrain()
+      c = YoloInference()
     else:
       die("Project not supported:", self.project)
 
     c.prepare_pytorch()
-    c.run_training_session()
+    c.run_inference()
 
 
   #-------------------------------------------------------------------------------------
