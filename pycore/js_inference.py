@@ -122,7 +122,20 @@ class JsInference:
       out_data = self.model(tensor_images)
 
     show_shape(out_data)
-    halt("what do we do with out_data?")
+    self.write_results(out_data)
+
+
+  def write_results(self, tensor):
+    results_path = os.path.join(self.inf_dir, "results.bin")
+    dt = self.network.label_data_type
+    if dt == DataType.FLOAT32:
+      labels = tensor.detach().cpu().numpy() # https://stackoverflow.com/questions/49768306/
+      #pr("labels:",labels)
+      #pr("dtype:",labels.dtype)
+      labels.tofile(results_path)
+      self.log("results written to",results_path)
+    else:
+      die("Unsupported label data type:", dt)
 
 
 
