@@ -9,7 +9,9 @@ fields {
 
   NetworkProjectType project_type;
 
-  * Layer layers;
+  // If I omit the 'gen.' prefix here, it generates faulty python code; why?
+  //   * gen.Layer layers;
+  * gen.Layer layers;
 
   // Number of weights (not their size, which is times sizeof(byte))
   //

@@ -3,6 +3,9 @@
 # Driver for pytorch experiments
 #
 
+### I needed to run this command on my mac:
+###  pip3 install jstyleson
+
 
 from pycore.base import *
 from example_classifier.classifier_train import ClassifierTrain
