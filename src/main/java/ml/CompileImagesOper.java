@@ -14,6 +14,7 @@ import gen.ImageSetInfo;
 import gen.NeuralNetwork;
 import gen.TrainParam;
 import js.app.AppOper;
+import js.base.BasePrinter;
 import js.base.DateTimeTools;
 import js.file.DirWalk;
 import js.file.Files;
@@ -42,6 +43,12 @@ public final class CompileImagesOper extends AppOper {
   @Override
   public String getHelpDescription() {
     return "Compile sets of training or testing images";
+  }
+
+  @Override
+  protected void getOperSpecificHelp(BasePrinter b) {
+    b.pr(userCommand(), " --- todo: fill out additional help info");
+    //    b.append(defaultArgs().toString());
   }
 
   @Override
