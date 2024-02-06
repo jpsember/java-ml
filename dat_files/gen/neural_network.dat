@@ -11,7 +11,7 @@ fields {
 
   // If I omit the 'gen.' prefix here, it generates faulty python code; why?
   //   * gen.Layer layers;
-  * gen.Layer layers;
+  * Layer layers;
 
   // Number of weights (not their size, which is times sizeof(byte))
   //
@@ -49,6 +49,6 @@ fields {
 
   SpecialOption special_option;
 
-  gen.NetworkOptions options;
+  NetworkOptions options;
 
 }

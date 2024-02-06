@@ -2,6 +2,8 @@ package ml.feed;
 
 import static js.base.Tools.*;
 
+import java.lang.reflect.Constructor;
+
 import gen.FeedConfig;
 import js.app.AppOper;
 
@@ -25,7 +27,8 @@ public class FeedOper extends AppOper {
     Class klass = null;
     try {
       klass = Class.forName(algName);
-      alg = (FeedAlg) klass.newInstance();
+      Constructor constructor = FeedAlg.class.getConstructor(klass);
+      alg = (FeedAlg) constructor.newInstance();
     } catch (Throwable e) {
       throw badArg("Can't construct algorithm! Error:", e.getMessage());
     }

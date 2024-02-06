@@ -1,7 +1,7 @@
 from pycore.base import *
-import numpy as np
+import numpy as np   # pip3 install numpy
 import torch
-from torch import nn
+from torch import nn # pip3 install torch
 from gen.vol import *
 from pycore.ipoint import IPoint
 
