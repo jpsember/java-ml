@@ -2,7 +2,7 @@
   "network_path" : "network.json",
 
    "categories" : "AB",
-  "image_total" : 32,   // Batch size 32 * n
+  "image_total" : 128,   // Batch size 32 * n
 
   "bgnd_image" : "sepia.png",
 

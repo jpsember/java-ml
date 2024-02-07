@@ -22,7 +22,8 @@ fields {
   string categories = "AB";
 
   // Maximum number of objects to generate within each image; generates at least one,
-  // and up to this value
+  // and up to this value.
+  // If network is a classifier, this value is ignored, and it generates exactly one object.
   //
   int max_objects = 4;
 

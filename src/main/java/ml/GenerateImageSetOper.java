@@ -19,6 +19,7 @@ import gen.GenerateImagesConfig;
 import gen.NetworkProjectType;
 import gen.Yolo;
 import js.app.AppOper;
+import js.base.BasePrinter;
 import js.file.Files;
 import js.geometry.IPoint;
 import js.geometry.IRect;
@@ -45,6 +46,11 @@ public class GenerateImageSetOper extends AppOper {
   @Override
   public String getHelpDescription() {
     return "Generate annotated images procedurally";
+  }
+
+  @Override
+  protected void getOperSpecificHelp(BasePrinter b) {
+    b.pr("Procedurally generates a set of images.");
   }
 
   @Override
@@ -403,12 +409,8 @@ public class GenerateImageSetOper extends AppOper {
   // ------------------------------------------------------------------
 
   private Random random() {
-    if (mRandom == null) {
-      var seed = config().seed();
-      if (seed == 0)
-        seed = (int) System.currentTimeMillis();
-      mRandom = new Random(seed);
-    }
+    if (mRandom == null)
+      mRandom = MlUtil.buildRandom(config().seed());
     return mRandom;
   }
 

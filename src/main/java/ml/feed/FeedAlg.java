@@ -10,6 +10,7 @@ import gen.FeedConfig;
 import js.base.BaseObject;
 import js.base.BasePrinter;
 import js.geometry.MyMath;
+import ml.MlUtil;
 
 public abstract class FeedAlg extends BaseObject {
 
@@ -39,7 +40,7 @@ public abstract class FeedAlg extends BaseObject {
       }
     }
 
-    out("Producer count:",mProducerTasks);
+    out("Producer count:", mProducerTasks);
     out("Consumer:", mConsumerEventLog);
     out("Efficiency %:", (100 * consumedObjCount()) / mConsumerLogicCount);
     out("Avg dist:", mDistSum / (float) (consumedObjCount() - 1));
@@ -180,7 +181,7 @@ public abstract class FeedAlg extends BaseObject {
 
   public final Random rand() {
     if (mRandom == null)
-      mRandom = new Random(config().seed());
+      mRandom = MlUtil.buildRandom(config().seed());
     return mRandom;
   }
 

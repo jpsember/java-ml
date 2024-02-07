@@ -28,6 +28,7 @@ import js.graphics.Inspector;
 import js.graphics.ScriptElement;
 import js.graphics.ScriptUtil;
 import ml.LabelledImage;
+import ml.MlUtil;
 import ml.ModelWrapper;
 import static gen.CompileOper.*;
 
@@ -40,10 +41,7 @@ public final class ImageCompiler extends BaseObject {
     mModel = model;
     mConfig = nullTo(config, CompileImagesConfig.DEFAULT_INSTANCE).build();
     mFiles = nullTo(files, Files.S);
-    int seed = config().seed();
-    if (seed <= 0)
-      seed = (int) System.currentTimeMillis();
-    mRandom = new Random(seed);
+    mRandom = MlUtil.buildRandom(config().seed());
   }
 
   public static void dump(BufferedImage img) {
