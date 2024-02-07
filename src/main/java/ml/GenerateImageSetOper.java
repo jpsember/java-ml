@@ -309,6 +309,7 @@ public class GenerateImageSetOper extends AppOper {
     IPoint loc = rndPoint();
     int k = random().nextInt(nf);
 
+   
     for (int i = 0; i < k; i++) {
       IPoint loc2 = rndPoint();
       p.with(randomElement(paints(), config().colorLimit()));
@@ -338,8 +339,9 @@ public class GenerateImageSetOper extends AppOper {
       if (model().inputImageChannels() == 1)
         sc = sColorsMono;
       mColors = arrayList();
+      var strokeWidth = config().augmentationConfig().scaleMax() / 12.0f;
       for (int i = 0; i < sc.length; i += 3) {
-        mColors.add(Paint.newBuilder().width(1f).color(sc[i], sc[i + 1], sc[i + 2]).build());
+        mColors.add(Paint.newBuilder().width(strokeWidth).color(sc[i], sc[i + 1], sc[i + 2]).build());
       }
     }
     return mColors;

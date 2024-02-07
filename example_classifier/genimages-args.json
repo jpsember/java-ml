@@ -8,7 +8,9 @@
 
   // Using more restricted parameters to produce a strong model quickly
   "augmentation_config" : {
-    "scale_max" : 12.0,
+    // We are generating very small images (32 x 32), so have a correspondingly small scale factor
+    "scale_max" : 2.0,
+
     //"rotate_degrees_max" : 5,
     //"translate_ratio_max":0.2,
   },
