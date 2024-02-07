@@ -48,7 +48,6 @@ public final class CompileImagesOper extends AppOper {
   @Override
   protected void getOperSpecificHelp(BasePrinter b) {
     b.pr(userCommand(), " --- todo: fill out additional help info");
-    //    b.append(defaultArgs().toString());
   }
 
   @Override

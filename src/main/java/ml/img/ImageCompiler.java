@@ -42,7 +42,7 @@ public final class ImageCompiler extends BaseObject {
     mFiles = nullTo(files, Files.S);
     int seed = config().seed();
     if (seed <= 0)
-      seed = 1965;
+      seed = (int) System.currentTimeMillis();
     mRandom = new Random(seed);
   }
 

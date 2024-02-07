@@ -290,7 +290,8 @@ public class GenerateImageSetOper extends AppOper {
     IPoint imgSize = ImgUtil.size(bgndImage);
     IPoint slack = IPoint.difference(imgSize, mImageSize);
     checkArgument(Math.min(slack.x, slack.y) > 0, "image isn't big enough");
-    IPoint originWithinBgndImage = new IPoint(random().nextFloat() * slack.x, random().nextFloat() * slack.y).negate();
+    IPoint originWithinBgndImage = new IPoint(random().nextFloat() * slack.x, random().nextFloat() * slack.y)
+        .negate();
     p.graphics().drawImage(bgndImage, originWithinBgndImage.x, originWithinBgndImage.y, null);
   }
 
@@ -402,8 +403,12 @@ public class GenerateImageSetOper extends AppOper {
   // ------------------------------------------------------------------
 
   private Random random() {
-    if (mRandom == null)
-      mRandom = new Random(config().seed());
+    if (mRandom == null) {
+      var seed = config().seed();
+      if (seed == 0)
+        seed = (int) System.currentTimeMillis();
+      mRandom = new Random(seed);
+    }
     return mRandom;
   }
 

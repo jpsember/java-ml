@@ -2,8 +2,12 @@ enum gen.CompileOper;
 
 fields {
 
+  // The type of compile operation to perform
+  //
   CompileOper oper;
 
+  // Location of network description
+  //
   ? NeuralNetwork network;
   File network_path;
 
@@ -13,6 +17,8 @@ fields {
   //
   AugmentationConfig augmentation_config;
 
+  // Seed to use for random number generator.  If zero, uses current epoch time
+  //
   int seed;
 
   File target_dir_model = "train_info";

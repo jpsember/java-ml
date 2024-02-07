@@ -1,21 +1,38 @@
 fields {
 
+  // Directory to generate
+  //
   File target_dir = "generated_images";
-  int image_total = 20;
-  int seed = 1965;
 
+  // Number of images to generate
+  //
+  int image_total = 20;
+
+  // Seed for random number generator.  If zero, uses value derived from epoch time
+  //
+  int seed;
+
+  // Location of network description
+  //
   ? NeuralNetwork network;
   File network_path;
 
+  // Characters to render for each category; the length should agree with the analogous network value
+  //
   string categories = "AB";
 
+  // Maximum number of objects to generate within each image; generates at least one,
+  // and up to this value
+  //
+  int max_objects = 4;
+
+  // Parameters for randomly transforming each object within a generated image
+  //
   AugmentationConfig augmentation_config;
 
   // If nonzero, generates random colored lines
   //
   int noise_factor = 30;
-
-  int max_objects = 4;
 
   // If > 0, limits choice of font from set of this size
   //
@@ -25,5 +42,7 @@ fields {
   //
   int color_limit;
 
+  // If nonempty, the background image to render.  At present, only the image 'sepia.png' is supported.
+  //
   string bgnd_image;
 }

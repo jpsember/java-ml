@@ -6,7 +6,6 @@ import java.lang.reflect.Constructor;
 
 import gen.FeedConfig;
 import js.app.AppOper;
-import js.base.BasePrinter;
 
 public class FeedOper extends AppOper {
 
