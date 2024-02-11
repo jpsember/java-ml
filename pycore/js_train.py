@@ -108,6 +108,11 @@ class JsTrain:
     self.model.prepare()
     self.model.to(JG.device)
     self.loss_fn = self.define_loss_function()
+    todo("add ability to calculate and report the accuracy")
+    # see https://discuss.pytorch.org/t/how-to-calculate-accuracy-in-pytorch/80476/2
+    # e.g. train_acc = torch.sum(y_pred == target)
+    #      accuracy = train_acc/number_of_datapoints
+
     self.optimizer = torch.optim.SGD(self.model.parameters(), lr=1e-3, momentum = 0.9)
 
 
@@ -303,7 +308,6 @@ class JsTrain:
 
       # Compute prediction error
       pred = self.model(tensor_images)
-
 
       # Save this model output in case we want to take a snapshot later
       self.recent_model_output = pred

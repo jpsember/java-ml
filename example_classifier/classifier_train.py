@@ -15,7 +15,8 @@ class ClassifierTrain(JsTrain):
     # With this model, we are interested in the classifier's accuracy, so we include
     # it in the test reports
     #
-    self.stat_acc = Stats("Accuracy")
+    todo("figure out how to report the accuracy")
+    #self.stat_acc = Stats("Accuracy")
 
 
   def define_model(self):
@@ -24,7 +25,4 @@ class ClassifierTrain(JsTrain):
 
   def define_loss_function(self):
     return nn.CrossEntropyLoss()
-
-
-
 

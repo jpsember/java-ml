@@ -81,7 +81,7 @@ public final class CompileImagesOper extends AppOper {
   private void performSubOperation() {
     switch (config().oper()) {
     default:
-      throw notSupported("operation not supported:", config().oper());
+      throw notSupported("operation not supported:", config().oper(),CR,"config:",INDENT,config());
     case PREPARE_TRAIN:
       prepareTrainService();
       break;

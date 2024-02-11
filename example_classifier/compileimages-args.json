@@ -1,4 +1,9 @@
 {
+
+
+"oper" : "prepare_train",
+
+
             "network_path" : "network.json",
              "source_dir" : "generated_images",
        "train_service" : false,
@@ -25,6 +30,7 @@
 
         "train_param" : {
 
+          //"batch_size" : 16,
           "target_loss" : 0.18,
           "target_accuracy" : 95,
           "test_size" : 20,
