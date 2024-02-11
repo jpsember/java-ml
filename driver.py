@@ -54,7 +54,7 @@ class App:
     if self.project == "yolo":
       c = YoloInference()
     else:
-      die("Project not supported:", self.project)
+      die("Project not supported for 'perform_inference':", self.project)
 
     c.prepare_pytorch()
     c.run_inference()
