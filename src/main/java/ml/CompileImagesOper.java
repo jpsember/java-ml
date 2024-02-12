@@ -81,7 +81,7 @@ public final class CompileImagesOper extends AppOper {
   private void performSubOperation() {
     switch (config().oper()) {
     default:
-      throw notSupported("operation not supported:", config().oper(),CR,"config:",INDENT,config());
+      throw notSupported("operation not supported:", config().oper(), CR, "config:", INDENT, config());
     case PREPARE_TRAIN:
       prepareTrainService();
       break;
@@ -338,7 +338,7 @@ public final class CompileImagesOper extends AppOper {
     long curr = currentTime();
     if (mLastGeneratedFilesTime == 0)
       mLastGeneratedFilesTime = curr;
-    if (curr - mLastGeneratedFilesTime > DateTimeTools.MINUTES(15)) {
+    if (curr - mLastGeneratedFilesTime > DateTimeTools.SECONDS(config().inactivityTimeoutSeconds())) {
       lp().println(
           "...a lot of time has elapsed since we had to generate files; assuming client is not running");
       return true;

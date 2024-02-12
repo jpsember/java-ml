@@ -3,6 +3,7 @@
 
 "oper" : "prepare_train",
 
+"inactivity_timeout_seconds" : 30,
 
             "network_path" : "network.json",
              "source_dir" : "generated_images",

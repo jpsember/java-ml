@@ -39,4 +39,10 @@ fields {
   // Maximum number of images to compile for
   //
   int max_image_count = 32;
+
+  // If nonzero, and we haven't needed to construct a training set for this amount of
+  // time, stop streaming
+  //
+  int inactivity_timeout_seconds = 900; // 15 minutes
+
 }
