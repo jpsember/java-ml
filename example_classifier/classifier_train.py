@@ -24,5 +24,8 @@ class ClassifierTrain(JsTrain):
 
 
   def define_loss_function(self):
-    return nn.CrossEntropyLoss()
+    fn = nn.CrossEntropyLoss()
+    # img_count, _, _ = fn.shape
+    # classification_loss = fn.view(img_count, -1)
+    return fn
 

@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -eu
 
+clear
+
 echo "Perform python inference"
 ../driver.py inference project classifier
 

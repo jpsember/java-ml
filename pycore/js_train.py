@@ -305,7 +305,6 @@ class JsTrain:
       tensor_images, tensor_labels = self.read_images(train_images_path, train_labels_path, img_index, self.batch_size)
       tensor_images, tensor_labels = tensor_images.to(self.device), tensor_labels.to(self.device)
       self.optimizer.zero_grad()
-
       # Compute prediction error
       pred = self.model(tensor_images)
 
@@ -313,6 +312,9 @@ class JsTrain:
       self.recent_model_output = pred
 
       # See: https://pytorch.org/docs/stable/generated/torch.nn.CrossEntropyLoss.html
+      todo("convenience methods to dump tensors, other pytorch structures")
+      show("pred",pred)
+      show("tensor_labels",tensor_labels)
       loss = self.loss_fn(pred, tensor_labels)
       self.train_loss = loss.item()
 

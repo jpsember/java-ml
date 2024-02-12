@@ -9,6 +9,7 @@
 
 from pycore.base import *
 from example_classifier.classifier_train import ClassifierTrain
+from example_classifier.classifier_inference import ClassifierInference
 from example_yolo.yolo_train import YoloTrain
 from example_yolo.yolo_inference import YoloInference
 
@@ -53,6 +54,8 @@ class App:
 
     if self.project == "yolo":
       c = YoloInference()
+    elif self.project == "classifier":
+      c = ClassifierInference()
     else:
       die("Project not supported for 'perform_inference':", self.project)
 

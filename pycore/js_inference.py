@@ -130,8 +130,14 @@ class JsInference:
     dt = self.network.label_data_type
     if dt == DataType.FLOAT32:
       labels = tensor.detach().cpu().numpy() # https://stackoverflow.com/questions/49768306/
-      #pr("labels:",labels)
-      #pr("dtype:",labels.dtype)
+      labels.tofile(results_path)
+      self.log("results written to",results_path)
+    elif dt == DataType.UNSIGNED_BYTE:
+      labels = tensor.detach().cpu().numpy()
+      # The datatype of the tensor might be DIFFERENT than the one defined in the network.
+      # (For example, right now, it's float32)
+      pr("labels:",labels)
+      pr("dtype:",labels.dtype)
       labels.tofile(results_path)
       self.log("results written to",results_path)
     else:
@@ -164,7 +170,8 @@ class JsInference:
     if path:
       checkpoint = torch.load(path)
       self.model.load_state_dict(checkpoint['model_state_dict'])
-      self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+      # Perhaps the optimizer is NOT used during inference?
+      #self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
       self.epoch_number = checkpoint['epoch']
       report(f"Restored checkpoint at epoch: {self.epoch_number}")
 

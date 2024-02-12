@@ -100,6 +100,7 @@ class JsModel(nn.Module):
     #
     ly = self.layer
     self.add_layer(nn.Flatten(),"fc.Flatten")
+    check_state(ly.filters > 0,"attempt to construct fc layer with filters=",ly.filters)
     self.add_layer(nn.Linear(vol_volume(ly.input_volume), ly.filters),"fc.Linear")
 
 
