@@ -238,8 +238,6 @@ class JsTrain:
       images = read_floats(images_path, floats_per_image * img_index, floats_per_image, img_count)
       self.recent_image_array = images
     elif dt == DataType.UNSIGNED_BYTE:
-      todo("convert byte values to float32?")
-      die("bye")
       bytes_per_image = self.train_info.image_length_bytes
       images = read_unsigned_bytes(images_path, bytes_per_image * img_index, bytes_per_image, img_count)
       self.recent_image_array = images
@@ -276,7 +274,8 @@ class JsTrain:
       labels = read_unsigned_bytes(labels_path, img_index * record_size, record_size, img_count)
       labels = labels.reshape(img_count)
       labels = torch.from_numpy(labels)
-      labels = labels.long()
+      labels = labels.float()
+      warning("converting datatype to float32 hopefully")
     elif dt == DataType.FLOAT32:
       record_size_floats = self.train_info.label_length_bytes // BYTES_PER_FLOAT
       labels = read_floats(path=labels_path, offset_in_floats=img_index * record_size_floats,

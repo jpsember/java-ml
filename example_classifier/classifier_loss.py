@@ -92,4 +92,5 @@ class ClassifierLoss(nn.Module):
   # Send a tensor for logging
   #
   def log_tensor(self, name, t=None):
-    TensorLogger.default_instance.report_grid(t, name, size=self.grid_size)
+    warning("doing nothing yet; this was yolo logging")
+    #TensorLogger.default_instance.report_grid(t, name, size=self.grid_size)
