@@ -238,6 +238,8 @@ class JsTrain:
       images = read_floats(images_path, floats_per_image * img_index, floats_per_image, img_count)
       self.recent_image_array = images
     elif dt == DataType.UNSIGNED_BYTE:
+      todo("convert byte values to float32?")
+      die("bye")
       bytes_per_image = self.train_info.image_length_bytes
       images = read_unsigned_bytes(images_path, bytes_per_image * img_index, bytes_per_image, img_count)
       self.recent_image_array = images
