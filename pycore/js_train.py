@@ -315,6 +315,7 @@ class JsTrain:
       todo("convenience methods to dump tensors, other pytorch structures")
       show("pred",pred)
       show("tensor_labels",tensor_labels)
+      todo("tensor_labels should be converted to float32?")
       loss = self.loss_fn(pred, tensor_labels)
       self.train_loss = loss.item()
 

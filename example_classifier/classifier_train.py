@@ -24,8 +24,11 @@ class ClassifierTrain(JsTrain):
 
 
   def define_loss_function(self):
+    todo("For flexibility, I think we need a custom 'classifier_loss' analogous to yolo_loss.py")
+    #then this function will be something like: return YoloLoss(self.network, self.yolo)
     fn = nn.CrossEntropyLoss()
     # img_count, _, _ = fn.shape
     # classification_loss = fn.view(img_count, -1)
     return fn
+
 
