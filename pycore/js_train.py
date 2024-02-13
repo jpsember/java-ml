@@ -81,6 +81,7 @@ class JsTrain:
     if self.train_images % self.batch_size != 0:
       warning("training image count", self.train_images,"is not a multiple of the batch size:", self.batch_size)
     self.batch_total = self.train_images // self.batch_size
+    pr("batch size:",self.batch_size)
 
 
   def proj_path(self, rel_path : str):

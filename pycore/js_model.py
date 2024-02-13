@@ -35,7 +35,6 @@ class JsModel(nn.Module):
     self.layer = None
     for lyr in self.network.layers:
       self.layer = lyr
-
       if lyr.type == "conv":
         kernel_width = lyr.kernel_width
         our_stride = lyr.stride.tuple()

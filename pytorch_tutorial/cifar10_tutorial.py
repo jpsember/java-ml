@@ -19,9 +19,14 @@ We will do the following steps in order:
 
 Using ``torchvision``, it’s extremely easy to load CIFAR10.
 """
+import os
+
+from base import *
+
 import torch
 import torchvision
 import torchvision.transforms as transforms
+
 
 ########################################################################
 # The output of torchvision datasets are PILImage images of range [0, 1].
@@ -60,31 +65,6 @@ classes = ('plane', 'car', 'bird', 'cat',
 import numpy as np
 
 
-if False:
-    ########################################################################
-    # Let us show some of the training images, for fun.
-
-    import matplotlib.pyplot as plt
-
-    # functions to show an image
-
-
-    def imshow(img):
-        img = img / 2 + 0.5     # unnormalize
-        npimg = img.numpy()
-        plt.imshow(np.transpose(npimg, (1, 2, 0)))
-        plt.show()
-
-
-    # get some random training images
-    dataiter = iter(trainloader)
-    images, labels = next(dataiter)
-
-    # show images
-    imshow(torchvision.utils.make_grid(images))
-    # print labels
-    print(' '.join(f'{classes[labels[j]]:5s}' for j in range(batch_size)))
-
 
 ########################################################################
 # 2. Define a Convolutional Neural Network
@@ -118,6 +98,9 @@ class Net(nn.Module):
 
 net = Net()
 
+
+
+
 ########################################################################
 # 3. Define a Loss function and optimizer
 # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -127,6 +110,13 @@ import torch.optim as optim
 
 criterion = nn.CrossEntropyLoss()
 optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
+
+
+PATH = './cifar_net.pth'
+
+if os.path.exists(PATH):
+    print("Loading previously saved state")
+    net.load_state_dict(torch.load(PATH))
 
 ########################################################################
 # 4. Train the network
@@ -138,6 +128,7 @@ optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
 
 for epoch in range(2):  # loop over the dataset multiple times
 
+    shown = False
     running_loss = 0.0
     for i, data in enumerate(trainloader, 0):
         # get the inputs; data is a list of [inputs, labels]
@@ -148,7 +139,26 @@ for epoch in range(2):  # loop over the dataset multiple times
 
         # forward + backward + optimize
         outputs = net(inputs)
+
+        # The outputs are [image, class log prob],
+        #  e.g.  [[ 5.8728, -4.8610,  3.1049, -0.7258,  3.2347,  0.1869, -1.9577, -0.8296, 1.4538, -3.0592],
+        #         [ 1.2802,  1.8693, -1.5234, -1.1094, -1.6835, -1.6081, -2.5142, -0.6030, 1.7281,  3.8946],
+        #         [-0.1654, -2.9004, -1.0536,  1.4381,  2.7306,  2.9377, -3.5011,  6.4039, -4.6020, -0.5139],
+        #         [-0.6465, -4.9333,  1.3352, -0.0241,  5.4004,  1.9908, -2.1186, 10.1500, -6.3850, -5.2495]]
+
+        # The labels are integers with the ground class:
+        #   tensor([2, 1, 7, 0])
+
         loss = criterion(outputs, labels)
+        if not shown:
+            pr("about to calculate loss")
+            pr("outputs:",outputs)
+            print(outputs)
+            pr("labels:",labels)
+            print(labels)
+            pr("loss:",loss)
+            shown = True
+
         loss.backward()
         optimizer.step()
 
@@ -186,7 +196,6 @@ dataiter = iter(testloader)
 images, labels = next(dataiter)
 
 # print images
-imshow(torchvision.utils.make_grid(images))
 print('GroundTruth: ', ' '.join(f'{classes[labels[j]]:5s}' for j in range(4)))
 
 ########################################################################

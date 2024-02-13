@@ -31,7 +31,7 @@
 
         "train_param" : {
 
-           "batch_size" : 16,
+          "batch_size" : 4,   // Make batch size the same as the cifar10 tutorial
           "target_loss" : 0.18,
           "target_accuracy" : 95,
           "test_size" : 20,
