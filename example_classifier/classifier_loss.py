@@ -23,8 +23,6 @@ class ClassifierLoss(nn.Module):
 
   def forward(self, current, target):
 
-    # ...I adapted this code from yolo_loss.py
-
     # Log some additional stats about the loss values
     #
     include_aux_stats = (JG.batch_number == 0)
@@ -35,30 +33,14 @@ class ClassifierLoss(nn.Module):
     self.log_counter += 1
     self.batch_size = current.data.size(0)
 
-    print("current:")
-    pr(current)
+    pr("batch size:",self.batch_size)
+
+    pr("current:",current)
     print(current)
     # This has structure
     #
     # [image, category prob]
     #
-    # But there is only a single category probability!  There should be one for each category.
-    #
-   # todo("I think I need to convert the category label (scalar) to a one-hot vector")
-
-   # current = current.view(self.batch_size)  # -1 : infer remaining
-    show("current:",current)
-   # current = torch.nn.functional.one_hot(current.long(), self.categories)
-   # show("current after one hot:", current)
-   # pr(str(current))
-
-
-
-    # pred_class = current[:,0:self.categories]
-    # show("pred_class", pred_class)
-    #
-    # pr("pred_class (this is the 'input'):",pred_class)
-    # print(pred_class)
 
     # The tensor we want to feed into the crossentropyloss is called 'outputs' in the other tutorial,
     # and has this structure:
@@ -71,13 +53,8 @@ class ClassifierLoss(nn.Module):
 
     # Reshape the target to match the current's shape
     show("target before reshape:",target)
-    target = target.view(current.shape)
-    show("target after reshape:",target)
-
-    # pr("self.categories:",self.categories)
-    # ground_category_onehot = target[:, 0:self.categories]
-    # show("ground_category_onehot",ground_category_onehot)
-
+    # target = target.view(current.shape)
+    # show("target after reshape:",target)
 
     if self.cross_entropy_loss is None:
       # https://pytorch.org/docs/stable/generated/torch.nn.CrossEntropyLoss.html
@@ -85,21 +62,9 @@ class ClassifierLoss(nn.Module):
 
 
 
-
-    # We need to reshape the input and target using views     (OLD YOLO COMMENT)
-    # so the 'minibatch' includes all the probability records, e.g.
-    # images * cells * anchors...
-    # input_view = pred_class.view(-1, self.categories)
-    # show("input_view", input_view)
-    # target_view = ground_category_onehot.view(-1, self.categories)
-    # show("target_view", target_view)
-    ce_loss_view = self.cross_entropy_loss(current, target )
-    show("ce_loss_view", ce_loss_view)
-
-    # Reshape the loss so we again have results for each image, cell, anchor...  (OLD YOLO COMMENT)
-    #
-    # img_count,  _ = pred_class.shape
-    classification_loss = ce_loss_view #.view(img_count,-1)
+    # The CrossEntropyLoss expects a target of type 'Long', not float
+    classification_loss = self.cross_entropy_loss(current, target.type(torch.LongTensor) )
+    show("classification_loss", classification_loss)
 
     self.log_tensor("classification_loss")
     #See https://pytorch.org/docs/stable/generated/torch.nn.CrossEntropyLoss.html
