@@ -17,7 +17,6 @@ import js.graphics.RectElement;
 import js.graphics.ScriptElement;
 import js.graphics.ScriptUtil;
 import js.graphics.gen.Script;
-import js.graphics.gen.Script.Builder;
 import ml.ModelWrapper;
 import ml.NetworkAnalyzer;
 import ml.NetworkUtil;
@@ -107,80 +106,37 @@ public final class ClassifierModelWrapper extends ModelWrapper<Classifier> {
   }
 
   @Override
-  public LabelReader readOutputLabelData(File file, int imageCount) {
-    var r = new LabelReader();
-    r.readLabels(file, imageCount);
-    return r;
+  public void readInferenceOutputLabels(File file, int imageCount) {
+    float[] results = Files.readFloatsLittleEndian(file, "ClassifierModelWrapper.readInferenceOutputLabels");
+    int labelCount = imageCount * modelConfig().categoryCount();
+    if (labelCount != results.length)
+      badArg("label count != labels length", labelCount, results.length, "image count:", imageCount,
+          "categoryCount", modelConfig().categoryCount());
+    mInferenceOutputLabels = results;
   }
 
   @Override
-  public void transformModelOutputToScript(int imageNumber, Object labelReader, Script.Builder script) {
-    var lb = (LabelReader) labelReader;
-    lb.transformModelOutputToScript(imageNumber, script);
-  }
-
-  private class LabelReader {
-
-    todo have model return an abstract LabelReader with known methods
-        
-    private float[] labelData;
-
-    public void readLabels(File file, int imageCount) {
-      //
-      //    {
-      //      var pt = model().projectType();
-      //      checkState(pt == NetworkProjectType.CLASSIFIER, "unexpected project type:", pt);
-      //    }
-      //
-      //    var cm = (Classifier) model().modelConfig();
-      //
-      float[] results = Files.readFloatsLittleEndian(file, "ClassifierModelWrapper.LabelReader.readLabels");
-      //
-      int labelCount = imageCount * modelConfig().categoryCount();
-      //    int ic = imageSetInfo.imageCount();
-      //    int labelCount = ic * cm.categoryCount();
-      if (labelCount != results.length)
-        badArg("label count != labels length", labelCount, results.length, "image count:", imageCount,
-            "categoryCount", modelConfig().categoryCount());
-      labelData = results;
-
-      //
-      //    File scriptDir = ScriptUtil.scriptDirForProject(inferenceInspectionDir());
-      //
-      //    for (int i = 0; i < ic; i++) {
-      //      float[] targetBuffer = model().labelBufferFloats();
-      //      halt("target buffer length:", targetBuffer.length);
-      //      int imgLblLen = targetBuffer.length;
-      //      System.arraycopy(results, imgLblLen * i, targetBuffer, 0, imgLblLen);
-      //
-      //      Script.Builder script = Script.newBuilder();
-      //      script.items(model().transformModelOutputToScredit());
-      //      ScriptUtil.write(files(), script, nextInferenceImageName(scriptDir, Files.EXT_JSON));
-      //    }
-      //
-
-    }
-
-    public void transformModelOutputToScript(int imageNumber, Builder script) {
-      List<ScriptElement> output = arrayList();
-      int cc = modelConfig().categoryCount();
-      float maxLogProb = 0;
-      int maxCat = -1;
-      int j = imageNumber * cc;
-      for (int i = 0; i < cc; i++) {
-        var logProb = labelData[j + i];
-        if (maxCat < 0 || logProb > maxLogProb) {
-          maxCat = i;
-          maxLogProb = logProb;
-        }
+  public void transformInferenceOutputToScript(int imageNumber, Script.Builder script) {
+    List<ScriptElement> output = arrayList();
+    int cc = modelConfig().categoryCount();
+    float maxLogProb = 0;
+    int maxCat = -1;
+    int j = imageNumber * cc;
+    for (int i = 0; i < cc; i++) {
+      var logProb = mInferenceOutputLabels[j + i];
+      if (maxCat < 0 || logProb > maxLogProb) {
+        maxCat = i;
+        maxLogProb = logProb;
       }
-
-      ScriptElement elem = new RectElement(ScriptUtil.setCategory(null, maxCat),
-          new IRect(inputImagePlanarSize()));
-      output.add(elem);
-
-      script.items(output);
     }
+
+    ScriptElement elem = new RectElement(ScriptUtil.setCategory(null, maxCat),
+        new IRect(inputImagePlanarSize()));
+    output.add(elem);
+
+    script.items(output);
   }
+
+  private float[] mInferenceOutputLabels;
 
 }

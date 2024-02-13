@@ -1,5 +1,6 @@
 package ml.yolo;
 
+import java.io.File;
 import java.util.Arrays;
 import java.util.List;
 
@@ -7,6 +8,7 @@ import static js.base.Tools.*;
 import static ml.NetworkUtil.*;
 import static ml.yolo.YoloUtil.*;
 
+import js.file.Files;
 import js.geometry.FPoint;
 import js.geometry.FRect;
 import js.geometry.IPoint;
@@ -17,6 +19,7 @@ import js.graphics.RectElement;
 import js.graphics.ScriptElement;
 import js.graphics.ScriptUtil;
 import js.graphics.gen.ElementProperties;
+import js.graphics.gen.Script;
 import js.json.JSMap;
 import ml.ModelWrapper;
 import ml.NetworkAnalyzer;
@@ -478,5 +481,26 @@ public final class YoloModelWrapper extends ModelWrapper<Yolo> {
     }
     return sb.toString();
   }
+
+  @Override
+  public void readInferenceOutputLabels(File file, int ic) {
+
+    var results = Files.readFloatsLittleEndian(file, "YoloModelWrapper.readInferenceOutputLabels");
+    int labelCount = imageSetInfo().labelLengthBytes() / Float.BYTES;
+    if (ic * labelCount != results.length)
+      badArg("label size * batch != labels length", "image count:", ic, "label count:", labelCount,
+          "results.length:", results.length);
+    mInferenceOutputLabels = results;
+  }
+
+  @Override
+  public void transformInferenceOutputToScript(int imageNumber, Script.Builder script) {
+    float[] targetBuffer = labelBufferFloats();
+    int imgLblLen = targetBuffer.length;
+    System.arraycopy(mInferenceOutputLabels, imgLblLen * imageNumber, targetBuffer, 0, imgLblLen);
+    script.items(transformModelOutputToScredit());
+  }
+
+  private float[] mInferenceOutputLabels;
 
 }

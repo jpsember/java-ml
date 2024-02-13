@@ -174,82 +174,15 @@ public final class CompileImagesOper extends AppOper {
     Files.assertExists(resultsFile);
 
     int ic = imageSetInfo.imageCount();
-    var labelData = model().readOutputLabelData(resultsFile, ic);
-    
+    model().readInferenceOutputLabels(resultsFile, ic);
+
     File scriptDir = ScriptUtil.scriptDirForProject(inferenceInspectionDir());
 
     for (int i = 0; i < ic; i++) {
-//      
-//      float[] targetBuffer = model().labelBufferFloats();
-//      int imgLblLen = targetBuffer.length;
-//      System.arraycopy(results, imgLblLen * i, targetBuffer, 0, imgLblLen);
-
       Script.Builder script = Script.newBuilder();
-      model().transformModelOutputToScript(i, labelData, script); 
-      //script.items(model().transformModelOutputToScredit());
+      model().transformInferenceOutputToScript(i, script);
       ScriptUtil.write(files(), script, nextInferenceImageName(scriptDir, Files.EXT_JSON));
     }
-    
-    
-//    
-//    switch (network().labelDataType()) {
-//    case FLOAT32: {
-//      float[] results = Files.readFloatsLittleEndian(resultsFile, "inference_results");
-//      int ic = imageSetInfo.imageCount();
-//      int labelCount = model().imageSetInfo().labelLengthBytes() / Float.BYTES;
-//      if (ic * labelCount != results.length)
-//        badArg("label size * batch != labels length", "image count:", ic, "label count:", labelCount,
-//            "results.length:", results.length);
-//
-//      File scriptDir = ScriptUtil.scriptDirForProject(inferenceInspectionDir());
-//
-//      for (int i = 0; i < ic; i++) {
-//        float[] targetBuffer = model().labelBufferFloats();
-//        int imgLblLen = targetBuffer.length;
-//        System.arraycopy(results, imgLblLen * i, targetBuffer, 0, imgLblLen);
-//
-//        Script.Builder script = Script.newBuilder();
-//        script.items(model().transformModelOutputToScredit());
-//        ScriptUtil.write(files(), script, nextInferenceImageName(scriptDir, Files.EXT_JSON));
-//      }
-//    }
-//      break;
-//    case UNSIGNED_BYTE: {
-//
-//      {
-//        var pt = model().projectType();
-//        checkState(pt == NetworkProjectType.CLASSIFIER, "unexpected project type:", pt);
-//      }
-//
-//      var cm = (Classifier) model().modelConfig();
-//
-//      float[] results = Files.readFloatsLittleEndian(resultsFile, "inference_results");
-//
-//      int ic = imageSetInfo.imageCount();
-//      int labelCount = ic * cm.categoryCount();
-//      if (labelCount != results.length)
-//        badArg("label count != labels length", "image count:", ic, "label count:", labelCount,
-//            "results.length:", results.length);
-//
-//      File scriptDir = ScriptUtil.scriptDirForProject(inferenceInspectionDir());
-//
-//      for (int i = 0; i < ic; i++) {
-//        float[] targetBuffer = model().labelBufferFloats();
-//        halt("target buffer length:", targetBuffer.length);
-//        int imgLblLen = targetBuffer.length;
-//        System.arraycopy(results, imgLblLen * i, targetBuffer, 0, imgLblLen);
-//
-//        Script.Builder script = Script.newBuilder();
-//        script.items(model().transformModelOutputToScredit());
-//        ScriptUtil.write(files(), script, nextInferenceImageName(scriptDir, Files.EXT_JSON));
-//      }
-//
-//    }
-//      break;
-//    default:
-//      throw notSupported("label data type:", network().labelDataType());
-//    }
-
   }
 
   private File inferenceInspectionDir() {

@@ -313,18 +313,16 @@ public abstract class ModelWrapper<T extends AbstractData> extends BaseObject {
   }
 
   /**
-   * Construct an object for reading output labels from a file
+   * Read inference labels from model output
    */
-  public Object readOutputLabelData(File file, int imageCount) {
-    throw modelNotSupported("readOutputLabelData");
-  }
-
+  public void readInferenceOutputLabels(File file, int imageCount) {
+    throw modelNotSupported("readInferenceOutputLabels");}
+  
   /**
-   * Using the object returned by readOutputLabelData(), generate a script from
-   * the label outputs
+   * Generate script from model output
    */
-  public void transformModelOutputToScript(int imageNumber, Object labelData, Script.Builder script) {
-    throw modelNotSupported("transformModelOutputToScript");
+  public void transformInferenceOutputToScript(int imageNumber,  Script.Builder script) {
+    throw modelNotSupported("transformInferenceOutputToScript");
   }
 
   // ------------------------------------------------------------------
