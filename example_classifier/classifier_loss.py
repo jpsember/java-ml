@@ -35,8 +35,8 @@ class ClassifierLoss(nn.Module):
       # https://pytorch.org/docs/stable/generated/torch.nn.CrossEntropyLoss.html
       self.cross_entropy_loss = nn.CrossEntropyLoss(reduction="none")
 
-    # The CrossEntropyLoss expects a target of type 'Long', not float
-    classification_loss = self.cross_entropy_loss(current, target.type(torch.LongTensor))
+    check_state(target.dtype == torch.long,"target dtype is not long")
+    classification_loss = self.cross_entropy_loss(current, target)
     show(".classification_loss", classification_loss)
 
     #See https://pytorch.org/docs/stable/generated/torch.nn.CrossEntropyLoss.html
