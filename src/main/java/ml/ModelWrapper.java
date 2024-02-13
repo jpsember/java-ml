@@ -13,6 +13,7 @@ import js.data.DataUtil;
 import js.file.Files;
 import js.geometry.IPoint;
 import js.graphics.ScriptElement;
+import js.graphics.gen.Script;
 import js.json.JSMap;
 
 import gen.Classifier;
@@ -309,6 +310,21 @@ public abstract class ModelWrapper<T extends AbstractData> extends BaseObject {
 
   public String renderLabels() {
     throw modelNotSupported("renderLabels");
+  }
+
+  /**
+   * Construct an object for reading output labels from a file
+   */
+  public Object readOutputLabelData(File file, int imageCount) {
+    throw modelNotSupported("readOutputLabelData");
+  }
+
+  /**
+   * Using the object returned by readOutputLabelData(), generate a script from
+   * the label outputs
+   */
+  public void transformModelOutputToScript(int imageNumber, Object labelData, Script.Builder script) {
+    throw modelNotSupported("transformModelOutputToScript");
   }
 
   // ------------------------------------------------------------------
