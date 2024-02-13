@@ -11,6 +11,8 @@ import inspect
 
 # Define some constants
 #
+from torch import Tensor
+
 BYTES_PER_FLOAT = 4
 BYTES_PER_INT = 4
 
@@ -96,6 +98,8 @@ def d(s):
     return pretty_pr(s)
   elif isinstance(s, float):
     return df(s)
+  elif isinstance(s, Tensor):
+    return tensor_to_string(s)
   else:
     return str(s)
 
@@ -764,9 +768,6 @@ def read_object(abstract_data_class_prototype, path):
   return abstract_data_class_prototype.parse(content)
 
 
-
-
-
 class AbstractData:
   """
   Base class for generated types, as well as BaseObject
@@ -845,3 +846,9 @@ class BaseObject(AbstractData):
     if self._verbose:
       pr("("+self.name()+")", *args)
 
+
+
+
+def tensor_to_string(t:Tensor):
+  s = {'shape' : list(t.shape), 'type' : str(t.dtype), '~device' : t.device.type }
+  return to_json(s)

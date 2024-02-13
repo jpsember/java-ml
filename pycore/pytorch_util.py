@@ -51,9 +51,10 @@ def show(label:str, obj):
   pr("\n\n")
   pr(dash)
   if isinstance(obj, torch.Tensor):
-    t:torch.Tensor = obj
-    pr(label,"      size:",list(t.size()),"   type:",t.dtype)
-    pr(t)
+    pr(label, tensor_to_string(obj))
+    # t:torch.Tensor = obj
+    # pr(label,"      size:",list(t.size()),"   type:",t.dtype)
+    # pr(t)
   else:
     pr(label,"type:",type(obj),"value:",obj)
   pr(dash)
@@ -155,4 +156,5 @@ from pycore.tensor_logger import TensorLogger
 
 def report(msg):
   TensorLogger.default_instance.add_msg(msg)
+
 

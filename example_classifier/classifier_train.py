@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 # Derived from https://pytorch.org/tutorials/beginner/basics/quickstart_tutorial.html
-
+from gen.classifier import Classifier
 from .classifier_model import ClassifierModel
 from pycore.js_train import *
 from .classifier_loss import ClassifierLoss
@@ -12,7 +12,7 @@ class ClassifierTrain(JsTrain):
 
   def __init__(self):
     super().__init__(__file__)
-
+    self.classifier = Classifier.default_instance.parse(self.network.model_config)
     # With this model, we are interested in the classifier's accuracy, so we include
     # it in the test reports
     #
@@ -25,8 +25,6 @@ class ClassifierTrain(JsTrain):
 
 
   def define_loss_function(self):
-
-    todo("For flexibility, I think we need a custom 'classifier_loss' analogous to yolo_loss.py")
-    return ClassifierLoss(self.network)
+    return ClassifierLoss(self.network, self.classifier)
 
 
