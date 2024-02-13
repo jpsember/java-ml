@@ -7,10 +7,12 @@ import java.io.File;
 import java.util.List;
 import java.util.SortedMap;
 
+import gen.Classifier;
 import gen.CmdItem;
 import gen.CompileImagesConfig;
 import gen.CompileOper;
 import gen.ImageSetInfo;
+import gen.NetworkProjectType;
 import gen.NeuralNetwork;
 import gen.TrainParam;
 import js.app.AppOper;
@@ -167,11 +169,11 @@ public final class CompileImagesOper extends AppOper {
 
   private void processInferenceResult() {
     File inferenceDir = config().inferenceDir();
-    File resultsFile = new File(inferenceDir, "results.bin");
-    Files.assertExists(resultsFile);
-
     ImageSetInfo imageSetInfo = Files.parseAbstractData(ImageSetInfo.DEFAULT_INSTANCE,
         new File(inferenceDir, "image_set_info.json"));
+
+    File resultsFile = new File(inferenceDir, "results.bin");
+    Files.assertExists(resultsFile);
 
     switch (network().labelDataType()) {
     case FLOAT32: {
@@ -193,6 +195,38 @@ public final class CompileImagesOper extends AppOper {
         script.items(model().transformModelOutputToScredit());
         ScriptUtil.write(files(), script, nextInferenceImageName(scriptDir, Files.EXT_JSON));
       }
+    }
+      break;
+    case UNSIGNED_BYTE: {
+
+      {
+        var pt = model().projectType();
+        checkState(pt == NetworkProjectType.CLASSIFIER, "unexpected project type:", pt);
+      }
+
+      var cm = (Classifier) model().modelConfig();
+
+      float[] results = Files.readFloatsLittleEndian(resultsFile, "inference_results");
+
+      int ic = imageSetInfo.imageCount();
+      int labelCount = ic * cm.categoryCount();
+      if (labelCount != results.length)
+        badArg("label count != labels length", "image count:", ic, "label count:", labelCount,
+            "results.length:", results.length);
+
+      File scriptDir = ScriptUtil.scriptDirForProject(inferenceInspectionDir());
+
+      for (int i = 0; i < ic; i++) {
+        float[] targetBuffer = model().labelBufferFloats();
+        halt("target buffer length:", targetBuffer.length);
+        int imgLblLen = targetBuffer.length;
+        System.arraycopy(results, imgLblLen * i, targetBuffer, 0, imgLblLen);
+
+        Script.Builder script = Script.newBuilder();
+        script.items(model().transformModelOutputToScredit());
+        ScriptUtil.write(files(), script, nextInferenceImageName(scriptDir, Files.EXT_JSON));
+      }
+
     }
       break;
     default:

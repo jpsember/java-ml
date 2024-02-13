@@ -37,6 +37,7 @@ public class EvalModelOper extends AppOper {
 
   @Override
   public void perform() {
+    pr("perform, config:", INDENT, config());
     mModel = ModelWrapper.constructFor(config().network(), config().networkPath());
     ModelWrapper model = mModel;
 
