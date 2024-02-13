@@ -47,7 +47,7 @@ class ClassifierLoss(nn.Module):
     scalar_classification = classification_loss.sum()
 
     if include_aux_stats:
-      self.add_aux_stat("loss_class", scalar_classification)
+      self.add_aux_stat("loss_classification", scalar_classification)
 
     scalar_loss = scalar_classification
     return scalar_loss / self.batch_size
