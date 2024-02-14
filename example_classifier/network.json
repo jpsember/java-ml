@@ -33,7 +33,7 @@
     ],
 
   "model_config" : {
-    "category_count" : 3,
+    "category_count" : 5,
     "image_channels" : 3,
    "image_size" : [32,32],
    //"image_size" : [ 128, 128 ],

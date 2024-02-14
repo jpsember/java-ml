@@ -1,13 +1,7 @@
-Procedurally generate a set of images:
+Procedurally generate sets of images for training and evaluation:
 
 ```
-ml genimages
-```
-
-Generate a set of images for evaluating (performing inference after training):
-
-```
-comp_inf.sh
+gen_images.sh
 ```
 
 Delete existing checkpoints (this usually happens automatically, but if code has changed, maybe not):
