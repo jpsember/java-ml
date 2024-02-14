@@ -16,7 +16,6 @@ class ClassifierLoss(nn.Module):
     self.batch_size = None
     self.aux_stats = None
     self.categories = classifier.category_count
-    check_state(self.categories == 2, "unexpected category count:",classifier)
 
 
   def forward(self, current, target):

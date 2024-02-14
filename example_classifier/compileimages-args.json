@@ -3,7 +3,7 @@
 
 "oper" : "prepare_train",
 
-"inactivity_timeout_seconds" : 30,
+ //"inactivity_timeout_seconds" : 30,
 
             "network_path" : "network.json",
              "source_dir" : "generated_images",
@@ -31,7 +31,7 @@
 
         "train_param" : {
 
-          "batch_size" : 4,   // Make batch size the same as the cifar10 tutorial
+          "batch_size" : 16,
           "target_loss" : 0.18,
           "target_accuracy" : 95,
           "test_size" : 20,

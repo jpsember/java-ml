@@ -23,15 +23,18 @@
       {"type" :"leaky_relu"},
       {"type" :"maxpool"},
 
+      {"type" :"conv", "filters": 512 },
+      {"type" :"leaky_relu"},
+      {"type" :"maxpool"},
+
       {"type" :"classifier"},
 
       { "type" : "output" }
     ],
 
   "model_config" : {
-    "category_count" : 2,
+    "category_count" : 5,
     "image_channels" : 3,
-    // Now using a very small image for this toy example
-    "image_size" : [ 32, 32 ]
+    "image_size" : [ 128, 128 ]
   }
 }
