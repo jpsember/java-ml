@@ -12,7 +12,7 @@ class ClassifierTrain(JsTrain):
 
   def __init__(self):
     super().__init__(__file__)
-    self.classifier = Classifier.default_instance.parse(self.network.model_config)
+    self.classifier = None
     # With this model, we are interested in the classifier's accuracy, so we include
     # it in the test reports
     #
@@ -21,7 +21,8 @@ class ClassifierTrain(JsTrain):
 
 
   def define_model(self):
-    return ClassifierModel(self.network).to(self.device)
+    self.classifier = getClassifier(self.network)
+    return ClassifierModel(self.network, self.classifier).to(self.device)
 
 
   def define_loss_function(self):

@@ -4,6 +4,8 @@ import torch
 from torch import nn # pip3 install torch
 from gen.vol import *
 from pycore.ipoint import IPoint
+from gen.neural_network import NeuralNetwork
+from gen.classifier import Classifier
 
 
 def read_unsigned_bytes(path: str, offset: int, record_size: int, record_count: int) -> np.ndarray:
@@ -156,5 +158,8 @@ from pycore.tensor_logger import TensorLogger
 
 def report(msg):
   TensorLogger.default_instance.add_msg(msg)
+
+def getClassifier(network:NeuralNetwork) -> Classifier:
+  return Classifier.default_instance.parse(network.model_config)
 
 

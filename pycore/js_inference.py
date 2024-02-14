@@ -136,8 +136,6 @@ class JsInference:
       labels = tensor.detach().cpu().numpy()
       # The datatype of the tensor might be DIFFERENT than the one defined in the network.
       # (For example, right now, it's float32)
-      pr("labels:",labels)
-      pr("dtype:",labels.dtype)
       labels.tofile(results_path)
       self.log("results written to",results_path)
     else:

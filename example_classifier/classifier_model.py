@@ -7,17 +7,16 @@ from gen.neural_network import NeuralNetwork
 class ClassifierModel(JsModel):
 
 
-  def __init__(self, network: NeuralNetwork):
+  def __init__(self, network: NeuralNetwork, classifier:Classifier):
     super(ClassifierModel, self).__init__(network)
-    self.categories = 2
-    todo("categories is a constant, 2, until I refactor method of passing classifier information around, e.g. categories")
+    self.classifier = classifier
 
 
   def process_custom_layer(self, lyr):
     if lyr.type != "classifier":
       die("unsupported layer type:", lyr.type)
 
-    ncat = self.categories
+    ncat = self.classifier.category_count
 
     # Flatten the input volume into a fibre, then apply a linear layer
     #

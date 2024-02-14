@@ -9,8 +9,9 @@ class ClassifierInference(JsInference):
 
   def __init__(self):
     super().__init__(__file__)
-
+    self.classifier = None
 
   def define_model(self):
-    return ClassifierModel(self.network).to(self.device)
+    self.classifier = getClassifier(self.network)
+    return ClassifierModel(self.network, self.classifier).to(self.device)
 
