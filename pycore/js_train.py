@@ -81,7 +81,6 @@ class JsTrain:
     if self.train_images % self.batch_size != 0:
       warning("training image count", self.train_images,"is not a multiple of the batch size:", self.batch_size)
     self.batch_total = self.train_images // self.batch_size
-    pr("batch size:",self.batch_size)
 
 
   def proj_path(self, rel_path : str):
@@ -312,8 +311,6 @@ class JsTrain:
       # Save this model output in case we want to take a snapshot later
       self.recent_model_output = pred
 
-      # See: https://pytorch.org/docs/stable/generated/torch.nn.CrossEntropyLoss.html
-      todo("tensor_labels should be converted to float32?")
       loss = self.loss_fn(pred, tensor_labels)
       self.train_loss = loss.item()
 
