@@ -1,14 +1,14 @@
 {
   "network_path" : "network.json",
 
-   "categories" : "ABCDE",
+  // "categories" : "",
   "image_total" : 256,   // Batch size 32 * n
 
   "bgnd_image" : "sepia.png",
 
   // Using more restricted parameters to produce a strong model quickly
   "augmentation_config" : {
-    "scale_max" : 4.0,
+    "scale_max" : 9.0,
 
     //"rotate_degrees_max" : 5,
     //"translate_ratio_max":0.2,

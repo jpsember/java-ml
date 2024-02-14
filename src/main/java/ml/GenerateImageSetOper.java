@@ -63,15 +63,13 @@ public class GenerateImageSetOper extends AppOper {
 
     case YOLO: {
       Yolo yolo = (Yolo) model().modelConfig();
-      checkArgument(yolo.categoryCount() == config().categories().length(), "Yolo category count",
-          yolo.categoryCount(), "disagrees with categories string length", config().categories());
+      determineCategoriesString(yolo.categoryCount());
     }
       break;
 
     case CLASSIFIER: {
       Classifier c = (Classifier) model().modelConfig();
-      checkArgument(c.categoryCount() == config().categories().length(), "Classifier category count",
-          c.categoryCount(), "disagrees with categories string length", config().categories());
+      determineCategoriesString(c.categoryCount());
     }
       break;
 
@@ -82,7 +80,7 @@ public class GenerateImageSetOper extends AppOper {
     if (model.isSpecial(OBVIOUS)) {
       checkArgument(projectType() == NetworkProjectType.CLASSIFIER,
           "obvious mode only supported in CLASSIFIER");
-      checkArgument(config().categories().length() <= Plotter.rgbColorList().size(),
+      checkArgument(mCatString.length() <= Plotter.rgbColorList().size(),
           "obvious mode doesn't support that many categories");
     }
 
@@ -110,6 +108,20 @@ public class GenerateImageSetOper extends AppOper {
     }
   }
 
+  private void determineCategoriesString(int categoryCount) {
+    checkArgument(categoryCount >= 1 && categoryCount <= 100, "illegal category count:", categoryCount);
+    var s = config().categories();
+    if (s.isEmpty()) {
+      var a = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+      checkArgument(categoryCount <= a.length(), "too many categories for generating string");
+      s = a.substring(0, categoryCount);
+    }
+
+    checkArgument(s.length() == categoryCount, "category count", categoryCount,
+        "disagrees with categories string length", quote(s));
+    mCatString = s;
+  }
+
   private void generateImage(Plotter p, Script.Builder script, String imageBaseName) {
     ModelWrapper model = model();
 
@@ -135,7 +147,7 @@ public class GenerateImageSetOper extends AppOper {
 
     for (int objIndex = 0; objIndex < totalObjects; objIndex++) {
       p.with(randomElement(paints(), config().colorLimit()).toBuilder().font(fi.mFont, 1f));
-      String categoriesString = config().categories();
+      String categoriesString = mCatString;
       int category = random().nextInt(categoriesString.length());
       if (firstCat == null)
         firstCat = category;
@@ -309,7 +321,6 @@ public class GenerateImageSetOper extends AppOper {
     IPoint loc = rndPoint();
     int k = random().nextInt(nf);
 
-   
     for (int i = 0; i < k; i++) {
       IPoint loc2 = rndPoint();
       p.with(randomElement(paints(), config().colorLimit()));
@@ -460,5 +471,5 @@ public class GenerateImageSetOper extends AppOper {
   private Random mRandom;
   private List<FontInfo> mFonts;
   private List<Paint> mColors;
-
+  private String mCatString;
 }

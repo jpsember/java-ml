@@ -17,9 +17,10 @@ fields {
   ? NeuralNetwork network;
   File network_path;
 
-  // Characters to render for each category; the length should agree with the analogous network value
+  // Characters to render for each category; the length should agree with the analogous network value;
+  // if empty, sets it to appropriate prefix of "ABCD..."
   //
-  string categories = "AB";
+  string categories;
 
   // Maximum number of objects to generate within each image; generates at least one,
   // and up to this value.
