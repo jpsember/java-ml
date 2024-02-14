@@ -20,10 +20,10 @@
       {"type" :"maxpool"},
 
       {"type" :"conv", "filters": 256 },
-      {"type" :"leaky_relu"},
-      {"type" :"maxpool"},
+      //{"type" :"leaky_relu"},
+      //{"type" :"maxpool"},
 
-      {"type" :"conv", "filters": 512 },
+      //{"type" :"conv", "filters": 512 },
       {"type" :"leaky_relu"},
       {"type" :"maxpool"},
 
@@ -35,6 +35,7 @@
   "model_config" : {
     "category_count" : 2,
     "image_channels" : 3,
-    "image_size" : [ 128, 128 ]
+   "image_size" : [32,32],
+   //"image_size" : [ 128, 128 ],
   }
 }
