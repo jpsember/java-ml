@@ -16,7 +16,8 @@ class ClassifierLoss(nn.Module):
     self.batch_size = None
     self.aux_stats = None
     self.categories = classifier.category_count
-
+    # https://pytorch.org/docs/stable/generated/torch.nn.CrossEntropyLoss.html
+    self.cross_entropy_loss = nn.CrossEntropyLoss(reduction="none")
 
   def forward(self, current, target):
 
@@ -30,10 +31,6 @@ class ClassifierLoss(nn.Module):
     self.log_counter += 1
     self.batch_size = current.data.size(0)
 
-    if self.cross_entropy_loss is None:
-      # https://pytorch.org/docs/stable/generated/torch.nn.CrossEntropyLoss.html
-      self.cross_entropy_loss = nn.CrossEntropyLoss(reduction="none")
-
     check_state(target.dtype == torch.long,"target dtype is not long")
     classification_loss = self.cross_entropy_loss(current, target)
     show(".classification_loss", classification_loss)
@@ -43,13 +40,14 @@ class ClassifierLoss(nn.Module):
     # We sum a loss tensor's components to a single (scalar) value.
     # Give the resulting tensors the prefix 'scalar_' to denote this.
 
+    # Should this reduction to a scalar be performed earlier, i.e., instead
+    # of doing it explicitly here?
     scalar_classification = classification_loss.sum()
 
-    if include_aux_stats:
+    if False and include_aux_stats:
       self.add_aux_stat("loss_classification", scalar_classification)
 
-    scalar_loss = scalar_classification
-    return scalar_loss / self.batch_size
+    return scalar_classification / self.batch_size
 
 
   # Calculate loss component from a tensor and store in the aux_stats dict.
