@@ -8,7 +8,7 @@
 
   // Using more restricted parameters to produce a strong model quickly
   "augmentation_config" : {
-    "scale_max" : 2.0, // 9.0,
+    "scale_max" : 9.0,
 
     //"rotate_degrees_max" : 5,
     //"translate_ratio_max":0.2,
