@@ -199,6 +199,7 @@ class YoloLoss(nn.Module):
     scalar_box_size = loss_box_size.sum() * yolo.lambda_coord
     scalar_objectness_box = loss_objectness_box.sum()
     scalar_objectness_nobox = loss_objectness_nobox.sum() * (yolo.lambda_noobj / self.boxes_per_image)
+    scalar_classification = None
     if classification_loss is not None:
       scalar_classification = classification_loss.sum()
 

@@ -59,5 +59,10 @@
               "anchor_boxes_pixels" : [[18,18]],
               "lambda_coord" : 5.0,
               "lambda_noobj" : 0.5
-        }
+        },
+
+        "options" : {
+          "confidence_pct" : 63.5,
+          "max_i_over_u" : 0.6,
+        },
   }

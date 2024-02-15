@@ -1,8 +1,6 @@
 {
       "network_path" : "network.json",
-        "categories" : "A",
-
-       "image_total" :  96,
+             "image_total" :  96,
 
  "noise_factor" : 0,
   "color_limit" : 1,
