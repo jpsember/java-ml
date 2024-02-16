@@ -44,9 +44,8 @@ alias ls="ls -l"
 alias makeexe="chmod u+x"
 alias mv="mv -i"
 alias show="unzip -l"
-alias hist="history | cut -c 8-"                       # Show history without line numbers
+alias hist="history | cut -c 8-"   # Show history without line numbers
 
 # Remove duplicate entries from PATH
 #
 PATH=`awk -F: '{for(i=1;i<=NF;i++){if(!($i in a)){a[$i];printf s$i;s=":"}}}'<<<$PATH`
-

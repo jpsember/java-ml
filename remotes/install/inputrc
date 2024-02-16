@@ -14,7 +14,5 @@ set completion-ignore-case on
 
 "\e[A":history-search-backward
 "\e[B":history-search-forward
-
 "\e[3~":delete-char
-
 "\C-k": kill-whole-line
