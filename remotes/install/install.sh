@@ -33,6 +33,9 @@ getdep "java-webtools"
 getdep "java-graphics"
 fi
 getdep "dev"
+
+dev setup new
+
 getdep "java-ml"
 
 cd ..
