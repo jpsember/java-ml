@@ -1,4 +1,4 @@
 {
   "language" : "python",
-  "dat_path" : "../ml/dat_files",
+  "dat_path" : "dat_files",
 }

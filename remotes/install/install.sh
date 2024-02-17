@@ -22,20 +22,20 @@ getdep () {
 
 
 echo "Cloning git repositories"
+
 mkdir -p repos
 cd repos
 
-if false; then
 getdep "java-core"
 getdep "java-testutil"
 getdep "datagen"
 getdep "java-webtools"
 getdep "java-graphics"
-fi
 getdep "dev"
 
+# This creates ~/bin/mk, which is used by subsequent java projects
+#
 dev setup new
-
 getdep "java-ml"
 
 cd ..
@@ -52,5 +52,7 @@ echo "Updating software"
 apt-get update
 apt install -y maven
 apt install -y openjdk-11-jre-headless
+apt install -y python3-pip
+pip install jstyleson numpy torch
 
 echo "Done install.sh"
