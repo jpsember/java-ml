@@ -17,7 +17,7 @@ getdep () {
   echo "Installing dependency from github: $1"
   rm -rf $1
   git clone https://github.com/jpsember/$1.git
-  (cd $1; mk)
+  (cd $1; mk skiptest)
 }
 
 
