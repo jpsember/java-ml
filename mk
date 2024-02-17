@@ -64,4 +64,4 @@ fi
 echo "...generating data classes"
 datagen
 mvn install $NOTEST
-cp driver.sh $LINK
+cp .jsproject/driver.sh $LINK

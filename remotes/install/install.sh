@@ -25,21 +25,17 @@ echo "Cloning git repositories"
 mkdir -p repos
 cd repos
 
-getdep "java-ml"
-
+if false; then
 getdep "java-core"
 getdep "java-testutil"
 getdep "datagen"
 getdep "java-webtools"
 getdep "java-graphics"
 getdep "dev"
+fi
 getdep "java-ml"
 
 cd ..
-
-echo "Stopping prematurely"
-exit 0
-
 
 
 echo "Installing .bash_profile, .inputrc"
