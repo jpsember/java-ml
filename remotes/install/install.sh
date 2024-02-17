@@ -1,5 +1,55 @@
 #!/usr/bin/env bash
-set -eu
+set -eux
 
-cp -f bash_profile ../.bash_profile
-cp -f inputrc ../.inputrc
+# Add '.' to the path in case it doesn't exist
+# (not sure this will work)
+
+
+mkdir -p /root/bin
+
+
+
+if [ "$HOME" != "/root" ]; then echo "This script is only to be run on the remote machine"; exit 1; fi
+
+
+
+getdep () {
+  echo "Installing dependency from github: $1"
+  rm -rf $1
+  git clone https://github.com/jpsember/$1.git
+  (cd $1; mk)
+}
+
+
+echo "Cloning git repositories"
+mkdir -p repos
+cd repos
+
+getdep "java-core"
+getdep "java-testutil"
+getdep "datagen"
+getdep "java-webtools"
+getdep "java-graphics"
+getdep "dev"
+getdep "ml"
+
+cd ..
+
+echo "Stopping prematurely"
+exit 0
+
+
+
+echo "Installing .bash_profile, .inputrc"
+
+cp -f bash_profile $HOME/.bash_profile
+cp -f inputrc $HOME/.inputrc
+
+
+echo "Updating software"
+
+apt-get update
+apt install -y maven
+apt install -y openjdk-11-jre-headless
+
+echo "Done install.sh"
