@@ -1,23 +1,67 @@
-#!/usr/bin/env sh
-set -eu
+#!/usr/bin/env bash
+set -e
 
-FILE="mk"
+APP=ml
 
-if [ ! -f ${FILE} ]; then
+BINDIR="$HOME/bin"
+if [ ! -d $BINDIR ]
+then
+  echo "Directory doesn't exist; please create it: $BINDIR"
+  exit 1
+fi
+LINK=$BINDIR/$APP
 
-	FILE=.jsproject/make.sh
-	if [ ! -f ${FILE} ]; then
-		echo "Calling dev to create a make file"
-		dev createmake
-	fi
 
+##################################################
+# Parse arguments:
+#   [clean | skiptest]
+##################################################
+
+CLEAN=""
+NOTEST=""
+DONEARGS=0
+
+while [ "$DONEARGS" -eq 0 ]; do
+  if [ "$1" == "" ]; then
+    DONEARGS=1
+  elif [ "$1" == "clean" ]; then
+    CLEAN="clean"
+    shift 1
+  elif [ "$1" == "skiptest" ]; then
+    NOTEST="-DskipTests"
+    shift 1
+  else
+    echo "Unrecognized argument: $1"
+    exit 1
+  fi
+done
+
+
+##################################################
+# Perform clean, if requested
+#
+if [ "$CLEAN" != "" ]; then
+  echo "...cleaning"
+  mvn clean
+  if [ -f $LINK ]; then
+    echo "....removing old driver: ${LINK}"
+    rm $LINK
+  fi
+  datagen clean delete_old
 fi
 
-${FILE} "$@"
 
-# Look for an auxilliary make step
 
-FILE="mk_aux"
-if [ -f ${FILE} ]; then
-	${FILE} "$@"
+
+
+##################################################
+# Compile and test
+#
+if [ "$NOTEST" != "" ]; then
+  echo "...skipping tests"
 fi
+
+echo "...generating data classes"
+datagen
+mvn install $NOTEST
+cp .jsproject/driver.sh $LINK
