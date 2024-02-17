@@ -31,8 +31,8 @@ getdep "java-testutil"
 getdep "datagen"
 getdep "java-webtools"
 getdep "java-graphics"
-getdep "dev"
 fi
+getdep "dev"
 getdep "java-ml"
 
 cd ..
