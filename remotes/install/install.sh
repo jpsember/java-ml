@@ -25,13 +25,15 @@ echo "Cloning git repositories"
 mkdir -p repos
 cd repos
 
+getdep "java-ml"
+
 getdep "java-core"
 getdep "java-testutil"
 getdep "datagen"
 getdep "java-webtools"
 getdep "java-graphics"
 getdep "dev"
-getdep "ml"
+getdep "java-ml"
 
 cd ..
 
