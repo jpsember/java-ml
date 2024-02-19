@@ -1,24 +1,39 @@
 #!/usr/bin/env bash
 set -eux
 
-# Add '.' to the path in case it doesn't exist
-# (not sure this will work)
-
-
-mkdir -p /root/bin
-
-
-
 if [ "$HOME" != "/root" ]; then echo "This script is only to be run on the remote machine"; exit 1; fi
 
 
 
-getdep () {
+function getdep {
   echo "Installing dependency from github: $1"
   rm -rf $1
   git clone https://github.com/jpsember/$1.git
   (cd $1; mk skiptest)
 }
+
+
+
+
+
+mkdir -p /root/bin
+
+
+echo "Updating software"
+
+apt-get update
+apt install -y maven
+apt install -y openjdk-11-jre-headless
+apt install -y python3-pip
+pip install jstyleson numpy torch
+
+echo "exiting early"
+exit 0
+
+
+
+
+
 
 
 echo "Cloning git repositories"
@@ -39,20 +54,5 @@ dev setup new
 getdep "java-ml"
 
 cd ..
-
-
-#echo "Installing .bash_profile, .inputrc"
-
-#cp -f bash_profile $HOME/.bash_profile
-#cp -f inputrc $HOME/.inputrc
-
-
-echo "Updating software"
-
-apt-get update
-apt install -y maven
-apt install -y openjdk-11-jre-headless
-apt install -y python3-pip
-pip install jstyleson numpy torch
 
 echo "Done install.sh"
