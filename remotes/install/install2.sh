@@ -41,10 +41,10 @@ getdep "java-ml"
 cd ..
 
 
-echo "Installing .bash_profile, .inputrc"
+#echo "Installing .bash_profile, .inputrc"
 
-cp -f bash_profile $HOME/.bash_profile
-cp -f inputrc $HOME/.inputrc
+#cp -f bash_profile $HOME/.bash_profile
+#cp -f inputrc $HOME/.inputrc
 
 
 echo "Updating software"

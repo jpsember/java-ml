@@ -5,8 +5,6 @@ if [ "$HOME" != "/root" ]; then echo "This script is to be run on the remote mac
 
 echo "Creating symbolic link for .bash_profile"
 
-ln -s ~/remotes/linode/bash_profile ~/.bash_profile
-ln -s ~/remotes/linode/inputrc ~/.inputrc
-
-apt-get update
+if ! [ -f ~/.bash_profile ]; then ln -s ~/remotes/install/bash_profile ~/.bash_profile; fi
+if ! [ -f ~/.inputrc ]; then ln -s ~/remotes/install/inputrc ~/.inputrc; fi
 

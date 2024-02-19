@@ -7,5 +7,6 @@ echo "Copying install subdirectory to remote"
 dev push install . -v
 
 echo "Exec commands on remote"
+sshe 'bash --login -c install/install0.sh'
 sshe '(cd install; bash --login -c install.sh)'
 
