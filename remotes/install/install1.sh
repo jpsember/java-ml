@@ -17,5 +17,5 @@ function create_link {
 
 if [ "$HOME" != "/root" ]; then echo "This script is to be run on the remote machine"; exit 1; fi
 
-create_link ~/remotes/install/inputrc ~/.inputrc
-create_link ~/remotes/install/bash_profile ~/.bash_profile
+create_link ~/install/inputrc ~/.inputrc
+create_link ~/install/bash_profile ~/.bash_profile

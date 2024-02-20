@@ -25,7 +25,7 @@ apt-get update
 apt install -y maven
 apt install -y openjdk-11-jre-headless
 apt install -y python3-pip
-pip install jstyleson numpy torch
+#pip install jstyleson numpy torch
 
 echo "exiting early"
 exit 0
